@@ -1,0 +1,14 @@
+spring:
+  application:
+    name : app
+
+  datasource:
+    url: jdbc:mysql://i13e202.p.ssafy.io/bwabwayo_db
+    username: root
+    password: whddnjsWkd123!
+    driver-class-name: com.mysql.cj.jdbc.Driver
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+
