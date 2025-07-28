@@ -12,19 +12,40 @@ import org.springframework.security.config.annotation.web.configuration.EnableWe
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.HttpStatusEntryPoint;
+import org.springframework.web.cors.CorsConfiguration;
+import org.springframework.web.cors.CorsConfigurationSource;
+import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
+
+import java.util.List;
 
 @Configuration
 @EnableWebSecurity
 @RequiredArgsConstructor
 public class SecurityConfig {
     private final CustomOAuth2UserService customOAuth2UserService;
+
+    @Bean
+    public CorsConfigurationSource corsConfigurationSource() {
+        CorsConfiguration corsConfiguration = new CorsConfiguration();
+        corsConfiguration.setAllowedOrigins(List.of("http://localhost:5173")); // ⭐ 정확한 origin 명시!
+        corsConfiguration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "HEAD", "OPTIONS"));
+        corsConfiguration.setAllowedHeaders(List.of("Authorization", "Cache-Control", "Content-Type"));
+        corsConfiguration.setAllowCredentials(true); // ✅ withCredentials를 위해 필수
+        corsConfiguration.addExposedHeader("Content-Disposition");
+        corsConfiguration.addExposedHeader("Authorization");
+
+        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+        source.registerCorsConfiguration("/**", corsConfiguration);
+        return source;
+    }
+
     @Bean
     public SecurityFilterChain filterchain(HttpSecurity http) throws Exception {
         http
                 .csrf(csrf -> csrf.disable())
                 .httpBasic(basic -> basic.disable())
                 .formLogin(form -> form.disable())
-                .cors(Customizer.withDefaults()) //아무 설정X -> Bean으로 찾아서 설정하겠다
+                .cors(cors -> cors.configurationSource(corsConfigurationSource()))
 //                .addFilterBefore() //나중에 필터 추가
                 .sessionManagement(session -> session
                         .sessionCreationPolicy(SessionCreationPolicy.STATELESS))
@@ -37,8 +58,8 @@ public class SecurityConfig {
                         .userInfoEndpoint(userInfo -> userInfo
                                 .userService(customOAuth2UserService)//나중에 커스텀 서비스 추가
                         )
-                        .failureHandler() //실패 핸들러도 나중에 추가
-                        .successHandler() //성공 핸들러도 나중에 추가
+//                        .failureHandler() //실패 핸들러도 나중에 추가
+//                        .successHandler() //성공 핸들러도 나중에 추가
                 )
                 // 예외 처리: API 호출시 인증 실패하면 401 반환
                 .exceptionHandling(ex -> ex
