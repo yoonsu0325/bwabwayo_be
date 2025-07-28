@@ -14,7 +14,6 @@ import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -51,7 +50,7 @@ public class CategoryController {
             // DTO로 매핑
             List<CategoryResponseDTO> categories =
                     topCategories.stream()
-                            .map(CategoryResponseDTO::fromEntity)
+                            .map(c -> CategoryResponseDTO.fromEntity(c, 3))
                             .toList();
 
             // Response 생성
@@ -59,6 +58,7 @@ public class CategoryController {
                     .message("카테고리 조회에 성공했습니다.")
                     .categories(categories)
                     .build();
+
             return ResponseEntity.ok(response);
         } catch(Exception e){
             // 서버에 오류 발생
@@ -67,6 +67,7 @@ public class CategoryController {
             ErrorResponseDTO response = ErrorResponseDTO.builder()
                     .message("카테고리 조회 중 서버 오류가 발생했습니다.")
                     .build();
+
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
         }
     }
