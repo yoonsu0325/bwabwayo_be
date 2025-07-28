@@ -1,8 +1,10 @@
 package com.bwabwayo.app.domain.user.service;
 
 import com.bwabwayo.app.domain.user.domain.User;
+import com.bwabwayo.app.domain.user.dto.response.OAuth2UserResponse;
 import com.bwabwayo.app.domain.user.provider.KakaoUserInfo;
 import com.bwabwayo.app.domain.user.provider.OAuth2UserInfo;
+import com.bwabwayo.app.domain.user.dto.response.CustomOAuth2User;
 import com.bwabwayo.app.domain.user.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.oauth2.client.userinfo.DefaultOAuth2UserService;
@@ -38,18 +40,24 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
             System.out.println("카카오 로그인 요청~~");
             oAuth2UserInfo = new KakaoUserInfo(oAuth2User.getAttributes());
         } else {
-            System.out.println("우리는 구글과 페이스북만 지원해요 ㅎㅎ");
+            System.out.println("카카오만 지원 ㅎㅎ");
         }
 
-        User userEntity =
+        Optional<User> userEntity =
                 userRepository.findById(oAuth2UserInfo.getProviderId());
 
-        if (userEntity != null) {
+        OAuth2UserResponse user = new OAuth2UserResponse();
+        user.setId(oAuth2UserInfo.getProviderId());
+        user.setRole("ROLE_USER");
+        if (userEntity.isEmpty()) {
+            System.out.println("존재X");
             //userEntity 이미 존재하므로 넘기기
             //login Successful
             //즉, SuccessfulHandling으로 넘겨서 성공시켜줘야함
         } else {
+            System.out.println("존재");
             //존재하지 않으므로 front에 요청해서 front로 넘기기
         }
+        return new CustomOAuth2User(user, oAuth2User.getAttributes());
     }
 }

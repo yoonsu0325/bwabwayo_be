@@ -43,10 +43,10 @@ cloud:
       client:
         registration:
           kakao:
-            client-name : kakao
+            client-name: kakao
             client-id: "e0925046e873c5680b35eca4994b854d"
-            redirect-uri: "http://localhost:8080/login/oauth2/code/kakao"
-            client-authentication-method: POST
+            redirect-uri: "http://localhost:8081/login/oauth2/code/kakao"
+            client-authentication-method: client_secret_post
             authorization-grant-type: authorization_code
             scope: profile_image, account_email
         provider:
@@ -55,3 +55,22 @@ cloud:
             token_uri: https://kauth.kakao.com/oauth/token
             user-info-uri: https://kapi.kakao.com/v2/user/me
             user_name_attribute: id
+
+jwt:
+  secret: "vmfhaltmskdlstkfkdgodyroqkfwkasdadowdqfgrgsgsrgsgrgsrgsrgsefjhgku="
+
+server:
+  port: 8081
+
+cloud:
+  aws:
+    credentials:
+      accessKey: AKIAT6OL2UNWJPX53KGW
+      secretKey: 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
+    region:
+      static: ap-northeast-2
+    s3:
+      bucket: bwabwayo-general-bucket
+    stack:
+      auto: false
+

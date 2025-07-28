@@ -1,5 +1,6 @@
 package com.bwabwayo.app.domain.user.domain;
 
+import com.bwabwayo.app.domain.user.utils.Role;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
@@ -21,7 +22,8 @@ public class User {
     private String id; // 소셜 로그인 공급자 ID (ex. kakao_12345)
 
     @Column(nullable = false, length = 10)
-    private String role; // user, admin
+    @Enumerated(EnumType.STRING)
+    private Role role;
 
     @Column(nullable = false, unique = true, length = 50)
     private String nickname;
