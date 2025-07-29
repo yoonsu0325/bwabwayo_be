@@ -15,6 +15,9 @@ public class CustomOAuth2User implements OAuth2User {
         this.user = user;
         this.attributes = attributes;
     }
+    public CustomOAuth2User(OAuth2UserResponse user) {
+        this.user = user;
+    }
 
     @Override
     public Map<String, Object> getAttributes() {
@@ -23,7 +26,7 @@ public class CustomOAuth2User implements OAuth2User {
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
-        return List.of((GrantedAuthority) () -> user.getRole());
+        return List.of((GrantedAuthority) () -> "ROLE_" + user.getRole());
     }
 
     @Override

@@ -18,7 +18,7 @@ import java.time.LocalDateTime;
 public class User {
 
     @Id
-    @Column(nullable = false, length = 100)
+    @Column(nullable = false, length = 255)
     private String id; // 소셜 로그인 공급자 ID (ex. kakao_12345)
 
     @Column(nullable = false, length = 10)

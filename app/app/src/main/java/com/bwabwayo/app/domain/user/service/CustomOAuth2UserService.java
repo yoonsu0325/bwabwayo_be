@@ -6,6 +6,7 @@ import com.bwabwayo.app.domain.user.provider.KakaoUserInfo;
 import com.bwabwayo.app.domain.user.provider.OAuth2UserInfo;
 import com.bwabwayo.app.domain.user.dto.response.CustomOAuth2User;
 import com.bwabwayo.app.domain.user.repository.UserRepository;
+import com.bwabwayo.app.domain.user.utils.Role;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.oauth2.client.userinfo.DefaultOAuth2UserService;
 import org.springframework.security.oauth2.client.userinfo.OAuth2UserRequest;
@@ -30,6 +31,7 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
         System.out.println("userRequest clientRegistration : " + userRequest.getClientRegistration());
         // token을 통해 응답받은 회원정보
         System.out.println("oAuth2User : " + oAuth2User);
+        System.out.println("oAuth2User.getAttributes() : " + oAuth2User.getAttributes());
 
         return processOAuth2User(userRequest, oAuth2User);
     }
@@ -48,12 +50,10 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
 
         OAuth2UserResponse user = new OAuth2UserResponse();
         user.setId(oAuth2UserInfo.getProviderId());
-        user.setRole("ROLE_USER");
+        user.setRole(Role.USER);
         if (userEntity.isEmpty()) {
             System.out.println("존재X");
-            //userEntity 이미 존재하므로 넘기기
-            //login Successful
-            //즉, SuccessfulHandling으로 넘겨서 성공시켜줘야함
+
         } else {
             System.out.println("존재");
             //존재하지 않으므로 front에 요청해서 front로 넘기기
