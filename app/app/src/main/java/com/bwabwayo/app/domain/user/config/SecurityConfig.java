@@ -1,6 +1,9 @@
 package com.bwabwayo.app.domain.user.config;
 
+import com.bwabwayo.app.domain.user.filter.JWTFilter;
+import com.bwabwayo.app.domain.user.repository.UserRepository;
 import com.bwabwayo.app.domain.user.service.CustomOAuth2UserService;
+import com.bwabwayo.app.domain.user.utils.JWTUtils;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
@@ -12,6 +15,7 @@ import org.springframework.security.config.annotation.web.configuration.EnableWe
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.HttpStatusEntryPoint;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
@@ -23,6 +27,8 @@ import java.util.List;
 @RequiredArgsConstructor
 public class SecurityConfig {
     private final CustomOAuth2UserService customOAuth2UserService;
+    private final UserRepository userRepository;
+    private final JWTUtils jwtUtils;
 
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
@@ -46,7 +52,7 @@ public class SecurityConfig {
                 .httpBasic(basic -> basic.disable())
                 .formLogin(form -> form.disable())
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
-//                .addFilterBefore() //나중에 필터 추가
+                .addFilterBefore(new JWTFilter(userRepository, jwtUtils), UsernamePasswordAuthenticationFilter.class)
                 .sessionManagement(session -> session
                         .sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
@@ -67,5 +73,4 @@ public class SecurityConfig {
                 );
         return http.build();
     }
-
 }
