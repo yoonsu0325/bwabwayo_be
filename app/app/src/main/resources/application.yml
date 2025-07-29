@@ -1,6 +1,6 @@
 spring:
   application:
-    name: app
+    name : app
 
   data:
     redis:
@@ -8,7 +8,6 @@ spring:
       port: 6379
       password:
       timeout: 6000
-
 
   datasource:
     url: jdbc:mysql://i13e202.p.ssafy.io/bwabwayo_db
@@ -22,3 +21,23 @@ spring:
 
 server:
   port: 8081
+
+openai:
+  secret-key: S13P11E202-b866ef0e-647a-4e68-aabe-9953140f6092
+  chat-url: https://gms.ssafy.io/gmsapi/api.openai.com/v1/chat/completions
+  chat-model: gpt-4.1-nano
+
+  embedding-url: https://gms.ssafy.io/gmsapi/api.openai.com/v1/embeddings
+  embedding-model: text-embedding-3-large
+
+cloud:
+  aws:
+    credentials:
+      accessKey: AKIAT6OL2UNWJPX53KGW
+      secretKey: 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
+    region:
+      static: ap-northeast-2
+    s3:
+      bucket: bwabwayo-general-bucket
+    stack:
+      auto: false
