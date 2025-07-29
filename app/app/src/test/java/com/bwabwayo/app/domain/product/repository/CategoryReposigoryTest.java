@@ -19,11 +19,11 @@ class CategoryRepositoryTest {
     @DisplayName("최상위 카테고리만 조회")
     void findByParentIsNull() {
         // given
-        Category root1 = Category.builder().name("전자기기").build();
-        Category root2 = Category.builder().name("패션").build();
+        Category root1 = Category.builder().id(1L).name("전자기기").build();
+        Category root2 = Category.builder().id(2L).name("패션").build();
 
-        Category child1 = Category.builder().name("노트북").parent(root1).build();
-        Category child2 = Category.builder().name("남성의류").parent(root2).build();
+        Category child1 = Category.builder().id(3L).name("노트북").parent(root1).build();
+        Category child2 = Category.builder().id(4L).name("남성의류").parent(root2).build();
 
         root1.setChildren(List.of(child1));
         root2.setChildren(List.of(child2));
