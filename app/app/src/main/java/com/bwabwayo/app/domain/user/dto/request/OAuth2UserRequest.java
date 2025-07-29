@@ -1,18 +1,20 @@
-package com.bwabwayo.app.domain.user.dto.response;
+package com.bwabwayo.app.domain.user.dto.request;
 
 import com.bwabwayo.app.domain.user.domain.User;
-import com.bwabwayo.app.domain.user.utils.Role;
+import com.bwabwayo.app.domain.user.domain.Role;
+import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
 @Data
 @NoArgsConstructor
-public class OAuth2UserResponse {
+@AllArgsConstructor
+public class OAuth2UserRequest {
     String id;
     Role role;
     String email;
     String profileImage;
-    public OAuth2UserResponse(User user){
+    public OAuth2UserRequest(User user){
         this.id = user.getId();
         this.role = user.getRole();
         this.email = user.getEmail();

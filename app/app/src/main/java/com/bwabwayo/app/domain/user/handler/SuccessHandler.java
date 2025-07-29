@@ -1,11 +1,10 @@
 package com.bwabwayo.app.domain.user.handler;
 
-import com.bwabwayo.app.domain.user.dto.response.CustomOAuth2User;
-import com.bwabwayo.app.domain.user.dto.response.OAuth2UserResponse;
+import com.bwabwayo.app.domain.user.dto.request.CustomOAuth2User;
+import com.bwabwayo.app.domain.user.dto.request.OAuth2UserRequest;
 import com.bwabwayo.app.domain.user.utils.JWTUtils;
-import com.bwabwayo.app.domain.user.utils.JwtProperties;
-import com.bwabwayo.app.domain.user.utils.Role;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import com.bwabwayo.app.domain.user.config.JwtProperties;
+import com.bwabwayo.app.domain.user.domain.Role;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -19,7 +18,6 @@ import org.springframework.web.util.UriComponentsBuilder;
 import java.io.IOException;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
-import java.util.Map;
 
 @Component
 @RequiredArgsConstructor
@@ -30,7 +28,7 @@ public class SuccessHandler extends SimpleUrlAuthenticationSuccessHandler {
     public void onAuthenticationSuccess(HttpServletRequest request, HttpServletResponse response, Authentication authentication) throws IOException, ServletException {
         System.out.println("인증성공");
         CustomOAuth2User oath2user = (CustomOAuth2User) authentication.getPrincipal();
-        OAuth2UserResponse user= oath2user.getUser();
+        OAuth2UserRequest user= oath2user.getUser();
         //AT 30분짜리 발행
         String accessToken = jwtUtils.createToken(user,jwtProperties.getAccessExpMinutes(), user.getRole());
 

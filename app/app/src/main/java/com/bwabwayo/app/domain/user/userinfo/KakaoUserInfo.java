@@ -1,4 +1,4 @@
-package com.bwabwayo.app.domain.user.provider;
+package com.bwabwayo.app.domain.user.userinfo;
 
 import java.util.Map;
 

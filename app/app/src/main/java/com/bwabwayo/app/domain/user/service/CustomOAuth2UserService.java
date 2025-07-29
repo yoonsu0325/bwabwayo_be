@@ -1,15 +1,14 @@
 package com.bwabwayo.app.domain.user.service;
 
 import com.bwabwayo.app.domain.user.domain.User;
-import com.bwabwayo.app.domain.user.dto.response.OAuth2UserResponse;
-import com.bwabwayo.app.domain.user.provider.KakaoUserInfo;
-import com.bwabwayo.app.domain.user.provider.OAuth2UserInfo;
-import com.bwabwayo.app.domain.user.dto.response.CustomOAuth2User;
+import com.bwabwayo.app.domain.user.dto.request.OAuth2UserRequest;
+import com.bwabwayo.app.domain.user.userinfo.KakaoUserInfo;
+import com.bwabwayo.app.domain.user.userinfo.OAuth2UserInfo;
+import com.bwabwayo.app.domain.user.dto.request.CustomOAuth2User;
 import com.bwabwayo.app.domain.user.repository.UserRepository;
-import com.bwabwayo.app.domain.user.utils.Role;
+import com.bwabwayo.app.domain.user.domain.Role;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.oauth2.client.userinfo.DefaultOAuth2UserService;
-import org.springframework.security.oauth2.client.userinfo.OAuth2UserRequest;
 import org.springframework.security.oauth2.core.OAuth2AuthenticationException;
 import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.stereotype.Service;
@@ -22,7 +21,7 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
     private UserRepository userRepository;
 
     @Override
-    public OAuth2User loadUser(OAuth2UserRequest userRequest) throws OAuth2AuthenticationException {
+    public OAuth2User loadUser(org.springframework.security.oauth2.client.userinfo.OAuth2UserRequest userRequest) throws OAuth2AuthenticationException {
         //카카오 서버에 요청한 유저 정보 받아오기
         OAuth2User oAuth2User = super.loadUser(userRequest);
 
@@ -39,7 +38,7 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
     }
 
     //받은 데이터를 가공 및 로그인 성공 여부 확인
-    private OAuth2User processOAuth2User(OAuth2UserRequest userRequest, OAuth2User oAuth2User) {
+    private OAuth2User processOAuth2User(org.springframework.security.oauth2.client.userinfo.OAuth2UserRequest userRequest, OAuth2User oAuth2User) {
         OAuth2UserInfo oAuth2UserInfo = null;
         if (userRequest.getClientRegistration().getRegistrationId().equals("kakao")) {
             System.out.println("카카오 로그인 요청~~");
@@ -50,17 +49,17 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
 
         Optional<User> userEntity =
                 userRepository.findById(oAuth2UserInfo.getProviderId());
-        OAuth2UserResponse user;
+        OAuth2UserRequest user;
         if (userEntity.isEmpty()) {
             System.out.println("존재X");
-            user = new OAuth2UserResponse();
+            user = new OAuth2UserRequest();
             user.setId(oAuth2UserInfo.getProviderId());
             user.setEmail(oAuth2UserInfo.getEmail());
             user.setProfileImage(oAuth2UserInfo.getProfileImage());
             user.setRole(Role.PREUSER);
         } else {
             System.out.println("존재");
-            user = new OAuth2UserResponse(
+            user = new OAuth2UserRequest(
                     userEntity.orElseThrow(() -> new RuntimeException("User not found"))
             );
             user.setRole(Role.USER);

@@ -1,6 +1,8 @@
 package com.bwabwayo.app.domain.user.utils;
 
-import com.bwabwayo.app.domain.user.dto.response.OAuth2UserResponse;
+import com.bwabwayo.app.domain.user.config.JwtProperties;
+import com.bwabwayo.app.domain.user.domain.Role;
+import com.bwabwayo.app.domain.user.dto.request.OAuth2UserRequest;
 import io.jsonwebtoken.ExpiredJwtException;
 import io.jsonwebtoken.JwtException;
 import io.jsonwebtoken.Jwts;
@@ -8,7 +10,6 @@ import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
 import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseCookie;
 import org.springframework.stereotype.Component;
 import javax.crypto.SecretKey;
@@ -36,7 +37,7 @@ public class JWTUtils {
     }
 
     //토큰 생성 함수 (유효시간, 역할을 받아서 생성) (AccessToken/RefreshToken 둘 다 이걸로 생성 가능)
-    public String createToken(OAuth2UserResponse user, long validTime, Role role) {
+    public String createToken(OAuth2UserRequest user, long validTime, Role role) {
         return Jwts.builder()
                 .setHeader(Map.of("typ","JWT"))   // JWT 헤더 명시 (선택)
                 .setSubject(user.getId())                // sub 필드 → 주체, 일반적으로 user_id
@@ -96,6 +97,21 @@ public class JWTUtils {
             return null;
         }
     }
+
+    //JWT payload의 "role"을 꺼내는 함수
+    public Role getRole(String jwt) {
+        try {
+            return Jwts.parserBuilder()
+                    .setSigningKey(secretKey)
+                    .build()
+                    .parseClaimsJws(jwt)
+                    .getBody()
+                    .get("role", Role.class); // role 필드 꺼냄
+        } catch (JwtException e) {
+            return null;
+        }
+    }
+
 
     public static ResponseCookie createHttpOnlyCookie(String refreshToken) { // 수정
         return ResponseCookie.from("refreshToken", refreshToken)

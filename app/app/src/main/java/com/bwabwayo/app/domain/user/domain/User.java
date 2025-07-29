@@ -1,6 +1,5 @@
 package com.bwabwayo.app.domain.user.domain;
 
-import com.bwabwayo.app.domain.user.utils.Role;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;

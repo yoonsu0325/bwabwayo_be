@@ -1,17 +1,16 @@
 package com.bwabwayo.app.domain.user.filter;
 
+import com.bwabwayo.app.domain.user.domain.Role;
 import com.bwabwayo.app.domain.user.domain.User;
-import com.bwabwayo.app.domain.user.dto.response.CustomOAuth2User;
-import com.bwabwayo.app.domain.user.dto.response.OAuth2UserResponse;
+import com.bwabwayo.app.domain.user.dto.request.CustomOAuth2User;
+import com.bwabwayo.app.domain.user.dto.request.OAuth2UserRequest;
 import com.bwabwayo.app.domain.user.repository.UserRepository;
 import com.bwabwayo.app.domain.user.utils.JWTUtils;
-import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.ExpiredJwtException;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import lombok.NoArgsConstructor;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.authentication.BadCredentialsException;
@@ -109,9 +108,8 @@ public class JWTFilter extends OncePerRequestFilter {
         }
 
         //User -> CustomOAuth2User로 가공
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new UsernameNotFoundException("유저를 찾을 수 없습니다"));
-        OAuth2UserResponse oauth2user = new OAuth2UserResponse(user);
+        Role role = jwtUtils.getRole(tokenFromHeader);
+        OAuth2UserRequest oauth2user = new OAuth2UserRequest(userId, role, "", "");
         CustomOAuth2User customOAuth2User = new CustomOAuth2User(oauth2user);
 
         System.out.println(customOAuth2User.getName());

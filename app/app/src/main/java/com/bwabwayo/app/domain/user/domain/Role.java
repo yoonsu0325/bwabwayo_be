@@ -1,4 +1,4 @@
-package com.bwabwayo.app.domain.user.utils;
+package com.bwabwayo.app.domain.user.domain;
 
 import org.springframework.security.core.GrantedAuthority;
 

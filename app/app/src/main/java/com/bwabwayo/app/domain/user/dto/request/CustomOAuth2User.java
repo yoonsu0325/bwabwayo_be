@@ -1,6 +1,5 @@
-package com.bwabwayo.app.domain.user.dto.response;
+package com.bwabwayo.app.domain.user.dto.request;
 
-import com.bwabwayo.app.domain.user.provider.OAuth2UserInfo;
 import lombok.Getter;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.oauth2.core.user.OAuth2User;
@@ -11,8 +10,8 @@ import java.util.Map;
 
 @Getter
 public class CustomOAuth2User implements OAuth2User {
-    private final OAuth2UserResponse user;
-    public CustomOAuth2User(OAuth2UserResponse user) {
+    private final OAuth2UserRequest user;
+    public CustomOAuth2User(OAuth2UserRequest user) {
         this.user = user;
     }
     @Override
