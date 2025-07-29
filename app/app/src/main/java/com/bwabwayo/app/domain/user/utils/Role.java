@@ -3,7 +3,7 @@ package com.bwabwayo.app.domain.user.utils;
 import org.springframework.security.core.GrantedAuthority;
 
 public enum Role implements GrantedAuthority {
-    USER, ADMIN;
+    USER, ADMIN, PREUSER; //PREUSER는 카카오로그인 인증만 한 유저
 
     @Override
     public String getAuthority() {

@@ -6,6 +6,8 @@ import io.jsonwebtoken.JwtException;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
+import jakarta.annotation.PostConstruct;
+import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseCookie;
 import org.springframework.stereotype.Component;
@@ -16,56 +18,71 @@ import java.util.Date;
 import java.util.Map;
 
 @Component
+@RequiredArgsConstructor
+//JWT에 필요한 여러 함수를 만들어 놓은 Util 클래스
 public class JWTUtils {
     private SecretKey secretKey;
+    private final JwtProperties jwtProperties;
+
+    //Bean 생성할 때 실행하는 생성자
+    @PostConstruct
+    public void init() {
+        byte[] keyBytes = Decoders.BASE64.decode(jwtProperties.getSecret()); // BASE64 디코딩
+        this.secretKey = Keys.hmacShaKeyFor(keyBytes); // 서명용 HMAC 키 생성
+    }
 
     public String getTokenFromHeader(String header) {
         return header.split(" ")[1];
     }
 
-    public JWTUtils(@Value("${jwt.secret}") String secret){
-        byte[] keyBytes = Decoders.BASE64.decode(secret); // BASE64 디코딩
-        this.secretKey = Keys.hmacShaKeyFor(keyBytes);
-    }
-
-    public String createToken(OAuth2UserResponse user, int validTime, String role) {
+    //토큰 생성 함수 (유효시간, 역할을 받아서 생성) (AccessToken/RefreshToken 둘 다 이걸로 생성 가능)
+    public String createToken(OAuth2UserResponse user, long validTime, Role role) {
         return Jwts.builder()
-                .setHeader(Map.of("typ","JWT"))
-                .setSubject(user.getId())
-                .claim("role", role)
-                .setIssuedAt(Date.from(ZonedDateTime.now().toInstant()))
-                .setExpiration(Date.from(ZonedDateTime.now().plusMinutes(validTime).toInstant()))
-                .signWith(secretKey)
-                .compact();
+                .setHeader(Map.of("typ","JWT"))   // JWT 헤더 명시 (선택)
+                .setSubject(user.getId())                // sub 필드 → 주체, 일반적으로 user_id
+                .claim("role", role)                  // 사용자 권한(roles) claim에 저장
+                .setIssuedAt(Date.from(ZonedDateTime.now().toInstant())) // 토큰 생성 시각
+                .setExpiration(Date.from(ZonedDateTime.now().plusMinutes(validTime).toInstant())) // 토큰 만료 시각
+                .signWith(secretKey) // 비밀키로 서명 (HS256)
+                .compact(); // JWT 문자열 생성
     }
 
+    //토큰 유효한지 체크 (만료, 위조, 서명, 등등) 함수
     public boolean validateToken(String token) {
         try {
             Jwts.parserBuilder()
-                    .setSigningKey(secretKey)
+                    .setSigningKey(secretKey) // 비밀키 설정
                     .build()
-                    .parseClaimsJws(token);
+                    .parseClaimsJws(token); // 토큰 파싱 및 유효성 검증
             return true;
         } catch (JwtException | IllegalArgumentException e) {
             return false; // 토큰이 유효하지 않은 경우
         }
     }
 
+    //토큰이 만료되었는 지만 체크 함수
     public boolean isExpired(String token) {
         try {
-            validateToken(token);
-        } catch (Exception e) {
-            return (e instanceof ExpiredJwtException);
+            Jwts.parserBuilder()
+                    .setSigningKey(secretKey) // 비밀키 설정
+                    .build()
+                    .parseClaimsJws(token); // 토큰 파싱 및 유효성 검증
+            return false;
+        } catch (ExpiredJwtException e) {
+            return true;
+        } catch (JwtException e) {
+            return false;
         }
-        return false;
     }
 
+    //토큰 남은 시간 계산 함수
     public long tokenRemainTime(Integer expTime) {
-        Date expDate = new Date((long) expTime * (1000));
-        long remainMs = expDate.getTime() - System.currentTimeMillis();
-        return remainMs / (1000 * 60);
+        Date expDate = new Date((long) expTime * (1000)); // 초 → 밀리초
+        long remainMs = expDate.getTime() - System.currentTimeMillis(); // 남은 ms
+        return remainMs / (1000 * 60); // 분 단위 반환
     }
 
+    //JWT payload의 "sub"을 꺼내는 함수
     public String getSubject(String jwt) {
         try{
             return Jwts.parserBuilder()
@@ -73,7 +90,7 @@ public class JWTUtils {
                     .build()
                     .parseClaimsJws(jwt)
                     .getBody()
-                    .getSubject();
+                    .getSubject(); // sub 필드 꺼냄 (보통 userId)
         }
         catch (JwtException e){
             return null;
@@ -82,11 +99,11 @@ public class JWTUtils {
 
     public static ResponseCookie createHttpOnlyCookie(String refreshToken) { // 수정
         return ResponseCookie.from("refreshToken", refreshToken)
-                .httpOnly(true)
-                .secure(true)
-                .path("/api/auth/refresh")
-                .maxAge(Duration.ofDays(1))
-                .sameSite("Strict") //일반적으로는 "Lax"사용
+                .httpOnly(true)  // JavaScript로 접근 불가 (XSS 방지)
+                .secure(true)  // HTTPS 연결에서만 전송
+                .path("/api/auth/refresh") // 이 경로에 접근할 때만 자동 전송됨
+                .maxAge(Duration.ofDays(7)) // 7일 동안 유지
+                .sameSite("Strict") //일반적으로는 "Lax"사용, 다른 사이트에서 접근 금지
                 .build();
     }
 }

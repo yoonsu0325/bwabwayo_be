@@ -32,6 +32,10 @@ spring:
 
 jwt:
   secret: "vmfhaltmskdlstkfkdgodyroqkfwkasdadowdqfgrgsgsrgsgrgsrgsrgsefjhgku="
+  access-exp-minutes: 30
+  refresh-exp-minutes: 10080 #60*24*7
+  header: Authorization
+  type: Bearer
 
 server:
   port: 8081
