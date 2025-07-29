@@ -11,6 +11,6 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @Builder
 public class ErrorResponseDTO {
-    @Schema(example = "카테고리 조회 중 서버 오류가 발생했습니다.")
+    @Schema(example = "서버 오류가 발생했습니다.")
     private String message;
 }
