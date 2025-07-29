@@ -19,12 +19,16 @@ import java.util.Map;
 public class JWTUtils {
     private SecretKey secretKey;
 
+    public String getTokenFromHeader(String header) {
+        return header.split(" ")[1];
+    }
+
     public JWTUtils(@Value("${jwt.secret}") String secret){
         byte[] keyBytes = Decoders.BASE64.decode(secret); // BASE64 디코딩
         this.secretKey = Keys.hmacShaKeyFor(keyBytes);
     }
 
-    public String generateToken(OAuth2UserResponse user, int validTime, String role) {
+    public String createToken(OAuth2UserResponse user, int validTime, String role) {
         return Jwts.builder()
                 .setHeader(Map.of("typ","JWT"))
                 .setSubject(user.getId())
@@ -62,7 +66,7 @@ public class JWTUtils {
         return remainMs / (1000 * 60);
     }
 
-    public String getClaims(String jwt) {
+    public String getSubject(String jwt) {
         try{
             return Jwts.parserBuilder()
                     .setSigningKey(secretKey)
@@ -70,7 +74,6 @@ public class JWTUtils {
                     .parseClaimsJws(jwt)
                     .getBody()
                     .getSubject();
-
         }
         catch (JwtException e){
             return null;
