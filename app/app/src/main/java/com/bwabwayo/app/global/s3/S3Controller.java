@@ -1,4 +1,4 @@
-package com.bwabwayo.app.common.s3;
+package com.bwabwayo.app.global.s3;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;

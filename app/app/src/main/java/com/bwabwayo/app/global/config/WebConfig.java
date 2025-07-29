@@ -1,4 +1,4 @@
-package com.bwabwayo.app.config;
+package com.bwabwayo.app.global.config;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;

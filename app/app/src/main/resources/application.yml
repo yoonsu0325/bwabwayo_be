@@ -2,6 +2,13 @@ spring:
   application:
     name : app
 
+  data:
+    redis:
+      host: i13e202.p.ssafy.io
+      port: 6379
+      password:
+      timeout: 6000
+
   datasource:
     url: jdbc:mysql://i13e202.p.ssafy.io/bwabwayo_db
     username: root
@@ -12,11 +19,8 @@ spring:
       ddl-auto: update
     show-sql: true
 
-
-
 server:
   port: 8081
-
 
 openai:
   secret-key: S13P11E202-b866ef0e-647a-4e68-aabe-9953140f6092
