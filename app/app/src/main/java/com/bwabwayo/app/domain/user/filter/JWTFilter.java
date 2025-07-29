@@ -83,7 +83,7 @@ public class JWTFilter extends OncePerRequestFilter {
 
             //SecuritycontextHolder에 넣어서 다음 인증 때 사용
             SecurityContextHolder.getContext().setAuthentication(authentication);
-
+            System.out.println("Token 인증 완료");
             filterChain.doFilter(request, response);    // 다음 필터로 이동
         } catch (Exception e) {
             response.setContentType("application/json; charset=UTF-8");

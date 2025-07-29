@@ -36,17 +36,20 @@ public class SuccessHandler extends SimpleUrlAuthenticationSuccessHandler {
         response.setContentType("application/json");
         response.setCharacterEncoding("UTF-8");
         if (user.getRole() == Role.PREUSER) {
+            System.out.println("PREUSER");
             String redirectUrl = UriComponentsBuilder
-                    .fromUriString("http://localhost:5173/kakao-callback")
+                    .fromUriString("http://localhost:3000/kakao-callback")
                     .queryParam("accessToken", accessToken)
                     .queryParam("isNewUser", user.getRole() == Role.PREUSER)
-                    .queryParam("email", URLEncoder.encode(user.getEmail(), StandardCharsets.UTF_8))
+                    .queryParam("id", user.getId())
+                    .queryParam("email", user.getEmail())
                     .queryParam("profileImage", URLEncoder.encode(user.getProfileImage(), StandardCharsets.UTF_8))
                     .build()
                     .toUriString();
 
             response.sendRedirect(redirectUrl);
         }else { //AT/RT 토큰 발행 후 전달
+            System.out.println("USER");
             // 가입된 유저 → AccessToken + RefreshToken 발급
             String refreshToken = jwtUtils.createToken(user, jwtProperties.getRefreshExpMinutes(), user.getRole()); // 7일
 
@@ -56,7 +59,7 @@ public class SuccessHandler extends SimpleUrlAuthenticationSuccessHandler {
 //            response.addHeader(jwtProperties.getHeader(), jwtProperties.getType() + accessToken); //헤더로 주는 방식
 
             String redirectUrl = UriComponentsBuilder
-                    .fromUriString("http://localhost:5173/kakao-callback")
+                    .fromUriString("http://localhost:3000/kakao-callback")
                     .queryParam("accessToken", accessToken)
                     .queryParam("isNewUser", false)
                     .build()

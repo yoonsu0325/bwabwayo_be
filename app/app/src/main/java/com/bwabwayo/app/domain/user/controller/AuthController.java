@@ -34,6 +34,7 @@ public class AuthController {
     @PostMapping("/signup")
     public ResponseEntity<?> signup(@RequestBody UserSignUpRequest request) {
         try {
+            System.out.println("SignUp");
             UserTokenResponse tokens = authService.signUp(request);
 
             // AccessToken만 바디에 포함
@@ -64,7 +65,7 @@ public class AuthController {
 //    public ResponseEntity<?> logout() {
 //
 //    }
-//
+
 //    @PostMapping("/refresh")
 //    public ResponseEntity<?> refreshToken() {
 //
