@@ -10,6 +10,7 @@ import jakarta.validation.constraints.Min;
 import lombok.*;
 
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -42,35 +43,39 @@ public class Product {
 
     @Column(nullable = false)
     @Min(0) // 가격은 음수가 될 수 없음
-    private Integer price; // 판매가
+    private int price; // 판매가
 
-    @Column(length = 2083)
-    private String thumbnail; // 썸네일 경로
+    @Column(length = 1024, nullable = false)
+    private String thumbnail; // 썸네일 key
 
+    @Builder.Default
     @OneToMany(mappedBy = "product", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<ProductImage> productImages = new ArrayList<>();; // 상품 이미지
+    private List<ProductImage> productImages = new ArrayList<>(); // 상품 이미지
 
     @Column(name = "view_count", nullable = false)
-    private int viewCount = 0; // 조회 수
+    private int viewCount; // 조회 수
 
     @Column(name = "wish_count", nullable = false)
-    private int wishCount = 0; // 관심 수
+    private int wishCount; // 관심 수
 
     @Column(name = "chat_count", nullable = false)
-    private int chatCount = 0; // 채팅 수
+    private int chatCount; // 채팅 수
 
     @Column(name = "can_negotiate", nullable = false)
-    private boolean canNegotiate = false; // 가격 협상 가능 여부
+    private boolean canNegotiate; // 가격 협상 가능 여부
 
     @Column(name = "can_direct", nullable = false)
-    private boolean canDirect = false; // 직거래 가능 여부
+    private boolean canDirect; // 직거래 가능 여부
 
+    @Builder.Default
     @Column(name = "can_delivery", nullable = false)
     private boolean canDelivery = true; // 택배거래 가능 여부
 
+    @Builder.Default
     @Column(name = "can_video_call", nullable = false)
     private boolean canVideoCall = true; // 화상 거래 가능 여부
 
+    @Builder.Default
     @Convert(converter = SaleStatusConvert.class)
     @Column(name = "sale_status", nullable = false)
     private SaleStatus saleStatus = SaleStatus.AVAILABLE; // 판매 상태
@@ -99,12 +104,12 @@ public class Product {
 
     @PrePersist
     public void prePersist() {
-        this.createdAt = LocalDateTime.now();
-        this.updatedAt = LocalDateTime.now();
+        this.createdAt = LocalDateTime.now(ZoneId.of("Asia/Seoul"));
+        this.updatedAt = LocalDateTime.now(ZoneId.of("Asia/Seoul"));
     }
 
     @PreUpdate
     public void preUpdate() {
-        this.updatedAt = LocalDateTime.now();
+        this.updatedAt = LocalDateTime.now(ZoneId.of("Asia/Seoul"));
     }
 }
