@@ -15,7 +15,6 @@ import java.util.List;
 public class Category {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id; // 카테고리 ID
 
     @ManyToOne(fetch = FetchType.LAZY)

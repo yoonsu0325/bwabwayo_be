@@ -78,6 +78,7 @@ public class EmbeddingService {
             body.put("limit", topK);
             body.put("with_payload", true);
 
+
             HttpHeaders headers = new HttpHeaders();
             headers.setContentType(MediaType.APPLICATION_JSON);
 

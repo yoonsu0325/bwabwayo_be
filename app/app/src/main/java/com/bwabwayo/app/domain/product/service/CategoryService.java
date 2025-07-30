@@ -21,4 +21,6 @@ public class CategoryService {
     public List<Category> getTopCategories() {
         return categoryRepository.findByParentIsNull();
     }
+
+    public Category getCategoryById(Long categoryId){ return categoryRepository.getCategoryById(categoryId); }
 }
