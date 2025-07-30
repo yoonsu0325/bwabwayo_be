@@ -4,6 +4,7 @@ import com.bwabwayo.app.domain.product.dto.request.ProductCreateRequestDTO;
 import com.bwabwayo.app.domain.product.dto.request.ProductSearchRequestDTO;
 import com.bwabwayo.app.domain.product.dto.response.MessageDTO;
 import com.bwabwayo.app.domain.product.dto.response.ProductCreateResponseDTO;
+import com.bwabwayo.app.domain.product.dto.response.ProductDetailResponseDTO;
 import com.bwabwayo.app.domain.product.dto.response.ProductSearchResponseDTO;
 import com.bwabwayo.app.domain.product.service.ProductService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -61,6 +62,37 @@ public class ProductController {
             return ResponseEntity.ok(response);
         } catch(Exception e){
             return ResponseEntity.status(500).body(new MessageDTO("상품 조회 중 서버에 오류가 발생하였습니다."));
+        }
+    }
+
+    @Operation(summary = "상품 상세 조회", description = "상품 ID를 기반으로 상세 정보를 조회합니다.")
+    @ApiResponses({
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "상품 상세 정보 조회 성공",
+                    content = @Content(
+                            mediaType = "application/json",
+                            schema = @Schema(implementation = ProductDetailResponseDTO.class)
+                    )
+            ),
+            @ApiResponse(
+                    responseCode = "500",
+                    description = "서버 오류 발생",
+                    content = @Content(
+                            mediaType = "application/json",
+                            schema = @Schema(implementation = MessageDTO.class)
+                    )
+            )
+    })
+    @GetMapping("/{productId}")
+    public ResponseEntity<?> getProductById(@PathVariable Long productId){
+        try{
+            ProductDetailResponseDTO productDetail = productService.getProductDetail(productId);
+            return ResponseEntity.ok(productDetail);
+        } catch (EntityNotFoundException e){
+            return ResponseEntity.status(404).body(new MessageDTO("상품을 찾을 수 없습니다."));
+        } catch(Exception e){
+            return ResponseEntity.status(500).body(new MessageDTO("서버에서 오류가 발생하였습니다."));
         }
     }
 
