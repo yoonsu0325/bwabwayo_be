@@ -6,7 +6,7 @@ spring:
     redis:
       host: i13e202.p.ssafy.io
       port: 6379
-      password:
+      password: whddnjsWkd123!
       timeout: 6000
 
 
