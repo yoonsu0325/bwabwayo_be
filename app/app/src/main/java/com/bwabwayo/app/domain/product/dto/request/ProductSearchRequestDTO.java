@@ -1,7 +1,6 @@
 package com.bwabwayo.app.domain.product.dto.request;
 
 import io.swagger.v3.oas.annotations.Parameter;
-import jakarta.validation.constraints.Min;
 import lombok.*;
 import org.springdoc.core.annotations.ParameterObject;
 

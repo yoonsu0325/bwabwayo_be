@@ -22,7 +22,5 @@ public class CategoryService {
         return categoryRepository.findByParentIsNull();
     }
 
-    public Category getCategoryById(Long categoryId){
-        return categoryRepository.getCategoryById(categoryId);
-    }
+    public Category getCategoryById(Long categoryId){ return categoryRepository.getCategoryById(categoryId); }
 }

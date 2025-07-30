@@ -20,6 +20,7 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
+@ToString
 // 상품 및 판매글
 public class Product {
 

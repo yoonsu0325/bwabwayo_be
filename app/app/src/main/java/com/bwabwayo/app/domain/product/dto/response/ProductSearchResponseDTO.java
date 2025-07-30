@@ -1,6 +1,7 @@
 package com.bwabwayo.app.domain.product.dto.response;
 
 import com.bwabwayo.app.domain.product.domain.Product;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -18,6 +19,7 @@ import java.util.List;
 @AllArgsConstructor
 @Builder
 public class ProductSearchResponseDTO {
+    @Schema(description = "메시지", example = "상품 조회에 성공하였습니다.")
     private String message;
     private List<ProductSearchResultDTO> result; // 조회된 상품 목록
 

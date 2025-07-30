@@ -8,6 +8,7 @@ import com.bwabwayo.app.domain.product.repository.CategoryRepository;
 import com.bwabwayo.app.domain.product.repository.ProductRepository;
 import com.bwabwayo.app.global.s3.S3Service;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -19,6 +20,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
@@ -47,14 +49,14 @@ public class ProductService {
         Pageable pageable = PageRequest.of(page - 1, size, sort);
         
         // 하위 카테고리 포함 카테고리 ID
-        Category topCategory = categoryService.getCategoryById(categoryId);
         List<Long> categoryIds = new ArrayList<>();
+        Category topCategory = categoryService.getCategoryById(categoryId);
         getSubCategoryIds(topCategory, categoryIds);
         
         // DB 조회
         Page<Product> pageData = productRepository.searchByCondition(keyword, categoryIds, pageable);
         
-        // thumbnail을 URL로 확장
+        // thumbnail을 URL로 확장W
         pageData.getContent().forEach(p-> p.setThumbnail(s3Service.getUrl(p.getThumbnail())));
 
         return ProductSearchResponseDTO.fromEntity(pageData);
