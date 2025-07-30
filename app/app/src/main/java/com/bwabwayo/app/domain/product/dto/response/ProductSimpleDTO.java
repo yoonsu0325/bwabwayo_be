@@ -8,13 +8,13 @@ import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
 
+/**
+ * 상품 요약 정보 DTO
+ */
 @Getter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-/**
- * 상품 요약 정보 DTO
- */
 public class ProductSimpleDTO {
     private Long id; // 상품 ID
     private Long categoryId; // 카테고리 ID
@@ -23,6 +23,7 @@ public class ProductSimpleDTO {
     private Integer price; // 판매가
     private Integer viewCount; // 조회수
     private Integer wishCount; // 관심수
+    private Integer chatCount; // 채팅수
     private Boolean isLike; // 관심 등록 여부
     private Integer saleStatusCode; // 판매 상태 코드
     private String saleStatus; // 판매 상태
@@ -38,6 +39,7 @@ public class ProductSimpleDTO {
                 .price(product.getPrice())
                 .viewCount(product.getViewCount())
                 .wishCount(product.getWishCount())
+                .chatCount(product.getChatCount())
                 .isLike(false) // 위시 리스트 미구현
                 .saleStatusCode(product.getSaleStatus().getLevel())
                 .saleStatus(product.getSaleStatus().getDescription())

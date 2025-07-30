@@ -10,13 +10,13 @@ import org.springframework.data.domain.Page;
 
 import java.util.List;
 
+/**
+ * 상품 조회 목록 DTO
+ */
 @Getter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-/**
- * 상품 조회 DTO
- */
 public class ProductSearchResponseDTO {
     private String message;
     private List<ProductSearchResultDTO> result; // 조회된 상품 목록
@@ -25,8 +25,9 @@ public class ProductSearchResponseDTO {
     private Boolean prev, next; // 이전, 다음 페이지 존재 여부
     private Integer totalPage; // 총 페이지 수
     private Integer current; // 현재 페이지 번호
+    private Long totalNums; // 총 데이터 수
 
-    public static ProductSearchResponseDTO fromEntity(Page<Product> pageData){
+    public static ProductSearchResponseDTO fromEntity(Page<Product> pageData) {
         List<Product> content = pageData.getContent();
 
         List<ProductSearchResultDTO> result = content.stream().map(p ->
@@ -37,34 +38,21 @@ public class ProductSearchResponseDTO {
         ).toList();
 
         int current = pageData.getNumber() + 1;
-        int end = (int)Math.ceil(current / 10.0) * 10; // 마지막 페이지 블록
+        int end = (int) Math.ceil(current / 10.0) * 10; // 마지막 페이지 블록
         int start = end - 9; // 처음 페이지 블록
         int last = Math.min(end, pageData.getTotalPages()); // 실제 마지막 페이지 블록
 
+
         return ProductSearchResponseDTO.builder()
                 .message("상품 조회에 성공하였습니다.")
                 .result(result)
-                .start(start)
-                .last(last)
+                .start(start - 1)
+                .last(last - 1)
                 .prev(current > 1)
                 .next(pageData.hasNext())
-                .current(current)
+                .current(current - 1)
                 .totalPage(pageData.getTotalPages())
+                .totalNums(pageData.getTotalElements())
                 .build();
     }
-
-    public static ProductSearchResponseDTO fromEntity(List<Product> products){
-        List<ProductSearchResultDTO> result = products.stream().map(p ->
-                ProductSearchResultDTO.builder()
-                        .product(ProductSimpleDTO.fromEntity(p))
-                        .seller(UserSimpleDTO.fromEntity(p.getSeller()))
-                        .build()
-        ).toList();
-
-        return ProductSearchResponseDTO.builder()
-                .message("상품 조회에 성공하였습니다.")
-                .result(result)
-                .build();
-    }
-
 }

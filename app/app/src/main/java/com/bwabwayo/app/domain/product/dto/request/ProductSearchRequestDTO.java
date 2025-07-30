@@ -1,23 +1,27 @@
 package com.bwabwayo.app.domain.product.dto.request;
 
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
+import io.swagger.v3.oas.annotations.Parameter;
+import lombok.*;
+import org.springdoc.core.annotations.ParameterObject;
 
+/**
+ * 상품 조회 조건 요청 DTO
+ */
 @Getter
+@Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-/**
- * 상품 검색 조건 요청 DTO
- */
+@ToString
+@ParameterObject
 public class ProductSearchRequestDTO {
     private String keyword; // 검색 키워드
-    private Long categoryId; // 카테고리 필터링
+    private Long categoryId; // 카테고리 ID
 
     @Builder.Default
+    @Parameter(example = "0")
     private Integer page = 0; // 페이지 번호
     @Builder.Default
+    @Parameter(example = "100")
     private Integer size = 100; // 상품 수
 }

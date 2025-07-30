@@ -157,16 +157,6 @@ class ProductRepositoryTest {
         assertThat(content.get(0)).extracting("title").isEqualTo("자바의 정석 3판");
     }
 
-    @Test
-    @DisplayName("상품 검색 - pageable 없이 전체 조회")
-    void searchByCondition_noPageable() {
-        // when
-        List<Product> result = productRepository.searchByCondition(null, null, Sort.by("price").descending());
-
-        // then
-        assertThat(result).hasSize(3);
-    }
-
 
     @Test
     @DisplayName("상품 검색 - 검색 결과 없음")
@@ -178,5 +168,4 @@ class ProductRepositoryTest {
         assertThat(result.getContent()).isEmpty();
         assertThat(result.getTotalElements()).isZero();
     }
-
 }

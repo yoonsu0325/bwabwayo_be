@@ -9,12 +9,7 @@ import java.util.List;
 
 public interface ProductRepositoryCustom {
     /**
-     * 페이지네이션이 적용된 상품 조회
+     * 상품 조회
      */
     Page<Product> searchByCondition(String keyword, Long categoryId, Pageable pageable);
-
-    /**
-     * 전체 상품 조회
-     */
-    List<Product> searchByCondition(String keyword, Long categoryId, Sort sort);
 }

@@ -41,3 +41,8 @@ cloud:
       bucket: bwabwayo-general-bucket
     stack:
       auto: false
+
+
+logging:
+  level:
+    com.bwabwayo.app: DEBUG

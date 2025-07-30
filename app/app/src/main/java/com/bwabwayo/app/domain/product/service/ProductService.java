@@ -12,7 +12,6 @@ import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -20,13 +19,21 @@ import java.util.List;
 public class ProductService {
     private final ProductRepository productRepository;
 
+    /**
+     * 상품 검색
+     */
     public ProductSearchResponseDTO searchProducts(ProductSearchRequestDTO requestDTO) {
         String keyword = requestDTO.getKeyword();
         Long categoryId = requestDTO.getCategoryId();
-        Integer page = requestDTO.getPage();
-        Integer size = requestDTO.getSize();
+        int page = requestDTO.getPage();
+        int size = requestDTO.getSize();
 
-        Sort sort = Sort.by("createdAt").descending(); // 최신순 조회
+        // 최신순 정렬; ID순 정렬
+        Sort sort = Sort.by(
+                Sort.Order.desc("createdAt"),
+                Sort.Order.asc("id")
+        );
+
         Pageable pageable = PageRequest.of(page, size, sort);
         Page<Product> pageData = productRepository.searchByCondition(keyword, categoryId, pageable);
 
