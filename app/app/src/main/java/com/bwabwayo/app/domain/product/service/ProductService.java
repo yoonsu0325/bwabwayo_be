@@ -5,8 +5,7 @@ import com.bwabwayo.app.domain.product.domain.Product;
 import com.bwabwayo.app.domain.product.domain.ProductImage;
 import com.bwabwayo.app.domain.product.dto.request.ProductCreateRequestDTO;
 import com.bwabwayo.app.domain.product.dto.request.ProductSearchRequestDTO;
-import com.bwabwayo.app.domain.product.dto.response.ProductCreateResponseDTO;
-import com.bwabwayo.app.domain.product.dto.response.ProductSearchResponseDTO;
+import com.bwabwayo.app.domain.product.dto.response.*;
 import com.bwabwayo.app.domain.product.event.ProductDeletedEvent;
 import com.bwabwayo.app.domain.product.repository.ProductRepository;
 import com.bwabwayo.app.domain.user.domain.User;
@@ -24,24 +23,24 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 
 @Slf4j
 @Service
 @RequiredArgsConstructor
-@Transactional(readOnly = true)
 public class ProductService {
 
     private final ProductRepository productRepository;
-
     private final CategoryService categoryService;
-
     private final S3Service s3Service;
-
     private final ApplicationEventPublisher eventPublisher;
     private final UserRepository userRepository;
 
+    /**
+     * 상품 등록
+     */
     @Transactional
     public ProductCreateResponseDTO createProduct(ProductCreateRequestDTO requestDTO) {
         User seller = userRepository.findById("4371393546")
@@ -81,10 +80,10 @@ public class ProductService {
         return ProductCreateResponseDTO.builder().id(product.getId()).build();
     }
 
-
     /**
      * 상품 검색
      */
+    @Transactional
     public ProductSearchResponseDTO searchProducts(ProductSearchRequestDTO requestDTO) {
         String keyword = requestDTO.getKeyword();
         Long categoryId = requestDTO.getCategoryId();
@@ -112,6 +111,54 @@ public class ProductService {
         pageData.getContent().forEach(p-> p.setThumbnail(s3Service.getUrl(p.getThumbnail())));
 
         return ProductSearchResponseDTO.fromEntity(pageData);
+    }
+
+    /**
+     * 상품 상세 정보 조회
+     */
+    @Transactional(readOnly = true)
+    public ProductDetailResponseDTO getProductDetail(Long id) {
+        Product product = productRepository
+                .findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("상품을 찾을 수 없습니다. id=" + id));
+
+        // 상품이 속한 카테고리부터 조상 카테고리까지의 모음
+        // 조상 카테고리가 먼저 저장됨
+        List<CategoryDTO> superCategories = resolveSuperCategories(product.getCategory());
+
+        // 상품에 포함된 이미지 URL 모음
+        List<String> images = product.getProductImages().stream()
+                .map(i -> s3Service.getUrl(i.getUrl())).toList();
+        
+        // 판매자 정보
+        User seller = product.getSeller();
+        SellerDTO sellerDTO = SellerDTO.builder()
+                .id(seller.getId())
+                .nickname(seller.getNickname())
+                .profileImage(s3Service.getUrl(seller.getProfileImage()))
+                .score(seller.getScore())
+                .rating(4.5) // TODO: 리뷰 통계와 연결 필요
+                .build();
+
+        return ProductDetailResponseDTO.builder()
+                .message("상품 상세 정보 조회에 성공하였습니다.")
+                .title(product.getTitle())
+                .description(product.getDescription())
+                .price(product.getPrice())
+                .saleStatus(product.getSaleStatus().getLevel())
+                .canNegotiate(product.isCanNegotiate())
+                .canDirect(product.isCanDirect())
+                .canDelivery(product.isCanDelivery())
+                .canVideoCall(product.isCanVideoCall())
+                .isWish(false) // TODO: 위시리스트와 연결 필요
+                .viewCount(product.getViewCount())
+                .wishCount(product.getWishCount())
+                .chatCount(product.getChatCount())
+                .createdAt(product.getCreatedAt())
+                .categories(superCategories)
+                .images(images)
+                .seller(sellerDTO)
+                .build();
     }
 
     /**
@@ -145,5 +192,15 @@ public class ProductService {
         for(Category subCategory : category.getChildren()){
             getSubCategoryIds(subCategory, result);
         }
+    }
+
+    private List<CategoryDTO> resolveSuperCategories(Category category) {
+        List<CategoryDTO> result = new ArrayList<>();
+        while (category != null) {
+            result.add(new CategoryDTO(category.getId(), category.getName()));
+            category = category.getParent();
+        }
+        Collections.reverse(result);
+        return result;
     }
 }
