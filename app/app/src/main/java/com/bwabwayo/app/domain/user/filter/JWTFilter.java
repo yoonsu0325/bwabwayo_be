@@ -47,6 +47,7 @@ public class JWTFilter extends OncePerRequestFilter {
         return uri.equals("/login") ||
                 (uri.startsWith("/api/auth/") && !uri.equals("/api/auth/signup")) ||
                 uri.startsWith("/oauth2/") ||
+                uri.startsWith("/api/products/") ||
                 uri.startsWith("/api/login/oauth2/") ||
                 uri.startsWith("/css/") ||
                 uri.startsWith("/js/") ||
@@ -115,5 +116,4 @@ public class JWTFilter extends OncePerRequestFilter {
                 customOAuth2User.getAuthorities()
         );
     }
-
 }
