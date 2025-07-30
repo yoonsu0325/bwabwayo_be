@@ -36,9 +36,6 @@ public class ProductController {
         }
     }
 
-    /**
-     * 상품 목록 조회
-     */
     @Operation(summary = "상품 목록 조회")
     @ApiResponses({
             @ApiResponse(responseCode = "200",
@@ -65,7 +62,7 @@ public class ProductController {
         }
     }
 
-    @Operation(summary = "상품 상세 조회", description = "상품 ID를 기반으로 상세 정보를 조회합니다.")
+    @Operation(summary = "상품 상세 조회")
     @ApiResponses({
             @ApiResponse(
                     responseCode = "200",
@@ -104,9 +101,10 @@ public class ProductController {
             @ApiResponse(responseCode = "500", description = "서버 오류")
     })
     @DeleteMapping("/{productId}")
-    public ResponseEntity<MessageDTO> deleteById(@PathVariable Long productId){
+    public ResponseEntity<MessageDTO> deleteProductById(@PathVariable Long productId){
+        // TODO: 사용자 권한 검사 필요
         try{
-            productService.deleteProduct(productId);
+            productService.deleteProductById(productId);
         } catch (EntityNotFoundException e){
             return ResponseEntity.status(404).body(new MessageDTO("삭제하려는 상품을 찾을 수 없습니다."));
         } catch (Exception e){

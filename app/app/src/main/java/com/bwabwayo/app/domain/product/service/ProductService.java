@@ -165,7 +165,7 @@ public class ProductService {
      * 상품 삭제
      */
     @Transactional
-    public void deleteProduct(Long productId) {
+    public void deleteProductById(Long productId) {
         // 상품이 존재하는지 확인
         Product product = productRepository.findById(productId)
                 .orElseThrow(() -> new EntityNotFoundException("상품을 찾을 수 없습니다."));
