@@ -18,19 +18,19 @@ public class ProductRepositoryImpl implements ProductRepositoryCustom {
     private final JPAQueryFactory queryFactory;
 
     @Override
-    public Page<Product> searchByCondition(String keyword, Long categoryId, @NonNull Pageable pageable){
+    public Page<Product> searchByCondition(String keyword, List<Long> categoryIds, @NonNull Pageable pageable){
         QProduct product = QProduct.product;
 
         BooleanBuilder condition = new BooleanBuilder();
 
         // 키워드 검색
-        if(keyword != null && !keyword.isBlank()){
-            condition.and(product.title.containsIgnoreCase(keyword));
+        if (categoryIds != null && !categoryIds.isEmpty()) {
+            condition.and(product.category.id.in(categoryIds));
         }
         
         // 카테고리 필터링
-        if(categoryId != null){
-            condition.and(product.category.id.eq(categoryId));
+        if (categoryIds != null && !categoryIds.isEmpty()) {
+            condition.and(product.category.id.in(categoryIds));
         }
 
         List<Product> content = queryFactory

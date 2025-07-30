@@ -23,9 +23,9 @@ public class ProductSearchResponseDTO {
 
     private Integer start, last; // 시작, 끝 페이지 번호
     private Boolean prev, next; // 이전, 다음 페이지 존재 여부
-    private Integer totalPage; // 총 페이지 수
     private Integer current; // 현재 페이지 번호
-    private Long totalNums; // 총 데이터 수
+    private Integer totalPages; // 총 페이지 수
+    private Long totalItems; // 총 항목 수
 
     public static ProductSearchResponseDTO fromEntity(Page<Product> pageData) {
         List<Product> content = pageData.getContent();
@@ -46,13 +46,13 @@ public class ProductSearchResponseDTO {
         return ProductSearchResponseDTO.builder()
                 .message("상품 조회에 성공하였습니다.")
                 .result(result)
-                .start(start - 1)
-                .last(last - 1)
+                .start(start)
+                .last(last)
                 .prev(current > 1)
                 .next(pageData.hasNext())
-                .current(current - 1)
-                .totalPage(pageData.getTotalPages())
-                .totalNums(pageData.getTotalElements())
+                .current(current)
+                .totalPages(pageData.getTotalPages())
+                .totalItems(pageData.getTotalElements())
                 .build();
     }
 }

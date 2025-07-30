@@ -9,6 +9,7 @@ import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -40,6 +41,10 @@ public class ProductController {
     })
     @GetMapping
     public ResponseEntity<?>getProducts(@ModelAttribute ProductSearchRequestDTO requestDTO) {
+        // 유효하지 않다면, 기본값으로 초기화
+        if(requestDTO.getPage() < 1) requestDTO.setPage(1);
+        if(requestDTO.getSize() < 0) requestDTO.setSize(100);
+
         try{
             ProductSearchResponseDTO response = productService.searchProducts(requestDTO);
 
