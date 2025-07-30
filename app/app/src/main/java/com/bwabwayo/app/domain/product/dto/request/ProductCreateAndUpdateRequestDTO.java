@@ -15,7 +15,7 @@ import java.util.List;
 @AllArgsConstructor
 @Builder
 @ParameterObject
-public class ProductCreateRequestDTO {
+public class ProductCreateAndUpdateRequestDTO {
     @NotBlank
     private String title; // 상품 제목
     @NotBlank
