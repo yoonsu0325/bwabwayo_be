@@ -1,0 +1,53 @@
+package com.bwabwayo.app.domain.user.annotation;
+
+import com.bwabwayo.app.domain.user.domain.User;
+import com.bwabwayo.app.domain.user.repository.UserRepository;
+import com.bwabwayo.app.domain.user.utils.JWTUtils;
+import jakarta.servlet.http.HttpServletRequest;
+import org.springframework.core.MethodParameter;
+import org.springframework.web.bind.support.WebDataBinderFactory;
+import org.springframework.web.context.request.NativeWebRequest;
+import org.springframework.web.method.support.HandlerMethodArgumentResolver;
+import org.springframework.web.method.support.ModelAndViewContainer;
+
+import javax.naming.AuthenticationException;
+
+//어노테이션을 설정했을 때 자동으로 주입해주는 클래스
+public class LoginUserArgumentResolver implements HandlerMethodArgumentResolver {
+
+    private final UserRepository userRepository;
+    private final JWTUtils jwtUtils;
+    public LoginUserArgumentResolver(UserRepository userRepository, JWTUtils jwtUtils) {
+        this.userRepository = userRepository;
+        this.jwtUtils = jwtUtils;
+    }
+
+
+    @Override //적용대상인지 확인
+    public boolean supportsParameter(MethodParameter parameter) {
+        //해당 파라미터에 @LoginUser가 붙었는가
+        boolean hasLoginUserAnnotation = parameter.hasParameterAnnotation(LoginUser.class);
+
+        //해당 파라미터의 타입이 User 혹은 User의 하위 클래스인가
+        boolean assignableFrom = User.class.isAssignableFrom(parameter.getParameterType());
+
+        //return값이 true라면 아래의 resolveArgument로 이동
+        return hasLoginUserAnnotation && assignableFrom;
+    }
+
+    @Override
+    public Object resolveArgument(MethodParameter parameter, ModelAndViewContainer mavContainer, NativeWebRequest webRequest, WebDataBinderFactory binderFactory) throws Exception {
+        //웹 요청 객체에서 HttpServletRequet를 얻어와야 헤더를 읽을 수 있어서 가져오기
+        HttpServletRequest request = (HttpServletRequest) webRequest.getNativeRequest();
+        //헤더에서 AccessToken 추출
+        String accessToken = request.getHeader("Authorization");
+
+        //인증이 안된 사용자 (예외 발생), (사실, jwtFilter와 SecurityFilter로 인증 안된 사용자는 걸러지긴 함, 그래도 이중체크)
+        if(accessToken == null) throw new AuthenticationException("인증에 실패하였습니다.");
+        //AccessToken에서 userId 가져오기
+        String userId = jwtUtils.getSubject(jwtUtils.getTokenFromHeader(accessToken));
+        //userId 존재여부 확인
+        if(userId == null) throw new AuthenticationException("인증에 실패하였습니다.");
+        return userRepository.findById(String.valueOf(userId));
+    }
+}

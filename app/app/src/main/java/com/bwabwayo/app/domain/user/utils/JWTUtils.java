@@ -112,7 +112,6 @@ public class JWTUtils {
         }
     }
 
-
     public static ResponseCookie createHttpOnlyCookie(String refreshToken) { // 수정
         return ResponseCookie.from("refreshToken", refreshToken)
                 .httpOnly(true)  // JavaScript로 접근 불가 (XSS 방지)

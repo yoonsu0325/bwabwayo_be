@@ -41,6 +41,7 @@ public class SecurityConfig {
                 "https://localhost:3000",
                 "http://localhost:3001",
                 "https://localhost:3001",
+                "http://localhost:8081",
                 "https://i13e202.p.ssafy.io",
                 "https://i13e202.p.ssafy.io/fe/",
                 "https://i13e202.p.ssafy.io:3000",
