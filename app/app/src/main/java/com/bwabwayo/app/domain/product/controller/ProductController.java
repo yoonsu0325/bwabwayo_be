@@ -4,6 +4,11 @@ import com.bwabwayo.app.domain.product.dto.request.ProductSearchRequestDTO;
 import com.bwabwayo.app.domain.product.dto.response.ErrorResponseDTO;
 import com.bwabwayo.app.domain.product.dto.response.ProductSearchResponseDTO;
 import com.bwabwayo.app.domain.product.service.ProductService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -20,8 +25,19 @@ public class ProductController {
     private final ProductService productService;
 
     /**
-     * 상품 전체 조회
+     * 상품 목록 조회
      */
+    @Operation(summary = "상품 목록 조회")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200",
+                    description = "상품 목록 조회 성공",
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = ProductSearchResponseDTO.class))
+            ),
+            @ApiResponse(responseCode = "500",
+                    description = "서버 오류",
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorResponseDTO.class))
+            )
+    })
     @GetMapping
     public ResponseEntity<?>getProducts(@ModelAttribute ProductSearchRequestDTO requestDTO) {
         try{
