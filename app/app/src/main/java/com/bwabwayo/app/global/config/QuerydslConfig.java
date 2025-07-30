@@ -1,4 +1,4 @@
-package com.bwabwayo.app.domain.global.config;
+package com.bwabwayo.app.global.config;
 
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import jakarta.persistence.EntityManager;

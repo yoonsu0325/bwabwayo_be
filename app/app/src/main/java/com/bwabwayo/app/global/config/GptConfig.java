@@ -1,4 +1,4 @@
-package com.bwabwayo.app.domain.global.config;
+package com.bwabwayo.app.global.config;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.web.client.RestTemplateBuilder;
