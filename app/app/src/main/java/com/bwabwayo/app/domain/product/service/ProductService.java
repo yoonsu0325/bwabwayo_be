@@ -3,7 +3,8 @@ package com.bwabwayo.app.domain.product.service;
 import com.bwabwayo.app.domain.product.domain.Category;
 import com.bwabwayo.app.domain.product.domain.Product;
 import com.bwabwayo.app.domain.product.domain.ProductImage;
-import com.bwabwayo.app.domain.product.dto.request.ProductCreateRequestDTO;
+import com.bwabwayo.app.domain.product.dto.ResponseMessage;
+import com.bwabwayo.app.domain.product.dto.request.ProductCreateAndUpdateRequestDTO;
 import com.bwabwayo.app.domain.product.dto.request.ProductSearchRequestDTO;
 import com.bwabwayo.app.domain.product.dto.response.*;
 import com.bwabwayo.app.domain.product.event.ProductDeletedEvent;
@@ -42,7 +43,7 @@ public class ProductService {
      * 상품 등록
      */
     @Transactional
-    public ProductCreateResponseDTO createProduct(ProductCreateRequestDTO requestDTO) {
+    public ProductCreateResponseDTO createProduct(ProductCreateAndUpdateRequestDTO requestDTO) {
         // TODO: 실제 사용자 정보를 가져오도록 수정 필요
         User seller = userRepository.findById("4371393546")
                 .orElseThrow(() -> new EntityNotFoundException("판매자 정보를 찾을 수 없습니다."));
@@ -79,7 +80,7 @@ public class ProductService {
         productRepository.save(product);
 
         return ProductCreateResponseDTO.builder()
-                .message("상품 등록에 성공하였습니다.")
+                .message(ResponseMessage.PRODUCT_CREATE_SUCCESS.getText())
                 .id(product.getId())
                 .build();
     }
@@ -122,9 +123,7 @@ public class ProductService {
      */
     @Transactional(readOnly = true)
     public ProductDetailResponseDTO getProductDetail(Long id) {
-        Product product = productRepository
-                .findById(id)
-                .orElseThrow(() -> new EntityNotFoundException("상품을 찾을 수 없습니다. id=" + id));
+        Product product = getProductById(id);
 
         // 상품이 속한 카테고리부터 조상 카테고리까지의 모음
         // 조상 카테고리가 먼저 저장됨
@@ -145,7 +144,7 @@ public class ProductService {
                 .build();
 
         return ProductDetailResponseDTO.builder()
-                .message("상품 상세 정보 조회에 성공하였습니다.")
+                .message(ResponseMessage.PRODUCT_DETAIL_SUCCESS.getText())
                 .title(product.getTitle())
                 .description(product.getDescription())
                 .price(product.getPrice())
@@ -166,13 +165,48 @@ public class ProductService {
     }
 
     /**
+     * 상품 정보 갱신
+     */
+    @Transactional
+    public void updateProduct(Long productId, ProductCreateAndUpdateRequestDTO requestDTO) {
+        Product product = getProductById(productId);
+        Category category = categoryService.getCategoryById(requestDTO.getCategoryId());
+
+        product.setCategory(category);
+        product.setTitle(requestDTO.getTitle());
+        product.setDescription(requestDTO.getDescription());
+        product.setPrice(requestDTO.getPrice());
+        product.setShippingFee(requestDTO.getShippingFee());
+        product.setCanNegotiate(requestDTO.getCanNegotiate());
+        product.setCanDirect(requestDTO.getCanDirect());
+        product.setCanDelivery(requestDTO.getCanDelivery());
+        product.setCanVideoCall(requestDTO.getCanVideoCall());
+
+        // TODO: 삭제될 이미지를 S3에서 삭제하는 로직 필요
+        product.getProductImages().clear();
+        List<String> imageKeys = requestDTO.getImages();
+        if (imageKeys != null && !imageKeys.isEmpty()) {
+            int index = 1;
+            for (String key : imageKeys) {
+                ProductImage image = ProductImage.builder()
+                        .product(product)
+                        .no(index++)
+                        .url(key)
+                        .build();
+                product.getProductImages().add(image);
+            }
+
+            product.setThumbnail(imageKeys.get(0));
+        }
+    }
+
+    /**
      * 상품 삭제
      */
     @Transactional
     public void deleteProductById(Long productId) {
         // 상품이 존재하는지 확인
-        Product product = productRepository.findById(productId)
-                .orElseThrow(() -> new EntityNotFoundException("상품을 찾을 수 없습니다."));
+        Product product = getProductById(productId);
 
         // 삭제할 이미지 URL 기록
         List<ProductImage> productImages = product.getProductImages();
@@ -206,5 +240,11 @@ public class ProductService {
         }
         Collections.reverse(result);
         return result;
+    }
+
+    public Product getProductById(Long id) {
+        return productRepository
+                .findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("상품을 찾을 수 없습니다. id=" + id));
     }
 }

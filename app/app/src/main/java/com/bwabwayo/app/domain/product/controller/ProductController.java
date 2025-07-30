@@ -1,7 +1,7 @@
 package com.bwabwayo.app.domain.product.controller;
 
 import com.bwabwayo.app.domain.product.dto.ResponseMessage;
-import com.bwabwayo.app.domain.product.dto.request.ProductCreateRequestDTO;
+import com.bwabwayo.app.domain.product.dto.request.ProductCreateAndUpdateRequestDTO;
 import com.bwabwayo.app.domain.product.dto.request.ProductSearchRequestDTO;
 import com.bwabwayo.app.domain.product.dto.response.MessageDTO;
 import com.bwabwayo.app.domain.product.dto.response.ProductCreateResponseDTO;
@@ -46,12 +46,12 @@ public class ProductController {
             )
     })
     @PostMapping
-    private ResponseEntity<?> createProduct(@ModelAttribute ProductCreateRequestDTO requestDTO){
+    private ResponseEntity<?> createProduct(@ModelAttribute ProductCreateAndUpdateRequestDTO requestDTO){
         try{
             ProductCreateResponseDTO responseDTO = productService.createProduct(requestDTO);
             return ResponseEntity.ok(responseDTO);
         } catch(Exception e){
-            return ResponseEntity.status(500).body(new MessageDTO(ResponseMessage.PRODUCT_CREATE_FAIL.getText()));
+            return ResponseEntity.status(500).body(new MessageDTO(ResponseMessage.PRODUCT_SERVER_ERROR.getText()));
         }
     }
 
@@ -75,7 +75,7 @@ public class ProductController {
             ProductSearchResponseDTO response = productService.searchProducts(requestDTO);
             return ResponseEntity.ok(response);
         } catch(Exception e){
-            return ResponseEntity.status(500).body(new MessageDTO(ResponseMessage.PRODUCT_SEARCH_FAIL.getText()));
+            return ResponseEntity.status(500).body(new MessageDTO(ResponseMessage.PRODUCT_SERVER_ERROR.getText()));
         }
     }
 
@@ -94,9 +94,25 @@ public class ProductController {
             ProductDetailResponseDTO productDetail = productService.getProductDetail(productId);
             return ResponseEntity.ok(productDetail);
         } catch (EntityNotFoundException e){
-            return ResponseEntity.status(404).body(new MessageDTO(ResponseMessage.PRODUCT_DETAIL_NOT_FOUND.getText()));
+            return ResponseEntity.status(404).body(new MessageDTO(ResponseMessage.PRODUCT_NOT_FOUND.getText()));
         } catch(Exception e){
-            return ResponseEntity.status(500).body(new MessageDTO(ResponseMessage.PRODUCT_DETAIL_FAIL.getText()));
+            return ResponseEntity.status(500).body(new MessageDTO(ResponseMessage.PRODUCT_SERVER_ERROR.getText()));
+        }
+    }
+
+    @Operation(summary = "상품 수정")
+    @PutMapping("/{productId}")
+    public ResponseEntity<MessageDTO> updateProduct(@PathVariable Long productId,
+                                           @RequestBody ProductCreateAndUpdateRequestDTO requestDTO) {
+        try {
+            productService.updateProduct(productId, requestDTO);
+            return ResponseEntity.ok(new MessageDTO(ResponseMessage.PRODUCT_UPDATE_SUCCESS.getText()));
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest()
+                    .body(new MessageDTO(e.getMessage()));
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError()
+                    .body(new MessageDTO(ResponseMessage.PRODUCT_SERVER_ERROR.getText()));
         }
     }
 
@@ -113,9 +129,9 @@ public class ProductController {
             productService.deleteProductById(productId);
             return ResponseEntity.ok(new MessageDTO(ResponseMessage.PRODUCT_DELETE_SUCCESS.getText()));
         } catch (EntityNotFoundException e){
-            return ResponseEntity.status(404).body(new MessageDTO(ResponseMessage.PRODUCT_DELETE_NOT_FOUND.getText()));
+            return ResponseEntity.status(404).body(new MessageDTO(ResponseMessage.PRODUCT_NOT_FOUND.getText()));
         } catch (Exception e){
-            return ResponseEntity.status(500).body(new MessageDTO(ResponseMessage.PRODUCT_DELETE_FAIL.getText()));
+            return ResponseEntity.status(500).body(new MessageDTO(ResponseMessage.PRODUCT_SERVER_ERROR.getText()));
         }
     }
 }
