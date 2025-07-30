@@ -1,7 +1,9 @@
 package com.bwabwayo.app.domain.product.controller;
 
+import com.bwabwayo.app.domain.product.dto.request.ProductCreateRequestDTO;
 import com.bwabwayo.app.domain.product.dto.request.ProductSearchRequestDTO;
 import com.bwabwayo.app.domain.product.dto.response.MessageDTO;
+import com.bwabwayo.app.domain.product.dto.response.ProductCreateResponseDTO;
 import com.bwabwayo.app.domain.product.dto.response.ProductSearchResponseDTO;
 import com.bwabwayo.app.domain.product.service.ProductService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -22,6 +24,17 @@ public class ProductController {
 
     private final ProductService productService;
 
+    @Operation(summary = "상품 등록")
+    @PostMapping
+    private ResponseEntity<?> createProduct(@ModelAttribute ProductCreateRequestDTO requestDTO){
+        try{
+            ProductCreateResponseDTO responseDTO = productService.createProduct(requestDTO);
+            return ResponseEntity.ok(responseDTO);
+        } catch(Exception e){
+            return ResponseEntity.status(500).body(new MessageDTO("상품 등록 중 서버에 오류가 발생하였습니다."));
+        }
+    }
+
     /**
      * 상품 목록 조회
      */
@@ -37,7 +50,7 @@ public class ProductController {
             )
     })
     @GetMapping
-    public ResponseEntity<?>getProducts(@ModelAttribute ProductSearchRequestDTO requestDTO) {
+    public ResponseEntity<?> getProducts(@ModelAttribute ProductSearchRequestDTO requestDTO) {
         // 유효하지 않다면, 기본값으로 초기화
         if(requestDTO.getPage() < 1) requestDTO.setPage(1);
         if(requestDTO.getSize() < 0) requestDTO.setSize(100);
@@ -47,10 +60,7 @@ public class ProductController {
 
             return ResponseEntity.ok(response);
         } catch(Exception e){
-            MessageDTO messageDTO = MessageDTO.builder()
-                    .message("상품 조회 중 서버에 오류가 발생하였습니다.")
-                    .build();
-            return ResponseEntity.status(500).body(messageDTO);
+            return ResponseEntity.status(500).body(new MessageDTO("상품 조회 중 서버에 오류가 발생하였습니다."));
         }
     }
 
