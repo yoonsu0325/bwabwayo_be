@@ -31,10 +31,10 @@ public class JWTFilter extends OncePerRequestFilter {
 
     //Header 유효성 체크
     private void checkAuthorizationHeader(String header) {
-        if(header == null) {
-            throw new RuntimeException("토큰이 전달되지 않았습니다");
+        if (header == null) {
+            throw new BadCredentialsException("토큰이 전달되지 않았습니다");
         } else if (!header.startsWith("Bearer ")) {
-            throw new RuntimeException("BEARER 로 시작하지 않는 올바르지 않은 토큰 형식입니다");
+            throw new BadCredentialsException("BEARER로 시작하지 않는 잘못된 토큰 형식입니다");
         }
     }
 
@@ -66,15 +66,8 @@ public class JWTFilter extends OncePerRequestFilter {
         String authHeader = request.getHeader("Authorization");
         String uri = request.getRequestURI();
         System.out.println("🔥 TokenAuthFilter: " + uri);
-        //header가 없거나, Bearer로 시작하지 않으면 Filter 통과
-        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
-            filterChain.doFilter(request, response);
-            return;
-        }
-
         try {
             checkAuthorizationHeader(authHeader);   // header 가 올바른 형식인지 체크
-
             //Header로부터 authentication 가져오기
             Authentication authentication = getAuthentication(authHeader);
 
@@ -89,9 +82,11 @@ public class JWTFilter extends OncePerRequestFilter {
             response.setContentType("application/json; charset=UTF-8");
 
             if (e instanceof ExpiredJwtException) {
-                response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Token_Expired: " + e.getMessage());
+                response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Token expired");
+            } else if (e instanceof BadCredentialsException || e instanceof AuthenticationException) {
+                response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Invalid token");
             } else {
-                response.sendError(HttpServletResponse.SC_BAD_REQUEST, "Error: " + e.getMessage());
+                response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Unexpected error: " + e.getMessage());
             }
         }
     }
