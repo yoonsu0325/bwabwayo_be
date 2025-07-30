@@ -3,7 +3,7 @@ package com.bwabwayo.app.domain.product.controller;
 import com.bwabwayo.app.domain.product.domain.Category;
 import com.bwabwayo.app.domain.product.dto.response.CategoryListResponseDTO;
 import com.bwabwayo.app.domain.product.dto.response.CategoryResponseDTO;
-import com.bwabwayo.app.domain.product.dto.response.ErrorResponseDTO;
+import com.bwabwayo.app.domain.product.dto.response.MessageDTO;
 import com.bwabwayo.app.domain.product.service.CategoryService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -38,7 +38,7 @@ public class CategoryController {
             ),
             @ApiResponse(responseCode = "500",
                     description = "서버 오류",
-                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorResponseDTO.class))
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = MessageDTO.class))
             )
     })
     @GetMapping
@@ -64,7 +64,7 @@ public class CategoryController {
             // 서버에 오류 발생
             log.error("카테고리 조회 중 오류 발생", e);
 
-            ErrorResponseDTO response = ErrorResponseDTO.builder()
+            MessageDTO response = MessageDTO.builder()
                     .message("카테고리 조회 중 서버 오류가 발생했습니다.")
                     .build();
 
