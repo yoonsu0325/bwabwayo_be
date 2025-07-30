@@ -25,13 +25,14 @@ public class S3Service {
     private String bucketName;
 
     /**
-     * 파일 업로드
-     * @param file s3에 업로드할 파일 객체
-     * @param dirName 파일을 저장할 경로
-     * @return 파일 업로드에 성공하였다면 저장된 위치(url)를 반환
+     * S3에 파일을 업로드
+     *
+     * @param file 업로드할 파일
+     * @param path 저장할 S3 경로
+     * @return 업로드된 파일의 URL
      */
-    public String uploadFile(MultipartFile file, String dirName) {
-        String fileName = dirName + "/" + UUID.randomUUID() + "_" + file.getOriginalFilename();
+    public String uploadFile(MultipartFile file, String path) {
+        String fileName = path + "/" + UUID.randomUUID() + "_" + file.getOriginalFilename();
 
         try {
             ObjectMetadata metadata = new ObjectMetadata();
@@ -40,19 +41,46 @@ public class S3Service {
 
             amazonS3.putObject(new PutObjectRequest(bucketName, fileName, file.getInputStream(), metadata));
 
-            return amazonS3.getUrl(bucketName, fileName).toString(); // URL 반환
+            return amazonS3.getUrl(bucketName, fileName).toString();
         } catch (IOException e) {
             throw new RuntimeException("S3 업로드 실패", e);
         }
     }
 
+
     /**
-     * 파일 삭제
-     * @param key 삭제할 파일의 경로를 포함한 이름
+     * S3에서 지정한 파일을 삭제
+     * @param key 삭제할 파일의 객체 키
      */
     public void deleteFile(String key) {
         amazonS3.deleteObject(bucketName, key);
     }
+
+
+    /**
+     * S3 객체의 경로(키)를 변경 (복사 후 원본 삭제)
+     * @param sourceKey 기존 파일 경로
+     * @param targetKey 새 파일 경로
+     */
+    public void moveFile(String sourceKey, String targetKey) {
+        if (!amazonS3.doesObjectExist(bucketName, sourceKey)) {
+            throw new RuntimeException("원본 파일이 존재하지 않습니다: " + sourceKey);
+        }
+
+        amazonS3.copyObject(bucketName, sourceKey, bucketName, targetKey);
+
+        amazonS3.deleteObject(bucketName, sourceKey);
+    }
+
+    /**
+     * S3에 파일이 존재하는지 확인
+     * @param key 확인할 파일의 key
+     * @return 존재하면 true, 아니면 false
+     */
+    public boolean exists(String key) {
+        return amazonS3.doesObjectExist(bucketName, key);
+    }
+
 
     /**
      * Presigned URL 생성
@@ -71,6 +99,12 @@ public class S3Service {
         return url.toString();
     }
 
+    /**
+     * S3 객체 키를 공개 URL로 변환
+     *
+     * @param key S3에 저장된 파일의 객체 키
+     * @return 접근 가능한 공개 URL
+     */
     public String getUrl(String key){
         return amazonS3.getUrl(bucketName, key).toString();
     }
