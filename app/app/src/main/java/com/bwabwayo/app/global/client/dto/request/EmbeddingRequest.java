@@ -1,4 +1,4 @@
-package com.bwabwayo.app.domain.global.client.dto.request;
+package com.bwabwayo.app.global.client.dto.request;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;

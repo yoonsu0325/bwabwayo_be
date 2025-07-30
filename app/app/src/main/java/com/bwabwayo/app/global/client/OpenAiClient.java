@@ -1,11 +1,11 @@
-package com.bwabwayo.app.domain.global.client;
+package com.bwabwayo.app.global.client;
 
 
-import com.bwabwayo.app.domain.global.client.domain.OpenAiMessage;
-import com.bwabwayo.app.domain.global.client.dto.request.EmbeddingRequest;
-import com.bwabwayo.app.domain.global.client.dto.request.OpenAiRequest;
-import com.bwabwayo.app.domain.global.client.dto.response.EmbeddingResponse;
-import com.bwabwayo.app.domain.global.client.dto.response.OpenAiResponse;
+import com.bwabwayo.app.global.client.domain.OpenAiMessage;
+import com.bwabwayo.app.global.client.dto.request.EmbeddingRequest;
+import com.bwabwayo.app.global.client.dto.request.OpenAiRequest;
+import com.bwabwayo.app.global.client.dto.response.EmbeddingResponse;
+import com.bwabwayo.app.global.client.dto.response.OpenAiResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
@@ -55,7 +55,7 @@ public class OpenAiClient {
         // step 1-1. system 메세지 작성 - AI 역할 지시
         OpenAiMessage systemMessage = new OpenAiMessage(
                 "system",
-                "너는 중고거래 플랫폼의 도우미야. 사용자 질문에 대해 중고 제품을 2개 ~ 3개 정도 추천해줘 제품 가격은 범위를 좁게 해줘. 응답은 반드시 아래 형식의 **JSON만** 보내. JSON 이외의 문장은 금지야.\n\n" +
+                "너는 중고거래 플랫폼의 도우미야. 사용자 질문에 대해 중고 제품을 2개 ~ 3개 정도 추천해줘 제품 가격은 범위를 좁게 한국 원화로해줘. 응답은 반드시 아래 형식의 **JSON만** 보내. JSON 이외의 문장은 금지야.\n\n" +
                         "{\n" +
                         "  \"products\": [\n" +
                         "    {\n" +

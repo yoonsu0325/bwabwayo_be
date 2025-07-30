@@ -1,11 +1,13 @@
-package com.bwabwayo.app.domain.global.client.domain;
+package com.bwabwayo.app.global.client.domain;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class OpenAiMessage {
 
     // 메세지 역할 (user, assistant, system)

@@ -1,8 +1,8 @@
 package com.bwabwayo.app.domain.ai.service;
 
 import com.bwabwayo.app.domain.ai.dto.response.OpenAiRecommendationResponse;
-import com.bwabwayo.app.domain.global.client.OpenAiClient;
-import com.bwabwayo.app.domain.global.client.dto.response.OpenAiResponse;
+import com.bwabwayo.app.global.client.OpenAiClient;
+import com.bwabwayo.app.global.client.dto.response.OpenAiResponse;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;

@@ -1,6 +1,6 @@
 package com.bwabwayo.app.domain.ai.service;
 
-import com.bwabwayo.app.domain.global.client.OpenAiClient;
+import com.bwabwayo.app.global.client.OpenAiClient;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 

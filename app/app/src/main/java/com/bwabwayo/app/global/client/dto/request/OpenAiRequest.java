@@ -1,6 +1,6 @@
-package com.bwabwayo.app.domain.global.client.dto.request;
+package com.bwabwayo.app.global.client.dto.request;
 
-import com.bwabwayo.app.domain.global.client.domain.OpenAiMessage;
+import com.bwabwayo.app.global.client.domain.OpenAiMessage;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
