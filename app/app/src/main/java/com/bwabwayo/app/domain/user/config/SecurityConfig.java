@@ -36,8 +36,15 @@ public class SecurityConfig {
         CorsConfiguration corsConfiguration = new CorsConfiguration();
 
         //cors 명시해서 허용시켜주기
-        corsConfiguration.setAllowedOrigins(List.of("http://localhost:5173","http://localhost:3000", "http://i13e202.p.ssafy.io:3000",
-                "http://localhost:3001", "http://i13e202.p.ssafy.io:3001"
+        corsConfiguration.setAllowedOrigins(List.of(
+                "http://localhost:3000",
+                "https://localhost:3000",
+                "http://localhost:3001",
+                "https://localhost:3001",
+                "https://i13e202.p.ssafy.io",
+                "https://i13e202.p.ssafy.io/fe/",
+                "https://i13e202.p.ssafy.io:3000",
+                "https://i13e202.p.ssafy.io:3001"
         )); // ⭐ 정확한 origin 명시!
 
         //허용할 HTTP 메서드들을 명시
