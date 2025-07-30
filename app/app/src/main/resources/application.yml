@@ -41,3 +41,8 @@ cloud:
       bucket: bwabwayo-general-bucket
     stack:
       auto: false
+
+qdrant:
+  base-url: "https://i13e202.p.ssafy.io/qdrant"
+  collection-name: "product-embeddings"
+  vector-size: 3072

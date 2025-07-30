@@ -92,4 +92,6 @@ public class OpenAiClient {
         return response.getBody().getData().get(0).getEmbedding();
     }
 
+
+
 }
