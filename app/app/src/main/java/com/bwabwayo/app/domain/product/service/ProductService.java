@@ -3,10 +3,14 @@ package com.bwabwayo.app.domain.product.service;
 import com.bwabwayo.app.domain.product.domain.Category;
 import com.bwabwayo.app.domain.product.domain.Product;
 import com.bwabwayo.app.domain.product.domain.ProductImage;
+import com.bwabwayo.app.domain.product.dto.request.ProductCreateRequestDTO;
 import com.bwabwayo.app.domain.product.dto.request.ProductSearchRequestDTO;
+import com.bwabwayo.app.domain.product.dto.response.ProductCreateResponseDTO;
 import com.bwabwayo.app.domain.product.dto.response.ProductSearchResponseDTO;
 import com.bwabwayo.app.domain.product.event.ProductDeletedEvent;
 import com.bwabwayo.app.domain.product.repository.ProductRepository;
+import com.bwabwayo.app.domain.user.domain.User;
+import com.bwabwayo.app.domain.user.repository.UserRepository;
 import com.bwabwayo.app.global.s3.S3Service;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
@@ -36,6 +40,46 @@ public class ProductService {
     private final S3Service s3Service;
 
     private final ApplicationEventPublisher eventPublisher;
+    private final UserRepository userRepository;
+
+    @Transactional
+    public ProductCreateResponseDTO createProduct(ProductCreateRequestDTO requestDTO) {
+        User seller = userRepository.findById("4371393546")
+                .orElseThrow(() -> new EntityNotFoundException("판매자 정보를 찾을 수 없습니다."));
+        Category category = categoryService.getCategoryById(requestDTO.getCategoryId());
+
+        Product product = Product.builder()
+                .category(category)
+                .seller(seller)
+                .title(requestDTO.getTitle())
+                .description(requestDTO.getDescription())
+                .price(requestDTO.getPrice())
+                .shippingFee(requestDTO.getShippingFee())
+                .canNegotiate(requestDTO.getCanNegotiate())
+                .canDirect(requestDTO.getCanDirect())
+                .canDelivery(requestDTO.getCanDelivery())
+                .canVideoCall(requestDTO.getCanVideoCall())
+                .build();
+
+        List<String> imageKeys = requestDTO.getImages();
+        if (imageKeys != null && !imageKeys.isEmpty()) {
+            int index = 1;
+            for (String key : imageKeys) {
+                if(index == 1) product.setThumbnail(key);
+
+                ProductImage image = ProductImage.builder()
+                        .product(product)
+                        .no(index++)
+                        .url(key)
+                        .build();
+                product.getProductImages().add(image);
+            }
+        }
+
+        productRepository.save(product);
+
+        return ProductCreateResponseDTO.builder().id(product.getId()).build();
+    }
 
 
     /**

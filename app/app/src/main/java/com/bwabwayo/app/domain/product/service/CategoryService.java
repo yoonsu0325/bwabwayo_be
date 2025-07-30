@@ -2,6 +2,7 @@ package com.bwabwayo.app.domain.product.service;
 
 import com.bwabwayo.app.domain.product.domain.Category;
 import com.bwabwayo.app.domain.product.repository.CategoryRepository;
+import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -22,5 +23,11 @@ public class CategoryService {
         return categoryRepository.findByParentIsNull();
     }
 
-    public Category getCategoryById(Long categoryId){ return categoryRepository.getCategoryById(categoryId); }
+    /**
+     * 카테고리 가져오기
+     */
+    public Category getCategoryById(Long categoryId){
+        return categoryRepository.getCategoryById(categoryId)
+                .orElseThrow(()-> new EntityNotFoundException("카테고리가 존재하지 않습니다."));
+    }
 }
