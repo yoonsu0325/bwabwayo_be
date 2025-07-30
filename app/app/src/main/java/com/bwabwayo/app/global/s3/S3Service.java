@@ -48,10 +48,10 @@ public class S3Service {
 
     /**
      * 파일 삭제
-     * @param fileName 삭제할 파일의 경로를 포함한 이름
+     * @param key 삭제할 파일의 경로를 포함한 이름
      */
-    public void deleteFile(String fileName) {
-        amazonS3.deleteObject(bucketName, fileName);
+    public void deleteFile(String key) {
+        amazonS3.deleteObject(bucketName, key);
     }
 
     /**

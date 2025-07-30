@@ -2,13 +2,16 @@ package com.bwabwayo.app.domain.product.service;
 
 import com.bwabwayo.app.domain.product.domain.Category;
 import com.bwabwayo.app.domain.product.domain.Product;
+import com.bwabwayo.app.domain.product.domain.ProductImage;
 import com.bwabwayo.app.domain.product.dto.request.ProductSearchRequestDTO;
 import com.bwabwayo.app.domain.product.dto.response.ProductSearchResponseDTO;
-import com.bwabwayo.app.domain.product.repository.CategoryRepository;
+import com.bwabwayo.app.domain.product.event.ProductDeletedEvent;
 import com.bwabwayo.app.domain.product.repository.ProductRepository;
 import com.bwabwayo.app.global.s3.S3Service;
+import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -27,8 +30,13 @@ import java.util.List;
 public class ProductService {
 
     private final ProductRepository productRepository;
+
     private final CategoryService categoryService;
+
     private final S3Service s3Service;
+
+    private final ApplicationEventPublisher eventPublisher;
+
 
     /**
      * 상품 검색
@@ -62,6 +70,27 @@ public class ProductService {
         return ProductSearchResponseDTO.fromEntity(pageData);
     }
 
+    /**
+     * 상품 삭제
+     */
+    @Transactional
+    public void deleteProduct(Long productId) {
+        // 상품이 존재하는지 확인
+        Product product = productRepository.findById(productId)
+                .orElseThrow(() -> new EntityNotFoundException("상품을 찾을 수 없습니다."));
+
+        // 삭제할 이미지 URL 기록
+        List<ProductImage> productImages = product.getProductImages();
+        List<String> imageKeys = productImages.stream().map(ProductImage::getUrl).toList();
+
+        // Product 삭제
+        productRepository.delete(product);
+
+        // 이벤트 발행
+        eventPublisher.publishEvent(new ProductDeletedEvent(imageKeys));
+    }
+
+    
     /**
      * 현재 카테고리와 그 하위의 카테고리의 ID의 리스트 생성
      */
