@@ -38,7 +38,7 @@ public class SuccessHandler extends SimpleUrlAuthenticationSuccessHandler {
         if (user.getRole() == Role.PREUSER) {
             System.out.println("PREUSER");
             String redirectUrl = UriComponentsBuilder
-                    .fromUriString("http://localhost:3000/kakao-callback")
+                    .fromUriString("http://i13e202.p.ssafy.io:3000/signup")
                     .queryParam("accessToken", accessToken)
                     .queryParam("isNewUser", user.getRole() == Role.PREUSER)
                     .queryParam("id", user.getId())
@@ -59,7 +59,7 @@ public class SuccessHandler extends SimpleUrlAuthenticationSuccessHandler {
 //            response.addHeader(jwtProperties.getHeader(), jwtProperties.getType() + accessToken); //헤더로 주는 방식
 
             String redirectUrl = UriComponentsBuilder
-                    .fromUriString("http://localhost:3000/kakao-callback")
+                    .fromUriString("http://i13e202.p.ssafy.io:3000/")
                     .queryParam("accessToken", accessToken)
                     .queryParam("isNewUser", false)
                     .build()
