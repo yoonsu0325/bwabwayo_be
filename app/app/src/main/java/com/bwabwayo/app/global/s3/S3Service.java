@@ -70,4 +70,8 @@ public class S3Service {
         URL url = amazonS3.generatePresignedUrl(generatePresignedUrlRequest);
         return url.toString();
     }
+
+    public String getUrl(String key){
+        return amazonS3.getUrl(bucketName, key).toString();
+    }
 }
