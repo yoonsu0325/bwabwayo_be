@@ -43,6 +43,7 @@ public class ProductService {
      */
     @Transactional
     public ProductCreateResponseDTO createProduct(ProductCreateRequestDTO requestDTO) {
+        // TODO: 실제 사용자 정보를 가져오도록 수정 필요
         User seller = userRepository.findById("4371393546")
                 .orElseThrow(() -> new EntityNotFoundException("판매자 정보를 찾을 수 없습니다."));
         Category category = categoryService.getCategoryById(requestDTO.getCategoryId());
@@ -64,8 +65,6 @@ public class ProductService {
         if (imageKeys != null && !imageKeys.isEmpty()) {
             int index = 1;
             for (String key : imageKeys) {
-                if(index == 1) product.setThumbnail(key);
-
                 ProductImage image = ProductImage.builder()
                         .product(product)
                         .no(index++)
@@ -73,11 +72,16 @@ public class ProductService {
                         .build();
                 product.getProductImages().add(image);
             }
+
+            product.setThumbnail(imageKeys.get(0));
         }
 
         productRepository.save(product);
 
-        return ProductCreateResponseDTO.builder().id(product.getId()).build();
+        return ProductCreateResponseDTO.builder()
+                .message("상품 등록에 성공하였습니다.")
+                .id(product.getId())
+                .build();
     }
 
     /**
