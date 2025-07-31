@@ -5,12 +5,11 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
-import java.util.List;
-
 @Getter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class UploadResponseDTO {
-    private List<UploadResultDTO> result;
+public class UploadResultDTO {
+    private String key;
+    private String url;
 }

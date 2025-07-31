@@ -1,12 +1,16 @@
 package com.bwabwayo.app.global.s3.controller;
 
 import com.bwabwayo.app.global.s3.dto.response.UploadResponseDTO;
+import com.bwabwayo.app.global.s3.dto.response.UploadResultDTO;
 import com.bwabwayo.app.global.s3.service.S3Service;
 import io.swagger.v3.oas.annotations.Operation;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
+
+import java.util.ArrayList;
+import java.util.List;
 
 @RestController
 @RequiredArgsConstructor
@@ -17,12 +21,20 @@ public class S3Controller {
 
     @Operation(summary = "파일 업로드")
     @PostMapping("/upload")
-    public ResponseEntity<UploadResponseDTO> uploadFile(
-            @RequestParam("file") MultipartFile file,
+    public ResponseEntity<UploadResponseDTO> uploadFiles(
+            @RequestParam("files") List<MultipartFile> files,
             @RequestParam("dir") String dirName) {
-        UploadResponseDTO uploadResponseDTO = s3Service.uploadFile(file, dirName);
-        return ResponseEntity.ok(uploadResponseDTO);
+
+        List<UploadResultDTO> result = new ArrayList<>();
+
+        for (MultipartFile file : files) {
+            UploadResultDTO dto = s3Service.uploadFile(file, dirName);
+            result.add(dto);
+        }
+
+        return ResponseEntity.ok(new UploadResponseDTO(result));
     }
+
 
     @Operation(summary = "파일 삭제")
     @DeleteMapping("/delete")
