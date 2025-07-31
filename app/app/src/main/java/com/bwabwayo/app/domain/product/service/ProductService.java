@@ -9,6 +9,7 @@ import com.bwabwayo.app.domain.product.dto.request.ProductSearchRequestDTO;
 import com.bwabwayo.app.domain.product.dto.response.*;
 import com.bwabwayo.app.domain.product.event.ProductDeletedEvent;
 import com.bwabwayo.app.domain.product.exception.UnauthorizedProductAccessException;
+import com.bwabwayo.app.domain.product.repository.ProductImageRepository;
 import com.bwabwayo.app.domain.product.repository.ProductRepository;
 import com.bwabwayo.app.domain.user.domain.Role;
 import com.bwabwayo.app.domain.user.domain.User;
@@ -24,9 +25,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
+import java.util.*;
 
 
 @Slf4j
@@ -35,9 +34,11 @@ import java.util.List;
 public class ProductService {
 
     private final ProductRepository productRepository;
+    private final ProductImageRepository productImageRepository;
     private final CategoryService categoryService;
     private final S3Service s3Service;
     private final ApplicationEventPublisher eventPublisher;
+
 
     /**
      * 상품 등록
@@ -60,25 +61,24 @@ public class ProductService {
                 .build();
 
         List<String> imageKeys = requestDTO.getImages();
-        if (imageKeys != null && !imageKeys.isEmpty()) {
-            int index = 0;
-            for (String key : imageKeys) {
-                if(!s3Service.exists(key)) {
-                    log.warn("등록하려는 이미지가 존재하지 않음: key={}", key);
-                    continue;
-                }
-
-                ProductImage image = ProductImage.builder()
-                        .product(product)
-                        .no(++index)
-                        .url(key)
-                        .build();
-                product.getProductImages().add(image);
+        if(imageKeys == null) throw new IllegalArgumentException("유효한 이미지가 존재하지 않습니다.");
+        productImageRepository.flush();
+        int index = 0;
+        for (String key : imageKeys) {
+            if(!s3Service.exists(key)) {
+                log.warn("등록하려는 이미지가 존재하지 않음: key={}", key);
+                continue;
             }
-            if(index == 0) throw new IllegalArgumentException("유효한 이미지가 존재하지 않습니다.");
-            product.setThumbnail(product.getProductImages().get(0).getUrl());
 
+            ProductImage image = ProductImage.builder()
+                    .product(product)
+                    .no(++index)
+                    .url(key)
+                    .build();
+            product.getProductImages().add(image);
         }
+        if(index == 0) throw new IllegalArgumentException("유효한 이미지가 존재하지 않습니다.");
+        product.setThumbnail(product.getProductImages().get(0).getUrl());
 
         productRepository.save(product);
 
@@ -226,22 +226,40 @@ public class ProductService {
         product.setCanDirect(requestDTO.getCanDirect());
         product.setCanDelivery(requestDTO.getCanDelivery());
         product.setCanVideoCall(requestDTO.getCanVideoCall());
+        
+        
+        Set<String> orphanImages = new HashSet<>();
+        for(ProductImage image : product.getProductImages()){
+            orphanImages.add(image.getUrl());
+        }
 
-        // TODO: 삭제될 이미지를 S3에서 삭제하는 로직 필요
-        product.getProductImages().clear();
         List<String> imageKeys = requestDTO.getImages();
-        if (imageKeys != null && !imageKeys.isEmpty()) {
-            int index = 1;
-            for (String key : imageKeys) {
-                ProductImage image = ProductImage.builder()
-                        .product(product)
-                        .no(index++)
-                        .url(key)
-                        .build();
-                product.getProductImages().add(image);
+        if (imageKeys == null) throw new IllegalArgumentException("유효한 이미지가 존재하지 않습니다.");
+
+        product.getProductImages().clear();
+        productImageRepository.deleteAllByProduct(product);
+
+        int index = 0;
+        for (String key : imageKeys) {
+            if(!s3Service.exists(key)) {
+                log.warn("등록하려는 이미지가 존재하지 않음: key={}", key);
+                continue;
             }
 
-            product.setThumbnail(imageKeys.get(0));
+            ProductImage image = ProductImage.builder()
+                    .product(product)
+                    .no(++index)
+                    .url(key)
+                    .build();
+            product.getProductImages().add(image);
+            orphanImages.remove(key);
+        }
+        if(index == 0) throw new IllegalArgumentException("유효한 이미지가 존재하지 않습니다.");
+        product.setThumbnail(product.getProductImages().get(0).getUrl());
+
+        // 이미지 삭제
+        for(String key : orphanImages){
+            s3Service.deleteFile(key);
         }
     }
 
