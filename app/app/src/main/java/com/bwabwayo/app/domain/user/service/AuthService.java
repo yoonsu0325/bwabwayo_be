@@ -55,7 +55,6 @@ public class AuthService {
                 .lastLoginAt(LocalDateTime.now())
                 .isActive(true)
                 .role(role)
-                .refreshToken(refreshToken)
                 .build();
         userRepository.save(user);
 

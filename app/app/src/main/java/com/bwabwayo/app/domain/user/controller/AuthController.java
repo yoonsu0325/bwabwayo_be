@@ -12,6 +12,7 @@ import com.bwabwayo.app.domain.user.repository.AccountRepository;
 import com.bwabwayo.app.domain.user.repository.DeliveryAddressRepository;
 import com.bwabwayo.app.domain.user.repository.UserRepository;
 import com.bwabwayo.app.domain.user.service.AuthService;
+import com.bwabwayo.app.domain.user.service.UserRedisService;
 import com.bwabwayo.app.domain.user.utils.JWTUtils;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -33,6 +34,8 @@ import org.springframework.web.bind.annotation.RestController;
 
 import java.util.Arrays;
 import java.util.Map;
+import java.util.Optional;
+import java.util.stream.Stream;
 
 @RestController
 @RequestMapping("/api/auth")
@@ -42,7 +45,7 @@ public class AuthController {
     private final JWTUtils jwtUtils;
     private final JwtProperties  jwtProperties;
     private final UserRepository userRepository;
-
+    private final UserRedisService  userRedisService;
 
     @PostMapping("/signup")
     @Operation(summary = "회원가입", description = "OAuth2 로그인 후, 추가 회원 정보를 입력 받아 가입 처리 후 토큰을 발급합니다.")
@@ -55,6 +58,9 @@ public class AuthController {
         try {
             System.out.println("SignUp");
             UserTokenResponse tokens = authService.signUp(request);
+
+            // ✅ RT를 Redis에 저장 (TTL: 7일)
+            userRedisService.saveRefreshToken(request.getId(), tokens.getRefreshToken());
 
             // AccessToken만 바디에 포함
             Map<String, String> responseBody = Map.of(
@@ -108,7 +114,9 @@ public class AuthController {
     public ResponseEntity<?> logout(HttpServletRequest request, HttpServletResponse response) {
         //Cookie를 가져와서 거기서 refreshToken을 찾고 mapping한 뒤에 첫번째거 들고와서
         //있으면 그대로 받고 없으면 null값
-        String refreshToken = Arrays.stream(request.getCookies())
+        String refreshToken = Optional.ofNullable(request.getCookies())
+                .map(Arrays::stream)
+                .orElseGet(Stream::empty)
                 .filter(cookie -> "refreshToken".equals(cookie.getName()))
                 .map(Cookie::getValue)
                 .findFirst()
@@ -116,16 +124,10 @@ public class AuthController {
 
         //refreshToken이 있는 지 체크
         if (refreshToken != null) {
-            System.out.println("refreshToken : " + refreshToken);
             String userId = jwtUtils.getSubject(refreshToken); // 서명 검증 없이 claim 추출만
-            System.out.println("userId : " + userId);
             //refreshToken 안에 userId 있는 지 체크
             if (userId != null) {
-                User user = userRepository.findById(userId);
-                if(user != null){
-                    user.setRefreshToken(null);
-                    userRepository.save(user);
-                }
+                userRedisService.deleteRefreshToken(userId);
             }
         }
 
@@ -142,7 +144,9 @@ public class AuthController {
 
     @PostMapping("/refresh")
     public ResponseEntity<?> refreshToken(HttpServletRequest request, HttpServletResponse response) {
-        String refreshToken = Arrays.stream(request.getCookies())
+        String refreshToken = Optional.ofNullable(request.getCookies())
+                .map(Arrays::stream)
+                .orElseGet(Stream::empty)
                 .filter(cookie -> "refreshToken".equals(cookie.getName()))
                 .map(Cookie::getValue)
                 .findFirst()
@@ -161,12 +165,13 @@ public class AuthController {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("토큰에서 사용자 정보를 가져올 수 없습니다.");
         }
 
-        //DB의 RT와 비교
-        if(!userRepository.findByIdAndRefreshToken(userId, refreshToken).isPresent()){
-            //401
+        //DB에서 조회
+        String savedRefreshToken = userRedisService.getRefreshToken(userId);
+        if (savedRefreshToken == null || !savedRefreshToken.equals(refreshToken)) {
+            // 401 Unauthorized
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("허용하지 않는 리프레시 토큰입니다.");
         }
-        System.out.println("refresh의 refreshToken" + refreshToken);
+
         User user = userRepository.findById(userId);
 
         //아래에 주석 처리 된건, RT의 남은 시간이 규정한 시간보다 적게 되면 RT를 재발급해주는 로직을 위해 남겨둠

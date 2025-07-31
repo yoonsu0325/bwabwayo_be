@@ -9,7 +9,7 @@ import java.time.Duration;
 @Service
 @RequiredArgsConstructor
 public class UserRedisService {
-    private final RedisTemplate<String, Object> redisTemplate;
+    private final RedisTemplate<String, String> redisTemplate;
     private static final long REFRESH_TOKEN_TTL = 7 * 24 * 60 * 60; // 7일
     public void saveRefreshToken(String userId, String refreshToken){
         String key = "RefreshToken:" + userId;

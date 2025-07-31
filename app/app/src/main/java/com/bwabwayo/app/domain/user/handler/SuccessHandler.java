@@ -4,6 +4,7 @@ import com.bwabwayo.app.domain.user.domain.User;
 import com.bwabwayo.app.domain.user.dto.request.CustomOAuth2User;
 import com.bwabwayo.app.domain.user.dto.request.OAuth2UserRequest;
 import com.bwabwayo.app.domain.user.repository.UserRepository;
+import com.bwabwayo.app.domain.user.service.UserRedisService;
 import com.bwabwayo.app.domain.user.utils.JWTUtils;
 import com.bwabwayo.app.domain.user.config.JwtProperties;
 import com.bwabwayo.app.domain.user.domain.Role;
@@ -22,14 +23,13 @@ import org.springframework.web.util.UriComponentsBuilder;
 import java.io.IOException;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
-import java.util.Map;
 
 @Component
 @RequiredArgsConstructor
 public class SuccessHandler extends SimpleUrlAuthenticationSuccessHandler {
     private final JWTUtils jwtUtils;
     private final JwtProperties jwtProperties;
-    private final UserRepository userRepository;
+    private final UserRedisService userRedisService;
     @Override
     @Transactional
     public void onAuthenticationSuccess(HttpServletRequest request, HttpServletResponse response, Authentication authentication) throws IOException, ServletException {
@@ -62,10 +62,8 @@ public class SuccessHandler extends SimpleUrlAuthenticationSuccessHandler {
             // 가입된 유저 → AccessToken + RefreshToken 발급
             String refreshToken = jwtUtils.createToken(user, jwtProperties.getRefreshExpMinutes(), user.getRole()); // 7일
 
-            // ✅ RT를 DB에 저장
-            User userEntity = userRepository.findById(user.getId());
-            userEntity.setRefreshToken(refreshToken);
-            userRepository.save(userEntity);
+            // ✅ RT를 Redis에 저장 (TTL: 7일)
+            userRedisService.saveRefreshToken(user.getId(), refreshToken);
 
             // RefreshToken은 HttpOnly 쿠키로 전달
             ResponseCookie cookie = JWTUtils.createHttpOnlyCookie(refreshToken);

@@ -9,6 +9,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cache.annotation.EnableCaching;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Primary;
 import org.springframework.data.redis.connection.RedisConnectionFactory;
 import org.springframework.data.redis.connection.lettuce.LettuceConnectionFactory;
 import org.springframework.data.redis.core.RedisTemplate;
@@ -44,7 +45,7 @@ public class RedisConfig {
         return mapper;
     }
 
-    // RedisTemplate (기본 직렬화 설정)
+    // RedisTemplate (기본 직렬화 설정, DB0 사용)
     @Bean
     public RedisTemplate<String, Object> redisTemplate(RedisConnectionFactory redisConnectionFactory) {
         //Redis의 key-value 저장을 처리하는 핵심 도구 (String key, Object value)
@@ -73,6 +74,33 @@ public class RedisConfig {
         template.setHashValueSerializer(serializer);
 
         //afterPropertiesSet()을 호출하면 내부적으로 설정한 직렬화기, 커넥션 팩토리 등을 기반으로 초기화 작업
+        template.afterPropertiesSet();
+        return template;
+    }
+
+    //RefreshTokenTemplate(DB1 사용)
+    @Bean
+    @Primary
+    public RedisTemplate<String, String> redisRefreshToeknTemplate() {
+        //Redis의 key-value 저장을 처리하는 핵심 도구 (String key, Object value)
+        RedisTemplate<String, String> template = new RedisTemplate<>();
+        //RedisConnectionFactory : Redis 서버와의 연결을 관리하는 객체
+        //RedisTemplate 객체 생성 후 Redis 연결 팩토리 주입 (redis 연결할 때 사용)
+        LettuceConnectionFactory factory = new LettuceConnectionFactory(redisHost, redisPort);
+        factory.setDatabase(1);
+        factory.afterPropertiesSet(); // 중요
+        template.setConnectionFactory(factory);
+
+        template.setKeySerializer(new StringRedisSerializer());
+        template.setHashKeySerializer(new StringRedisSerializer());
+
+        ObjectMapper mapper = objectMapper();
+        Jackson2JsonRedisSerializer<Object> serializer = new Jackson2JsonRedisSerializer<>(Object.class);
+        serializer.setObjectMapper(mapper);
+
+        template.setValueSerializer(serializer);
+        template.setHashValueSerializer(serializer);
+
         template.afterPropertiesSet();
         return template;
     }
