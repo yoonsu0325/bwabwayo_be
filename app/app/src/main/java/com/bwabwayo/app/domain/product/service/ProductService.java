@@ -116,11 +116,51 @@ public class ProductService {
         
         // DB 조회
         Page<Product> pageData = productRepository.searchByCondition(keyword, categoryIds, pageable);
-        
-        // thumbnail을 URL로 확장W
-        pageData.getContent().forEach(p-> p.setThumbnail(s3Service.getUrl(p.getThumbnail())));
+        List<Product> content = pageData.getContent();
 
-        return ProductSearchResponseDTO.fromEntity(pageData);
+        List<ProductSearchResultDTO> result = content.stream().map(product -> {
+            ProductSimpleDTO productDTO = ProductSimpleDTO.builder()
+                    .id(product.getId())
+                    .categoryId(product.getCategory().getId())
+                    .thumbnail(s3Service.getUrl(product.getThumbnail()))
+                    .title(product.getTitle())
+                    .price(product.getPrice())
+                    .viewCount(product.getViewCount())
+                    .wishCount(product.getWishCount())
+                    .chatCount(product.getChatCount())
+                    .isLike(false) // 위시 리스트 미구현
+                    .canVideoCall(product.isCanVideoCall())
+                    .saleStatusCode(product.getSaleStatus().getLevel())
+                    .saleStatus(product.getSaleStatus().getDescription())
+                    .createdAt(product.getCreatedAt())
+                    .build();
+
+            User user = product.getSeller();
+            UserSimpleDTO userDTO = new UserSimpleDTO(user.getId(), user.getNickname());
+
+            return ProductSearchResultDTO.builder()
+                    .product(productDTO)
+                    .seller(userDTO)
+                    .build();
+        }).toList();
+
+        int current = pageData.getNumber() + 1;
+        int end = (int) Math.ceil(current / 10.0) * 10; // 마지막 페이지 블록
+        int start = end - 9; // 처음 페이지 블록
+        int last = Math.min(end, pageData.getTotalPages()); // 실제 마지막 페이지 블록
+
+
+        return ProductSearchResponseDTO.builder()
+                .message(ResponseMessage.PRODUCT_SEARCH_SUCCESS.getText())
+                .result(result)
+                .start(start)
+                .last(last)
+                .prev(current > 1)
+                .next(pageData.hasNext())
+                .current(current)
+                .totalPages(pageData.getTotalPages())
+                .totalItems(pageData.getTotalElements())
+                .build();
     }
 
     /**
