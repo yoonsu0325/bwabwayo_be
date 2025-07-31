@@ -14,6 +14,7 @@ public enum ResponseMessage {
 
     PRODUCT_DELETE_SUCCESS("상품을 삭제하였습니다."),
 
+    PRODUCT_UNAUTHORIZATION("상품에 대한 접근 권한이 없습니다."),
     PRODUCT_NOT_FOUND("상품을 찾을 수 없습니다."),
     PRODUCT_SERVER_ERROR("서버에 오류가 발생하였습니다.");
 

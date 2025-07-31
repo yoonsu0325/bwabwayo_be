@@ -8,7 +8,9 @@ import com.bwabwayo.app.domain.product.dto.request.ProductCreateAndUpdateRequest
 import com.bwabwayo.app.domain.product.dto.request.ProductSearchRequestDTO;
 import com.bwabwayo.app.domain.product.dto.response.*;
 import com.bwabwayo.app.domain.product.event.ProductDeletedEvent;
+import com.bwabwayo.app.domain.product.exception.UnauthorizedProductAccessException;
 import com.bwabwayo.app.domain.product.repository.ProductRepository;
+import com.bwabwayo.app.domain.user.domain.Role;
 import com.bwabwayo.app.domain.user.domain.User;
 import com.bwabwayo.app.domain.user.repository.UserRepository;
 import com.bwabwayo.app.global.s3.S3Service;
@@ -204,9 +206,15 @@ public class ProductService {
      * 상품 삭제
      */
     @Transactional
-    public void deleteProductById(Long productId) {
+    public void deleteProductById(Long productId, User user) {
         // 상품이 존재하는지 확인
         Product product = getProductById(productId);
+
+        // 상품을 삭제하려는 사용자가 상품의 판매자 또는 관리자인지 확인
+        if(user.getRole() == Role.ADMIN ||
+                !product.getSeller().getId().equals(user.getId())) {
+            throw new UnauthorizedProductAccessException("상품을 삭제할 권한이 없습니다: 자신이 등록한 상품만 삭제할 수 있습니다.");
+        }
 
         // 삭제할 이미지 URL 기록
         List<ProductImage> productImages = product.getProductImages();
@@ -218,7 +226,6 @@ public class ProductService {
         // 이벤트 발행
         eventPublisher.publishEvent(new ProductDeletedEvent(imageKeys));
     }
-
     
     /**
      * 현재 카테고리와 그 하위의 카테고리의 ID의 리스트 생성

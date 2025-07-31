@@ -7,7 +7,10 @@ import com.bwabwayo.app.domain.product.dto.response.MessageDTO;
 import com.bwabwayo.app.domain.product.dto.response.ProductCreateResponseDTO;
 import com.bwabwayo.app.domain.product.dto.response.ProductDetailResponseDTO;
 import com.bwabwayo.app.domain.product.dto.response.ProductSearchResponseDTO;
+import com.bwabwayo.app.domain.product.exception.UnauthorizedProductAccessException;
 import com.bwabwayo.app.domain.product.service.ProductService;
+import com.bwabwayo.app.domain.user.annotation.LoginUser;
+import com.bwabwayo.app.domain.user.domain.User;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -15,10 +18,12 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 
+@Slf4j
 @RestController
 @RequestMapping("/api/products")
 @RequiredArgsConstructor
@@ -124,13 +129,18 @@ public class ProductController {
             @ApiResponse(responseCode = "500", description = "서버 오류")
     })
     @DeleteMapping("/{productId}")
-    public ResponseEntity<MessageDTO> deleteProductById(@PathVariable Long productId){
+    public ResponseEntity<MessageDTO> deleteProductById(@PathVariable Long productId, @LoginUser User user){
         try{
-            productService.deleteProductById(productId);
+            productService.deleteProductById(productId, user);
             return ResponseEntity.ok(new MessageDTO(ResponseMessage.PRODUCT_DELETE_SUCCESS.getText()));
+        } catch (UnauthorizedProductAccessException e){
+            log.error("ERROR 403: ", e);
+            return ResponseEntity.status(403).body(new MessageDTO(ResponseMessage.PRODUCT_UNAUTHORIZATION.getText()));
         } catch (EntityNotFoundException e){
+            log.error("ERROR 404: ", e);
             return ResponseEntity.status(404).body(new MessageDTO(ResponseMessage.PRODUCT_NOT_FOUND.getText()));
         } catch (Exception e){
+            log.error("ERROR 500: ", e);
             return ResponseEntity.status(500).body(new MessageDTO(ResponseMessage.PRODUCT_SERVER_ERROR.getText()));
         }
     }
