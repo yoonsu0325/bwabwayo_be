@@ -5,13 +5,10 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
-import java.util.List;
-
 @Getter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class CategoryListResponseDTO {
+public class MessageDTO {
     private String message;
-    private List<CategoryResponseDTO> categories;
 }

@@ -5,13 +5,14 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
-import java.util.List;
-
 @Getter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class CategoryListResponseDTO {
-    private String message;
-    private List<CategoryResponseDTO> categories;
+public class SellerDTO {
+    String id;
+    String nickname;
+    String profileImage;
+    Integer score;
+    Double rating;
 }
