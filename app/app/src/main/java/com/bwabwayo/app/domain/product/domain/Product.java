@@ -6,7 +6,6 @@ import com.bwabwayo.app.domain.product.enums.SaleStatus;
 import com.bwabwayo.app.domain.product.enums.SaleStatusConvert;
 import com.bwabwayo.app.domain.user.domain.User;
 import jakarta.persistence.*;
-import jakarta.validation.constraints.Min;
 import lombok.*;
 
 import java.time.LocalDateTime;
@@ -43,7 +42,6 @@ public class Product {
     private String description; // 판매글 내용
 
     @Column(nullable = false)
-    @Min(0) // 가격은 음수가 될 수 없음
     private int price; // 판매가
 
     @Column(length = 1024, nullable = false)
@@ -82,7 +80,6 @@ public class Product {
     private SaleStatus saleStatus = SaleStatus.AVAILABLE; // 판매 상태
 
     @Column(name = "shipping_fee")
-    @Min(0)
     private Integer shippingFee; // 배송비
 
     @ManyToOne(fetch = FetchType.LAZY)

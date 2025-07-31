@@ -1,5 +1,6 @@
 package com.bwabwayo.app.domain.product.dto.request;
 
+import com.bwabwayo.app.domain.product.annotation.AtLeastOneTrue;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -14,7 +15,7 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-@ParameterObject
+@AtLeastOneTrue(fields = {"canDirect", "canDelivery"}, message = "canDirect 또는 canDelivery 중 하나는 true여야 합니다.")
 public class ProductCreateAndUpdateRequestDTO {
     @NotBlank
     private String title; // 상품 제목
@@ -39,6 +40,7 @@ public class ProductCreateAndUpdateRequestDTO {
     @NotNull
     private Long categoryId; // 카테고리 ID
 
+    @NotNull
     @Size(min = 1, max = 10)
     private List<String> images; // 이미지 URL
 }

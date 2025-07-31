@@ -12,11 +12,13 @@ import com.bwabwayo.app.domain.product.service.ProductService;
 import com.bwabwayo.app.domain.user.annotation.LoginUser;
 import com.bwabwayo.app.domain.user.domain.User;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import jakarta.persistence.EntityNotFoundException;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
@@ -42,6 +44,14 @@ public class ProductController {
                     )
             ),
             @ApiResponse(
+                    responseCode = "403",
+                    description = "비회원 상품 등록 시도",
+                    content = @Content(
+                            mediaType = "application/json",
+                            schema = @Schema(implementation = MessageDTO.class)
+                    )
+            ),
+            @ApiResponse(
                     responseCode = "500",
                     description = "서버 오류로 상품 등록 실패",
                     content = @Content(
@@ -51,9 +61,17 @@ public class ProductController {
             )
     })
     @PostMapping
-    private ResponseEntity<?> createProduct(@ModelAttribute ProductCreateAndUpdateRequestDTO requestDTO){
+    private ResponseEntity<?> createProduct(
+            @Valid @RequestBody ProductCreateAndUpdateRequestDTO requestDTO,
+            @Parameter(hidden = true) @LoginUser User user
+    ){
+        // 로그인하지 않았다면 상품 등록 불가
+        if(user == null){
+            return ResponseEntity.status(403).body(ResponseMessage.PRODUCT_UNAUTHORIZATION.getText());
+        }
+
         try{
-            ProductCreateResponseDTO responseDTO = productService.createProduct(requestDTO);
+            ProductCreateResponseDTO responseDTO = productService.createProduct(requestDTO, user);
             return ResponseEntity.ok(responseDTO);
         } catch(Exception e){
             return ResponseEntity.status(500).body(new MessageDTO(ResponseMessage.PRODUCT_SERVER_ERROR.getText()));
@@ -129,7 +147,10 @@ public class ProductController {
             @ApiResponse(responseCode = "500", description = "서버 오류")
     })
     @DeleteMapping("/{productId}")
-    public ResponseEntity<MessageDTO> deleteProductById(@PathVariable Long productId, @LoginUser User user){
+    public ResponseEntity<MessageDTO> deleteProductById(
+            @PathVariable Long productId,
+            @Parameter(hidden = true) @LoginUser User user
+    ){
         try{
             productService.deleteProductById(productId, user);
             return ResponseEntity.ok(new MessageDTO(ResponseMessage.PRODUCT_DELETE_SUCCESS.getText()));

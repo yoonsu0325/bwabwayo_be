@@ -45,15 +45,12 @@ public class ProductService {
      * 상품 등록
      */
     @Transactional
-    public ProductCreateResponseDTO createProduct(ProductCreateAndUpdateRequestDTO requestDTO) {
-        // TODO: 실제 사용자 정보를 가져오도록 수정 필요
-        User seller = userRepository.findById("4371393546")
-                .orElseThrow(() -> new EntityNotFoundException("판매자 정보를 찾을 수 없습니다."));
+    public ProductCreateResponseDTO createProduct(ProductCreateAndUpdateRequestDTO requestDTO, User user) {
         Category category = categoryService.getCategoryById(requestDTO.getCategoryId());
 
         Product product = Product.builder()
                 .category(category)
-                .seller(seller)
+                .seller(user)
                 .title(requestDTO.getTitle())
                 .description(requestDTO.getDescription())
                 .price(requestDTO.getPrice())
