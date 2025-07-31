@@ -39,7 +39,6 @@ public class ProductService {
     private final CategoryService categoryService;
     private final S3Service s3Service;
     private final ApplicationEventPublisher eventPublisher;
-    private final UserRepository userRepository;
 
     /**
      * 상품 등록
@@ -63,17 +62,23 @@ public class ProductService {
 
         List<String> imageKeys = requestDTO.getImages();
         if (imageKeys != null && !imageKeys.isEmpty()) {
-            int index = 1;
+            int index = 0;
             for (String key : imageKeys) {
+                if(!s3Service.exists(key)) {
+                    log.warn("등록하려는 이미지가 존재하지 않음: key={}", key);
+                    continue;
+                }
+
                 ProductImage image = ProductImage.builder()
                         .product(product)
-                        .no(index++)
+                        .no(++index)
                         .url(key)
                         .build();
                 product.getProductImages().add(image);
             }
+            if(index == 0) throw new IllegalArgumentException("유효한 이미지가 존재하지 않습니다.");
+            product.setThumbnail(product.getProductImages().get(0).getUrl());
 
-            product.setThumbnail(imageKeys.get(0));
         }
 
         productRepository.save(product);

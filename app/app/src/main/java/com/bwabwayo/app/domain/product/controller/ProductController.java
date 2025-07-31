@@ -39,6 +39,7 @@ public class ProductController {
                     responseCode = "200",
                     content = @Content(schema = @Schema(implementation = ProductCreateResponseDTO.class))
             ),
+            @ApiResponse(responseCode = "400"),
             @ApiResponse(responseCode = "403"),
             @ApiResponse(responseCode = "500")
     })
@@ -46,16 +47,21 @@ public class ProductController {
     private ResponseEntity<?> createProduct(
             @Valid @RequestBody ProductCreateAndUpdateRequestDTO requestDTO,
             @Parameter(hidden = true) @LoginUser User user
-    ){
+    ) {
         // 로그인하지 않았다면 상품 등록 불가
-        if(user == null){
+        if (user == null) {
+            log.error("ERROR 403: ");
             return ResponseEntity.status(403).body(ResponseMessage.PRODUCT_UNAUTHORIZATION.getText());
         }
 
-        try{
+        try {
             ProductCreateResponseDTO responseDTO = productService.createProduct(requestDTO, user);
             return ResponseEntity.ok(responseDTO);
-        } catch(Exception e){
+        } catch (IllegalArgumentException e) {
+            log.error("ERROR 400: ", e);
+            return ResponseEntity.status(400).body(new MessageDTO(ResponseMessage.PRODUCT_BAD_REQUEST.getText()));
+        } catch (Exception e) {
+            log.error("ERROR 500: ", e);
             return ResponseEntity.status(500).body(new MessageDTO(ResponseMessage.PRODUCT_SERVER_ERROR.getText()));
         }
     }
@@ -77,6 +83,7 @@ public class ProductController {
             ProductSearchResponseDTO response = productService.searchProducts(requestDTO);
             return ResponseEntity.ok(response);
         } catch(Exception e){
+            log.error("ERROR 500: ", e);
             return ResponseEntity.status(500).body(new MessageDTO(ResponseMessage.PRODUCT_SERVER_ERROR.getText()));
         }
     }
@@ -95,8 +102,10 @@ public class ProductController {
             ProductDetailResponseDTO productDetail = productService.getProductDetail(productId);
             return ResponseEntity.ok(productDetail);
         } catch (EntityNotFoundException e){
+            log.error("ERROR 404: ", e);
             return ResponseEntity.status(404).body(new MessageDTO(ResponseMessage.PRODUCT_NOT_FOUND.getText()));
         } catch(Exception e){
+            log.error("ERROR 500: ", e);
             return ResponseEntity.status(500).body(new MessageDTO(ResponseMessage.PRODUCT_SERVER_ERROR.getText()));
         }
     }
@@ -118,11 +127,11 @@ public class ProductController {
             productService.updateProduct(productId, requestDTO);
             return ResponseEntity.ok(new MessageDTO(ResponseMessage.PRODUCT_UPDATE_SUCCESS.getText()));
         } catch (IllegalArgumentException e) {
-            return ResponseEntity.badRequest()
-                    .body(new MessageDTO(e.getMessage()));
+            log.error("ERROR 400: ", e);
+            return ResponseEntity.status(400).body(new MessageDTO(e.getMessage()));
         } catch (Exception e) {
-            return ResponseEntity.internalServerError()
-                    .body(new MessageDTO(ResponseMessage.PRODUCT_SERVER_ERROR.getText()));
+            log.error("ERROR 500: ", e);
+            return ResponseEntity.status(500).body(new MessageDTO(ResponseMessage.PRODUCT_SERVER_ERROR.getText()));
         }
     }
 
@@ -153,4 +162,3 @@ public class ProductController {
         }
     }
 }
-
