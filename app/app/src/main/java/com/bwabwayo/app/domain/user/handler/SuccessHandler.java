@@ -1,14 +1,11 @@
 package com.bwabwayo.app.domain.user.handler;
 
-import com.bwabwayo.app.domain.user.domain.User;
 import com.bwabwayo.app.domain.user.dto.request.CustomOAuth2User;
 import com.bwabwayo.app.domain.user.dto.request.OAuth2UserRequest;
-import com.bwabwayo.app.domain.user.repository.UserRepository;
 import com.bwabwayo.app.domain.user.service.UserRedisService;
 import com.bwabwayo.app.domain.user.utils.JWTUtils;
 import com.bwabwayo.app.domain.user.config.JwtProperties;
 import com.bwabwayo.app.domain.user.domain.Role;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;

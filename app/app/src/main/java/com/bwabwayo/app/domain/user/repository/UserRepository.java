@@ -8,7 +8,4 @@ import java.util.Optional;
 public interface UserRepository extends JpaRepository<User, Long> {
     // SELECT * FROM user WHERE id = ?1
     User findById(String id);
-
-    //SELECT * FROM user WHERE id = ? and refresh_token = ?
-    Optional<User> findByIdAndRefreshToken(String id, String refreshToken);
 }

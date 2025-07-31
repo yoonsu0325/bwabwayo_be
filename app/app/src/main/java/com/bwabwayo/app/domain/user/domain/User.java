@@ -68,7 +68,4 @@ public class User {
 
     @Column(name = "is_active", nullable = false)
     private boolean isActive;
-
-    @Column(name = "refresh_token", length = 512)
-    private String refreshToken; // 암호화된 상태로 저장
 }

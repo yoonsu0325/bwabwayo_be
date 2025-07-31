@@ -101,5 +101,9 @@ public class AuthService {
                 .refreshToken(refreshToken)
                 .build();
     }
+
+    public User findById(String id){
+        return userRepository.findById(id);
+    }
 }
 
