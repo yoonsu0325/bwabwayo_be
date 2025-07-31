@@ -80,5 +80,5 @@ springdoc:
   api-docs:
     path: /v3/api-docs
   swagger-ui:
-    path: /be/swagger-ui.html
+    path: /be/swagger-ui/index.html
     url: /be/v3/api-docs
