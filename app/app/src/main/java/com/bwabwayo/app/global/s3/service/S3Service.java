@@ -1,10 +1,11 @@
-package com.bwabwayo.app.global.s3;
+package com.bwabwayo.app.global.s3.service;
 
 import com.amazonaws.HttpMethod;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.model.GeneratePresignedUrlRequest;
 import com.amazonaws.services.s3.model.ObjectMetadata;
 import com.amazonaws.services.s3.model.PutObjectRequest;
+import com.bwabwayo.app.global.s3.dto.response.UploadResponseDTO;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -12,8 +13,9 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
 import java.net.URL;
-import java.util.Date;
-import java.util.UUID;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
+import java.util.*;
 
 @Service
 @RequiredArgsConstructor
@@ -24,15 +26,21 @@ public class S3Service {
     @Value("${cloud.aws.s3.bucket}")
     private String bucketName;
 
+
     /**
      * S3에 파일을 업로드
-     *
-     * @param file 업로드할 파일
-     * @param path 저장할 S3 경로
-     * @return 업로드된 파일의 URL
      */
-    public String uploadFile(MultipartFile file, String path) {
-        String fileName = path + "/" + UUID.randomUUID() + "_" + file.getOriginalFilename();
+    public UploadResponseDTO uploadFile(MultipartFile file, String path) {
+        // 이중 슬래시 방지
+        if (path != null && path.endsWith("/") && path.length() > 1) {
+            path = path.substring(0, path.length() - 1);
+        }
+        // 파일명이 비어있다면 임의 부여
+        String originalFileName = Optional.ofNullable(file.getOriginalFilename()).orElse("unknown");
+        // 파일명 URL 인코딩
+        String encodedFileName = URLEncoder.encode(originalFileName, StandardCharsets.UTF_8);
+        // key 생성
+        String fileName = path + "/" + UUID.randomUUID() + "_" + encodedFileName;
 
         try {
             ObjectMetadata metadata = new ObjectMetadata();
@@ -41,7 +49,14 @@ public class S3Service {
 
             amazonS3.putObject(new PutObjectRequest(bucketName, fileName, file.getInputStream(), metadata));
 
-            return amazonS3.getUrl(bucketName, fileName).toString();
+            URL url = amazonS3.getUrl(bucketName, fileName);
+            String key = fileName;
+            if(key.startsWith("/")) key = key.substring(1);
+
+            return UploadResponseDTO.builder()
+                    .key(key)
+                    .url(url.toString())
+                    .build();
         } catch (IOException e) {
             throw new RuntimeException("S3 업로드 실패", e);
         }

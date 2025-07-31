@@ -12,8 +12,7 @@ import com.bwabwayo.app.domain.product.exception.UnauthorizedProductAccessExcept
 import com.bwabwayo.app.domain.product.repository.ProductRepository;
 import com.bwabwayo.app.domain.user.domain.Role;
 import com.bwabwayo.app.domain.user.domain.User;
-import com.bwabwayo.app.domain.user.repository.UserRepository;
-import com.bwabwayo.app.global.s3.S3Service;
+import com.bwabwayo.app.global.s3.service.S3Service;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -110,8 +109,10 @@ public class ProductService {
         
         // 하위 카테고리 포함 카테고리 ID
         List<Long> categoryIds = new ArrayList<>();
-        Category topCategory = categoryService.getCategoryById(categoryId);
-        getSubCategoryIds(topCategory, categoryIds);
+        if(categoryId != null){
+            Category topCategory = categoryService.getCategoryById(categoryId);
+            getSubCategoryIds(topCategory, categoryIds);
+        }
         
         // DB 조회
         Page<Product> pageData = productRepository.searchByCondition(keyword, categoryIds, pageable);

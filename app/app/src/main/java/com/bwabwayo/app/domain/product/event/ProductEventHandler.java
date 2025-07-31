@@ -1,6 +1,6 @@
 package com.bwabwayo.app.domain.product.event;
 
-import com.bwabwayo.app.global.s3.S3Service;
+import com.bwabwayo.app.global.s3.service.S3Service;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
