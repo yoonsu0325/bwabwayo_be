@@ -175,8 +175,10 @@ public class ProductService {
         List<CategoryDTO> superCategories = resolveSuperCategories(product.getCategory());
 
         // 상품에 포함된 이미지 URL 모음
-        List<String> images = product.getProductImages().stream()
+        List<String> imageUrls = product.getProductImages().stream()
                 .map(i -> s3Service.getUrl(i.getUrl())).toList();
+        List<String> imageKeys = product.getProductImages().stream()
+                .map(ProductImage::getUrl).toList();
         
         // 판매자 정보
         User seller = product.getSeller();
@@ -205,7 +207,8 @@ public class ProductService {
                 .chatCount(product.getChatCount())
                 .createdAt(product.getCreatedAt())
                 .categories(superCategories)
-                .images(images)
+                .imageUrls(imageUrls)
+                .imageKeys(imageKeys)
                 .seller(sellerDTO)
                 .build();
     }

@@ -41,7 +41,10 @@ public class ProductDetailResponseDTO {
     private List<CategoryDTO> categories = new ArrayList<>();
 
     @Builder.Default
-    private List<String> images = new ArrayList<>();
+    private List<String> imageUrls = new ArrayList<>();
+
+    @Builder.Default
+    private List<String> imageKeys = new ArrayList<>();
 
     private SellerDTO seller;
 }
