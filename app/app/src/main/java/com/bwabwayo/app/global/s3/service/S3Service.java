@@ -5,7 +5,7 @@ import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.model.GeneratePresignedUrlRequest;
 import com.amazonaws.services.s3.model.ObjectMetadata;
 import com.amazonaws.services.s3.model.PutObjectRequest;
-import com.bwabwayo.app.global.s3.dto.response.UploadResponseDTO;
+import com.bwabwayo.app.global.s3.dto.response.UploadResultDTO;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -30,7 +30,7 @@ public class S3Service {
     /**
      * S3에 파일을 업로드
      */
-    public UploadResponseDTO uploadFile(MultipartFile file, String path) {
+    public UploadResultDTO uploadFile(MultipartFile file, String path) {
         // 이중 슬래시 방지
         if (path != null && path.endsWith("/") && path.length() > 1) {
             path = path.substring(0, path.length() - 1);
@@ -53,7 +53,7 @@ public class S3Service {
             String key = fileName;
             if(key.startsWith("/")) key = key.substring(1);
 
-            return UploadResponseDTO.builder()
+            return UploadResultDTO.builder()
                     .key(key)
                     .url(url.toString())
                     .build();
