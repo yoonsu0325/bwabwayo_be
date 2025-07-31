@@ -46,15 +46,17 @@ public class SuccessHandler extends SimpleUrlAuthenticationSuccessHandler {
         response.setCharacterEncoding("UTF-8");
         if (user.getRole() == Role.PREUSER) {
             System.out.println("PREUSER");
-            Map<String, Object> responseBody = Map.of(
-                    "accessToken", accessToken,
-                    "isNewUser", true,
-                    "id", user.getId(),
-                    "email", user.getEmail(),
-                    "profileImage", user.getProfileImage()
-            );
+            String redirectUrl = UriComponentsBuilder
+                    .fromUriString("https://i13e202.p.ssafy.io/fe/logincallback")
+                    .queryParam("accessToken", accessToken)
+                    .queryParam("isNewUser", user.getRole() == Role.PREUSER)
+                    .queryParam("id", user.getId())
+                    .queryParam("email", user.getEmail())
+                    .queryParam("profileImage", URLEncoder.encode(user.getProfileImage(), StandardCharsets.UTF_8))
+                    .build()
+                    .toUriString();
 
-            new ObjectMapper().writeValue(response.getWriter(), responseBody);
+            response.sendRedirect(redirectUrl);
         }else { //AT/RT 토큰 발행 후 전달
             System.out.println("USER");
             // 가입된 유저 → AccessToken + RefreshToken 발급
@@ -70,12 +72,14 @@ public class SuccessHandler extends SimpleUrlAuthenticationSuccessHandler {
             response.setHeader("Set-Cookie", cookie.toString());
 //            response.addHeader(jwtProperties.getHeader(), jwtProperties.getType() + accessToken); //헤더로 주는 방식
 
-            Map<String, Object> responseBody = Map.of(
-                    "accessToken", accessToken,
-                    "isNewUser", false
-            );
+            String redirectUrl = UriComponentsBuilder
+                    .fromUriString("https://i13e202.p.ssafy.io/fe/")
+                    .queryParam("accessToken", accessToken)
+                    .queryParam("isNewUser", false)
+                    .build()
+                    .toUriString();
 
-            new ObjectMapper().writeValue(response.getWriter(), responseBody);
+            response.sendRedirect(redirectUrl);
         }
     }
 }
