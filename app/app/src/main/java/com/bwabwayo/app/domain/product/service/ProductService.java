@@ -183,7 +183,8 @@ public class ProductService {
         SellerDTO sellerDTO = SellerDTO.builder()
                 .id(seller.getId())
                 .nickname(seller.getNickname())
-                .profileImage(s3Service.getUrl(seller.getProfileImage()))
+//                .profileImage(s3Service.getUrl(seller.getProfileImage()))
+                .profileImage(seller.getProfileImage())
                 .score(seller.getScore())
                 .rating(4.5) // TODO: 리뷰 통계와 연결 필요
                 .build();
