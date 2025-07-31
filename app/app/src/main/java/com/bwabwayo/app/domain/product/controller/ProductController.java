@@ -37,28 +37,10 @@ public class ProductController {
     @ApiResponses({
             @ApiResponse(
                     responseCode = "200",
-                    description = "상품 등록 성공",
-                    content = @Content(
-                            mediaType = "application/json",
-                            schema = @Schema(implementation = ProductCreateResponseDTO.class)
-                    )
+                    content = @Content(schema = @Schema(implementation = ProductCreateResponseDTO.class))
             ),
-            @ApiResponse(
-                    responseCode = "403",
-                    description = "비회원 상품 등록 시도",
-                    content = @Content(
-                            mediaType = "application/json",
-                            schema = @Schema(implementation = MessageDTO.class)
-                    )
-            ),
-            @ApiResponse(
-                    responseCode = "500",
-                    description = "서버 오류로 상품 등록 실패",
-                    content = @Content(
-                            mediaType = "application/json",
-                            schema = @Schema(implementation = MessageDTO.class)
-                    )
-            )
+            @ApiResponse(responseCode = "403"),
+            @ApiResponse(responseCode = "500")
     })
     @PostMapping
     private ResponseEntity<?> createProduct(
@@ -80,14 +62,11 @@ public class ProductController {
 
     @Operation(summary = "상품 목록 조회")
     @ApiResponses({
-            @ApiResponse(responseCode = "200",
-                    description = "상품 목록 조회 성공",
-                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = ProductSearchResponseDTO.class))
+            @ApiResponse(
+                    responseCode = "200",
+                    content = @Content(schema = @Schema(implementation = ProductSearchResponseDTO.class))
             ),
-            @ApiResponse(responseCode = "500",
-                    description = "서버 오류",
-                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = MessageDTO.class))
-            )
+            @ApiResponse(responseCode = "500")
     })
     @GetMapping
     public ResponseEntity<?> getProducts(@ModelAttribute ProductSearchRequestDTO requestDTO) {
@@ -104,12 +83,11 @@ public class ProductController {
 
     @Operation(summary = "상품 상세 조회")
     @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "상품 상세 정보 조회 성공",
-                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = ProductDetailResponseDTO.class))),
-            @ApiResponse(responseCode = "404", description = "상품이 존재하지 않음",
-                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = MessageDTO.class))),
-            @ApiResponse(responseCode = "500", description = "서버 오류 발생",
-                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = MessageDTO.class)))
+            @ApiResponse(
+                    responseCode = "200",
+                    content = @Content(schema = @Schema(implementation = ProductDetailResponseDTO.class))),
+            @ApiResponse(responseCode = "404"),
+            @ApiResponse(responseCode = "500")
     })
     @GetMapping("/{productId}")
     public ResponseEntity<?> getProductById(@PathVariable Long productId){
@@ -123,7 +101,16 @@ public class ProductController {
         }
     }
 
-    @Operation(summary = "상품 수정")
+    @Operation(summary = "상품 정보 갱신")
+    @ApiResponses({
+            @ApiResponse(
+                    responseCode = "200",
+                    content = @Content(schema = @Schema(implementation = ProductCreateResponseDTO.class))
+            ),
+            @ApiResponse(responseCode = "403"),
+            @ApiResponse(responseCode = "404"),
+            @ApiResponse(responseCode = "500")
+    })
     @PutMapping("/{productId}")
     public ResponseEntity<MessageDTO> updateProduct(@PathVariable Long productId,
                                            @RequestBody ProductCreateAndUpdateRequestDTO requestDTO) {
@@ -141,10 +128,10 @@ public class ProductController {
 
     @Operation(summary = "상품 삭제")
     @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "상품 삭제 성공"),
-            @ApiResponse(responseCode = "403", description = "삭제 권한 없음"),
-            @ApiResponse(responseCode = "404", description = "존재하지 않는 상품"),
-            @ApiResponse(responseCode = "500", description = "서버 오류")
+            @ApiResponse(responseCode = "200"),
+            @ApiResponse(responseCode = "403"),
+            @ApiResponse(responseCode = "404"),
+            @ApiResponse(responseCode = "500")
     })
     @DeleteMapping("/{productId}")
     public ResponseEntity<MessageDTO> deleteProductById(
