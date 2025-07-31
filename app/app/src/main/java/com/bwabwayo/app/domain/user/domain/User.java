@@ -13,7 +13,14 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-@Table(name = "user")
+@Table(
+        name = "user",
+        uniqueConstraints = {
+                @UniqueConstraint(name = "unique_user_nickname", columnNames = {"nickname"}),
+                @UniqueConstraint(name = "unique_user_phone", columnNames = {"phone_number"}),
+                @UniqueConstraint(name = "unique_user_email", columnNames = {"email"})
+        }
+)
 public class User {
 
     @Id

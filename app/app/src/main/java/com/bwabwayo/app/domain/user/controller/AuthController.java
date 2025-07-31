@@ -70,7 +70,29 @@ public class AuthController {
                     .body(responseBody);
         } catch (DataIntegrityViolationException e) {
             // 중복 이메일, 닉네임, 전화번호 등 제약조건 위반
-            return ResponseEntity.badRequest().body("SQL 오류");
+            String message = e.getMostSpecificCause().getMessage();
+            System.out.println("제약 조건 위반: " + message);
+
+            if (message.contains("unique_user_nickname")) {
+                return ResponseEntity.badRequest().body(Map.of(
+                        "field", "nickname",
+                        "message", "이미 사용 중인 닉네임입니다."
+                ));
+            } else if (message.contains("unique_user_email")) {
+                return ResponseEntity.badRequest().body(Map.of(
+                        "field", "email",
+                        "message", "이미 등록된 이메일입니다."
+                ));
+            } else if (message.contains("unique_user_phone")) {
+                return ResponseEntity.badRequest().body(Map.of(
+                        "field", "phoneNumber",
+                        "message", "이미 등록된 전화번호입니다."
+                ));
+            } else {
+                return ResponseEntity.badRequest().body(Map.of(
+                        "message", "회원정보 중복 오류입니다."
+                ));
+            }
         } catch (IllegalArgumentException e) {
             // 서비스 레이어에서 유효성 검사 실패 등
             return ResponseEntity.badRequest().body(e.getMessage());
