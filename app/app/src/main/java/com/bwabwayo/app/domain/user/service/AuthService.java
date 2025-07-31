@@ -65,17 +65,16 @@ public class AuthService {
                         request.getAccountHolder() != null &&
                         request.getBankName() != null;
 
-        if (!hasCompleteAccountInfo) {
-            throw new IllegalArgumentException("계좌 정보가 모두 입력되어야 합니다.");
+        if (hasCompleteAccountInfo) {
+            Account account = Account.builder()
+                    .user(user)
+                    .accountNumber(request.getAccountNumber())
+                    .accountHolder(request.getAccountHolder())
+                    .bankName(request.getBankName())
+                    .build();
+            accountRepository.save(account);
         }
 
-        Account account = Account.builder()
-                .user(user)
-                .accountNumber(request.getAccountNumber())
-                .accountHolder(request.getAccountHolder())
-                .bankName(request.getBankName())
-                .build();
-        accountRepository.save(account);
 
         // 4. DeliveryAddress 저장 조건 검사
         boolean hasCompleteAddressInfo =
@@ -85,19 +84,17 @@ public class AuthService {
                         request.getAddress() != null &&
                         request.getAddressDetail() != null;
 
-        if (!hasCompleteAddressInfo) {
-            throw new IllegalArgumentException("배송지 정보가 모두 입력되어야 합니다.");
+        if (hasCompleteAddressInfo) {
+            DeliveryAddress address = DeliveryAddress.builder()
+                    .user(user)
+                    .recipientName(request.getRecipientName())
+                    .recipientPhoneNumber(request.getRecipientPhoneNumber())
+                    .zipcode(request.getZipcode())
+                    .address(request.getAddress())
+                    .addressDetail(request.getAddressDetail())
+                    .build();
+            deliveryAddressRepository.save(address);
         }
-
-        DeliveryAddress address = DeliveryAddress.builder()
-                .user(user)
-                .recipientName(request.getRecipientName())
-                .recipientPhoneNumber(request.getRecipientPhoneNumber())
-                .zipcode(request.getZipcode())
-                .address(request.getAddress())
-                .addressDetail(request.getAddressDetail())
-                .build();
-        deliveryAddressRepository.save(address);
 
         // 5. 토큰 응답 반환
         return UserTokenResponse.builder()
