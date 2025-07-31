@@ -7,6 +7,7 @@ import com.bwabwayo.app.domain.user.repository.UserRepository;
 import com.bwabwayo.app.domain.user.utils.JWTUtils;
 import com.bwabwayo.app.domain.user.config.JwtProperties;
 import com.bwabwayo.app.domain.user.domain.Role;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -21,6 +22,7 @@ import org.springframework.web.util.UriComponentsBuilder;
 import java.io.IOException;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
+import java.util.Map;
 
 @Component
 @RequiredArgsConstructor
@@ -38,21 +40,21 @@ public class SuccessHandler extends SimpleUrlAuthenticationSuccessHandler {
         String accessToken = jwtUtils.createToken(user,jwtProperties.getAccessExpMinutes(), user.getRole());
 
         //PREUSER면 회원가입 폼으로 이동
+        // 프론트에 JSON 응답으로 전달
+        response.setStatus(HttpServletResponse.SC_OK);
         response.setContentType("application/json");
         response.setCharacterEncoding("UTF-8");
         if (user.getRole() == Role.PREUSER) {
             System.out.println("PREUSER");
-            String redirectUrl = UriComponentsBuilder
-                    .fromUriString("https://i13e202.p.ssafy.io/fe/signup")
-                    .queryParam("accessToken", accessToken)
-                    .queryParam("isNewUser", user.getRole() == Role.PREUSER)
-                    .queryParam("id", user.getId())
-                    .queryParam("email", user.getEmail())
-                    .queryParam("profileImage", URLEncoder.encode(user.getProfileImage(), StandardCharsets.UTF_8))
-                    .build()
-                    .toUriString();
+            Map<String, Object> responseBody = Map.of(
+                    "accessToken", accessToken,
+                    "isNewUser", true,
+                    "id", user.getId(),
+                    "email", user.getEmail(),
+                    "profileImage", user.getProfileImage()
+            );
 
-            response.sendRedirect(redirectUrl);
+            new ObjectMapper().writeValue(response.getWriter(), responseBody);
         }else { //AT/RT 토큰 발행 후 전달
             System.out.println("USER");
             // 가입된 유저 → AccessToken + RefreshToken 발급
@@ -68,14 +70,12 @@ public class SuccessHandler extends SimpleUrlAuthenticationSuccessHandler {
             response.setHeader("Set-Cookie", cookie.toString());
 //            response.addHeader(jwtProperties.getHeader(), jwtProperties.getType() + accessToken); //헤더로 주는 방식
 
-            String redirectUrl = UriComponentsBuilder
-                    .fromUriString("https://i13e202.p.ssafy.io/fe/")
-                    .queryParam("accessToken", accessToken)
-                    .queryParam("isNewUser", false)
-                    .build()
-                    .toUriString();
+            Map<String, Object> responseBody = Map.of(
+                    "accessToken", accessToken,
+                    "isNewUser", false
+            );
 
-            response.sendRedirect(redirectUrl);
+            new ObjectMapper().writeValue(response.getWriter(), responseBody);
         }
     }
 }
