@@ -95,3 +95,7 @@ storage:
   path:
     temp: temp
     productImage: products
+
+
+sse:
+  timeout: 1800000
