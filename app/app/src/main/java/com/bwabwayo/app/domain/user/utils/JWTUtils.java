@@ -116,7 +116,7 @@ public class JWTUtils {
         return ResponseCookie.from("refreshToken", refreshToken)
                 .httpOnly(true)  // JavaScript로 접근 불가 (XSS 방지)
                 .secure(true)  // HTTPS 연결에서만 전송
-                .path("/api/auth/refresh") // 이 경로에 접근할 때만 자동 전송됨
+                .path("/be/api/auth/refresh") // 이 경로에 접근할 때만 자동 전송됨
                 .maxAge(Duration.ofDays(7)) // 7일 동안 유지
                 .sameSite("Strict") //일반적으로는 "Lax"사용, 다른 사이트에서 접근 금지
                 .build();
