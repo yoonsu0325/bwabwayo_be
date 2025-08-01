@@ -9,7 +9,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class UploadResultDTO {
+public class UploadFileDTO {
     private String key;
     private String url;
 }

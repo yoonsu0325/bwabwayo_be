@@ -1,7 +1,7 @@
 package com.bwabwayo.app.global.s3.controller;
 
+import com.bwabwayo.app.global.s3.dto.response.UploadFileDTO;
 import com.bwabwayo.app.global.s3.dto.response.UploadResponseDTO;
-import com.bwabwayo.app.global.s3.dto.response.UploadResultDTO;
 import com.bwabwayo.app.global.s3.service.S3Service;
 import io.swagger.v3.oas.annotations.Operation;
 import lombok.RequiredArgsConstructor;
@@ -12,6 +12,7 @@ import org.springframework.web.multipart.MultipartFile;
 import java.util.ArrayList;
 import java.util.List;
 
+@Deprecated
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/api/s3")
@@ -25,14 +26,19 @@ public class S3Controller {
             @RequestParam("files") List<MultipartFile> files,
             @RequestParam("dir") String dirName) {
 
-        List<UploadResultDTO> result = new ArrayList<>();
+        List<UploadFileDTO> fileDTOList = new ArrayList<>();
 
         for (MultipartFile file : files) {
-            UploadResultDTO dto = s3Service.uploadFile(file, dirName);
-            result.add(dto);
+            UploadFileDTO fileDTO = s3Service.uploadFile(file, dirName);
+            fileDTOList.add(fileDTO);
         }
 
-        return ResponseEntity.ok(new UploadResponseDTO(result));
+        UploadResponseDTO response = UploadResponseDTO.builder()
+                .size(fileDTOList.size())
+                .result(fileDTOList)
+                .build();
+
+        return ResponseEntity.ok(response);
     }
 
 

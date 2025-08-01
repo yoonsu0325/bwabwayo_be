@@ -5,6 +5,7 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
+import java.util.ArrayList;
 import java.util.List;
 
 @Getter
@@ -12,5 +13,7 @@ import java.util.List;
 @AllArgsConstructor
 @Builder
 public class UploadResponseDTO {
-    private List<UploadResultDTO> result;
+    private int size; // 업로드한 파일의 수
+    @Builder.Default
+    private List<UploadFileDTO> result = new ArrayList<>(); // 업로드된 파일의 정보
 }

@@ -24,4 +24,6 @@ public class ProductSearchRequestDTO {
     @Builder.Default
     @Parameter(example = "100")
     private Integer size = 100; // 상품 수
+    
+    private String sortBy; // 정렬 기준
 }

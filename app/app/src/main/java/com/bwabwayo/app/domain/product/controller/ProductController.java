@@ -32,7 +32,7 @@ import org.springframework.web.bind.annotation.*;
 public class ProductController {
 
     private final ProductService productService;
-
+    
     @Operation(summary = "상품 등록")
     @ApiResponses({
             @ApiResponse(
@@ -121,8 +121,10 @@ public class ProductController {
             @ApiResponse(responseCode = "500")
     })
     @PutMapping("/{productId}")
-    public ResponseEntity<MessageDTO> updateProduct(@PathVariable Long productId,
-                                           @RequestBody ProductCreateAndUpdateRequestDTO requestDTO) {
+    public ResponseEntity<MessageDTO> updateProduct(
+            @PathVariable Long productId,
+            @RequestBody ProductCreateAndUpdateRequestDTO requestDTO
+    ) {
         try {
             productService.updateProduct(productId, requestDTO);
             return ResponseEntity.ok(new MessageDTO(ResponseMessage.PRODUCT_UPDATE_SUCCESS.getText()));

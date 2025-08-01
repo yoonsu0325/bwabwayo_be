@@ -13,5 +13,6 @@ import java.util.List;
 @Builder
 public class CategoryListResponseDTO {
     private String message;
-    private List<CategoryResponseDTO> categories;
+    private int size;
+    private List<CategoryTreeDTO> categories;
 }

@@ -5,7 +5,7 @@ import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.model.GeneratePresignedUrlRequest;
 import com.amazonaws.services.s3.model.ObjectMetadata;
 import com.amazonaws.services.s3.model.PutObjectRequest;
-import com.bwabwayo.app.global.s3.dto.response.UploadResultDTO;
+import com.bwabwayo.app.global.s3.dto.response.UploadFileDTO;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -30,30 +30,37 @@ public class S3Service {
     /**
      * S3에 파일을 업로드
      */
-    public UploadResultDTO uploadFile(MultipartFile file, String path) {
+    public UploadFileDTO uploadFile(MultipartFile file, String path) {
         // 이중 슬래시 방지
-        if (path != null && path.endsWith("/") && path.length() > 1) {
-            path = path.substring(0, path.length() - 1);
+        if(path != null){
+            if (path.startsWith("/")) {
+                path = path.substring(1);
+            }
+            if (path.endsWith("/")) {
+                path = path.substring(0, path.length() - 1);
+            }
         }
-        // 파일명이 비어있다면 임의 부여
+
+        // 파일명 가져오기 (기본값: "unknown")
         String originalFileName = Optional.ofNullable(file.getOriginalFilename()).orElse("unknown");
         // 파일명 URL 인코딩
         String encodedFileName = URLEncoder.encode(originalFileName, StandardCharsets.UTF_8);
+
         // key 생성
-        String fileName = path + "/" + UUID.randomUUID() + "_" + encodedFileName;
+        String prefix = (path == null || path.isBlank()) ? "" : path + "/";
+        String key = prefix + UUID.randomUUID() + "_" + encodedFileName;
+
 
         try {
             ObjectMetadata metadata = new ObjectMetadata();
             metadata.setContentLength(file.getSize());
             metadata.setContentType(file.getContentType());
 
-            amazonS3.putObject(new PutObjectRequest(bucketName, fileName, file.getInputStream(), metadata));
+            amazonS3.putObject(new PutObjectRequest(bucketName, key, file.getInputStream(), metadata));
 
-            URL url = amazonS3.getUrl(bucketName, fileName);
-            String key = fileName;
-            if(key.startsWith("/")) key = key.substring(1);
+            URL url = amazonS3.getUrl(bucketName, key);
 
-            return UploadResultDTO.builder()
+            return UploadFileDTO.builder()
                     .key(key)
                     .url(url.toString())
                     .build();

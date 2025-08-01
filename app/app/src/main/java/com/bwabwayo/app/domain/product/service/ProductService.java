@@ -97,21 +97,31 @@ public class ProductService {
         Long categoryId = requestDTO.getCategoryId();
         int page = requestDTO.getPage();
         int size = requestDTO.getSize();
+        String sortBy = requestDTO.getSortBy() != null ? requestDTO.getSortBy() : "latest";
+
+        Sort.Order option = switch (sortBy){
+            case "oldest" -> Sort.Order.asc("createdAt");
+            case "views" -> Sort.Order.desc("view_count");
+            case "wishes" -> Sort.Order.desc("wish_count");
+//            case "latest" -> Sort.Order.desc("createdAt");
+            default -> Sort.Order.desc("createdAt");
+        };
 
         // 최신순 정렬; ID순 정렬
-        Sort sort = Sort.by(
-                Sort.Order.desc("createdAt"),
-                Sort.Order.asc("id")
-        );
-        
+        Sort sort = Sort.by(option, Sort.Order.asc("id"));
+
         // 페이지네이션
         Pageable pageable = PageRequest.of(page - 1, size, sort);
         
         // 하위 카테고리 포함 카테고리 ID
         List<Long> categoryIds = new ArrayList<>();
         if(categoryId != null){
-            Category topCategory = categoryService.getCategoryById(categoryId);
-            getSubCategoryIds(topCategory, categoryIds);
+            if(!categoryService.existsCategoryById(categoryId)) {
+                categoryIds.add(categoryId);
+            } else {
+                Category topCategory = categoryService.getCategoryById(categoryId);
+                getSubCategoryIds(topCategory, categoryIds);
+            }
         }
         
         // DB 조회
