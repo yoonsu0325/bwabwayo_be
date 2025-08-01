@@ -86,20 +86,6 @@ public class ChatService {
 
     }
 
-    // redis에서 채팅방 리스트 불러오는 로직
-    private List<ChatRoomListResponse> getChatRoomListByUserId(String userId) {
-        List<ChatRoomListResponse> chatRoomListGetResponseList = new ArrayList<>();
-
-        if (chatRoomRedisRepository.existChatRoomList(userId)) {
-            chatRoomListGetResponseList = chatRoomRedisRepository.getChatRoomList(userId);
-/*            for (ChatRoomListResponse chatRoomListGetResponse : chatRoomListGetResponseList) {
-                chatRoomService.setListChatLastMessage(chatRoomListGetResponse);
-            }*/
-        }
-
-        return chatRoomListGetResponseList;
-    }
-
     private String getPartnerId(MessageDTO chatMessageDto, ChatRoomListResponse my) {
         String userId = chatMessageDto.getSenderId();
         String partnerId;

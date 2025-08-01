@@ -1,5 +1,6 @@
 package com.bwabwayo.app.domain.chat.controller;
 
+import com.bwabwayo.app.domain.chat.domain.ChatMessageRedisEntity;
 import com.bwabwayo.app.domain.chat.domain.ChatRoom;
 import com.bwabwayo.app.domain.chat.dto.MessageDTO;
 import com.bwabwayo.app.domain.chat.dto.request.CreateChatRoomRequest;
@@ -29,8 +30,6 @@ public class ChatRoomController {
     @GetMapping
     public ResponseEntity<List<ChatRoomListResponse>> getChatRoomList(
             @LoginUser User user){
-        log.info("get chatroom list");
-        log.info(user.getId());
 
         return ResponseEntity.ok(chatRoomService.getChatRoomList(user.getId()));
     }
@@ -39,7 +38,8 @@ public class ChatRoomController {
     @GetMapping("/{roomId}")
     public ResponseEntity<?> roomFindInfo(
             @PathVariable(name = "roomId") Long roomId,
-            @RequestParam(name = "page") Integer pageNumber
+            @RequestParam(name = "page") Integer pageNumber,
+            @LoginUser User user
     ) {
         List<MessageDTO> messages = redisService.findMessages(roomId, pageNumber);
 
@@ -47,15 +47,25 @@ public class ChatRoomController {
         if (messages.isEmpty()) {
             log.info("no redis");
             messages = chatMongoService.findAll(roomId, pageNumber);
+            log.info("몽고디비에용");
+            log.info(messages.get(0).getContent());
         }
+
+        messages.stream()
+                .filter(msg -> !msg.getSenderId().equals(user.getId()) && !msg.isRead())
+                .forEach(msg -> {
+                    ChatMessageRedisEntity entity = ChatMessageRedisEntity.of(msg); // DTO → Entity 변환 메서드 필요
+                    redisService.markAsRead(entity);
+                });
 
         return ResponseEntity.ok(messages);
     }
 
     @PostMapping
     public ResponseEntity<ChatRoom> createChatRoom(
+            @LoginUser User user,
             @RequestBody CreateChatRoomRequest request) {
-        ChatRoom chatRoom = chatRoomService.createRoom(request);
+        ChatRoom chatRoom = chatRoomService.createRoom(request, user);
         return ResponseEntity.ok(chatRoom);
     }
 }

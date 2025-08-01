@@ -4,11 +4,14 @@ import com.bwabwayo.app.domain.chat.domain.ChatMessageRedisEntity;
 import com.bwabwayo.app.domain.chat.dto.MessageDTO;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 
-import java.util.Collections;
-import java.util.List;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
@@ -26,7 +29,7 @@ public class RedisService {
         this.chatMongoService = chatMongoService;
     }
     private static final int PAGE_SIZE = 20;
-    private static final int MAX_CACHE_SIZE = 5;
+    private static final int MAX_CACHE_SIZE = 30;
     public List<MessageDTO> findMessages(Long roomId, int pageNumber) {
         String key = "chat:room:" + roomId;
         long start = (long) pageNumber * PAGE_SIZE;
@@ -37,38 +40,73 @@ public class RedisService {
         if (cachedMessages.isEmpty()) {
             return Collections.emptyList();
         }
-
+        Collections.sort(cachedMessages, Comparator.comparing(ChatMessageRedisEntity::getCreatedAt));
         return cachedMessages.stream()
                 .map(MessageDTO::fromEntity)
                 .collect(Collectors.toList());
 
     }
 
-    public void save(MessageDTO messageDTO) {
-        String redisKey = "chat:room:" + messageDTO.getRoomId();
-        ChatMessageRedisEntity entity = ChatMessageRedisEntity.of(messageDTO);
 
-        // 객체 그대로 저장
-        redisTemplate.opsForList().leftPush(redisKey, entity);
-        redisTemplate.opsForList().trim(redisKey, 0, 99);
-        log.info("✅ 저장된 객체: {}", entity);
-    }
 
     public void saveMessageToRedis(MessageDTO message) {
-        String key = "chat:room:" + message.getRoomId();
-        redisTemplate.opsForList().rightPush(key, ChatMessageRedisEntity.of(message));
+        String redisKey = "chat:room:" + message.getRoomId();
+        ChatMessageRedisEntity entity = ChatMessageRedisEntity.of(message);
+        redisTemplate.opsForList().leftPush(redisKey, entity);
+        redisTemplate.opsForList().trim(redisKey, 0, 99);
 
         // 캐시 사이즈 초과 시 -> MongoDB로 이전
-        Long size = redisTemplate.opsForList().size(key);
+        Long size = redisTemplate.opsForList().size(redisKey);
         if (size != null && size >= MAX_CACHE_SIZE) {
-            List<ChatMessageRedisEntity> messages = redisTemplate.opsForList().range(key, 0, -1);
+            List<ChatMessageRedisEntity> messages = redisTemplate.opsForList().range(redisKey, 0, -1);
 
             if (messages != null) {
                 for (ChatMessageRedisEntity chatMessageRedisEntity : messages) {
                     chatMongoService.save(MessageDTO.fromEntity(chatMessageRedisEntity));
                 }
-                redisTemplate.delete(key); // 캐시 초기화
+                redisTemplate.delete(redisKey); // 캐시 초기화
             }
         }
     }
+
+    public void markAsRead(ChatMessageRedisEntity message) {
+        String key = "chat:room:" + message.getRoomId();
+        log.info(String.valueOf(message.getContent()));
+        List<ChatMessageRedisEntity> list = redisTemplate.opsForList().range(key, 0, -1);
+        if (list == null || list.isEmpty()) return;
+
+        for (int i = 0; i < list.size(); i++) {
+            ChatMessageRedisEntity m = list.get(i);
+            log.info(m.getCreatedAt() +" "+message.getCreatedAt());
+            if (Objects.equals(m.getCreatedAt(), message.getCreatedAt())
+                    && Objects.equals(m.getSenderId(), message.getSenderId())
+                    && Objects.equals(m.getContent(), message.getContent())) {
+
+                // ✅ 읽음 처리
+                m.setIsRead(true);
+                redisTemplate.opsForList().set(key, i, m);
+                break;
+            }
+            log.info(String.valueOf(message.getIsRead()));
+        }
+    }
+
+
+    public Optional<ChatMessageRedisEntity> findLastMessage(Long roomId) {
+        String key = "chat:room:" + roomId;
+        List<ChatMessageRedisEntity> lastMsgList = redisTemplate.opsForList().range(key, -1, -1);
+        if (lastMsgList != null && !lastMsgList.isEmpty()) {
+            return Optional.of(lastMsgList.get(0));
+        }
+        return Optional.empty();
+    }
+
+    public long countUnreadMessages(Long roomId, String userId) {
+        String key = "chat:room:" + roomId;
+        List<ChatMessageRedisEntity> messages = redisTemplate.opsForList().range(key, 0, -1);
+        return messages.stream()
+                .filter(msg -> !msg.getSenderId().equals(userId) && !Boolean.TRUE.equals(msg.getIsRead()))
+                .count();
+    }
+
 }

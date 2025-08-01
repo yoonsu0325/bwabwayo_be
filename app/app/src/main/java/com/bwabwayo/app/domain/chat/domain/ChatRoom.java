@@ -26,10 +26,10 @@ public class ChatRoom implements Serializable {
     private String sellerId;
     private Long productId;
 
-    public static ChatRoom createRoom(CreateChatRoomRequest request){
+    public static ChatRoom createRoom(CreateChatRoomRequest request, String userId){
         ChatRoom chatRoom = new ChatRoom();
         chatRoom.sellerId = request.getSellerId();
-        chatRoom.buyerId = request.getBuyerId();
+        chatRoom.buyerId = userId;
         chatRoom.productId = request.getProductId();
         return chatRoom;
     }

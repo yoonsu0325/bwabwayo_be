@@ -42,29 +42,30 @@ public class ChatMongoService {
     // 채팅 불러오기
     @Transactional(readOnly = true)
     public List<MessageDTO> findAll(Long roomId, Integer pageNumber) {
-        return findByRoomIdWithPaging(roomId,pageNumber,20)
-                .stream().map(MessageDTO::fromEntity)
+        Page<ChatMessageMongoEntity> page = findByRoomIdWithPaging(roomId, pageNumber, 20);
+        return page.getContent().stream()
+                .map(MessageDTO::fromEntity)
                 .collect(Collectors.toList());
     }
 
 
+
     private Page<ChatMessageMongoEntity> findByRoomIdWithPaging(Long roomId, int page, int size) {
-        Pageable pageable = PageRequest.of(page,size,Sort.by(Sort.Direction.DESC,"time"));
+        Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.ASC, "createdAt")); // 정방향 정렬로 변경
 
         Query query = new Query()
-                .with(pageable)
-                .collation(Collation.of("ko"))
-                .skip((long) pageable.getPageSize() * pageable.getPageNumber())
-                .limit(pageable.getPageSize());
+                .addCriteria(Criteria.where("roomId").is(roomId))
+                .with(pageable);
 
-        query.addCriteria(Criteria.where("roomId").is(roomId));
+        List<ChatMessageMongoEntity> result = mongoTemplate.find(query, ChatMessageMongoEntity.class, "chat_messages");
 
-        List<ChatMessageMongoEntity> filteredChatMessage = mongoTemplate.find(query, ChatMessageMongoEntity.class, "chat_messages");
-        Collections.sort(filteredChatMessage, Comparator.comparing(ChatMessageMongoEntity::getTime));
+        // count 쿼리는 skip/limit 제거된 상태로 실행해야 정확함
+        Query countQuery = new Query(Criteria.where("roomId").is(roomId));
+
         return PageableExecutionUtils.getPage(
-                filteredChatMessage,
+                result,
                 pageable,
-                () -> mongoTemplate.count(query.skip(-1).limit(-1), ChatMessageMongoEntity.class)
+                () -> mongoTemplate.count(countQuery, ChatMessageMongoEntity.class, "chat_messages")
         );
     }
 
