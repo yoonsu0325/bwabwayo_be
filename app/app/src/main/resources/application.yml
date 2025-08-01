@@ -81,3 +81,7 @@ qdrant:
 logging:
   level:
     com.bwabwayo.app: DEBUG
+
+openvidu:
+  url: https://i13e202.p.ssafy.io:8443/
+  secret: whddnjsWkd123
