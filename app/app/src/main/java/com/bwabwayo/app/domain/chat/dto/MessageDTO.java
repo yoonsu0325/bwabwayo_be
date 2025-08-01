@@ -33,7 +33,7 @@ public class MessageDTO implements Serializable {
                 .receiverId(chatMessage.getReceiverId())
                 .roomId(chatMessage.getRoomId())
                 .read(chatMessage.getIsRead())
-                .createdAt(String.valueOf(chatMessage.getTime()))
+                .createdAt(String.valueOf(chatMessage.getCreatedAt()))
                 .type(chatMessage.getType())
                 .build();
     }

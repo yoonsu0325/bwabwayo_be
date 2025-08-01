@@ -20,7 +20,6 @@ public class RedisController {
     @MessageMapping("/chat/message")
     public void message(MessageDTO messageDTO){
         log.info("💬 메시지 수신: {}", messageDTO);
-        redisService.save(messageDTO);
         chatService.sendChatMessage(messageDTO);
     }
 }

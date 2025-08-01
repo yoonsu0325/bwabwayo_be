@@ -24,7 +24,7 @@ public class ChatMessageRedisEntity{
                 .receiverId(dto.getReceiverId())
                 .roomId(dto.getRoomId())
                 .content(dto.getContent())
-                .createdAt(LocalDateTime.now().toString())
+                .createdAt(dto.getCreatedAt())
                 .type(dto.getType())
                 .isRead(false)
                 .build();
