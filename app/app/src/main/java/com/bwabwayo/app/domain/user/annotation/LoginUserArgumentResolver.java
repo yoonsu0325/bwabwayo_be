@@ -1,6 +1,7 @@
 package com.bwabwayo.app.domain.user.annotation;
 
 import com.bwabwayo.app.domain.user.domain.User;
+import com.bwabwayo.app.domain.user.exception.UnauthorizedException;
 import com.bwabwayo.app.domain.user.repository.UserRepository;
 import com.bwabwayo.app.domain.user.utils.JWTUtils;
 import jakarta.servlet.http.HttpServletRequest;
@@ -9,8 +10,6 @@ import org.springframework.web.bind.support.WebDataBinderFactory;
 import org.springframework.web.context.request.NativeWebRequest;
 import org.springframework.web.method.support.HandlerMethodArgumentResolver;
 import org.springframework.web.method.support.ModelAndViewContainer;
-
-import javax.naming.AuthenticationException;
 
 //어노테이션을 설정했을 때 자동으로 주입해주는 클래스
 public class LoginUserArgumentResolver implements HandlerMethodArgumentResolver {
@@ -43,11 +42,11 @@ public class LoginUserArgumentResolver implements HandlerMethodArgumentResolver 
         String accessToken = request.getHeader("Authorization");
 
         //인증이 안된 사용자 (예외 발생), (사실, jwtFilter와 SecurityFilter로 인증 안된 사용자는 걸러지긴 함, 그래도 이중체크)
-        if(accessToken == null) throw new AuthenticationException("인증에 실패하였습니다.");
+        if(accessToken == null) throw new UnauthorizedException("인증에 실패하였습니다.");
         //AccessToken에서 userId 가져오기
         String userId = jwtUtils.getSubject(jwtUtils.getTokenFromHeader(accessToken));
         //userId 존재여부 확인
-        if(userId == null) throw new AuthenticationException("인증에 실패하였습니다.");
+        if(userId == null) throw new UnauthorizedException("인증에 실패하였습니다.");
         return userRepository.findById(String.valueOf(userId));
     }
 }
