@@ -1,13 +1,10 @@
 package com.bwabwayo.app.domain.product.controller;
 
-import com.bwabwayo.app.domain.product.dto.ResponseMessage;
 import com.bwabwayo.app.domain.product.dto.request.ProductCreateAndUpdateRequestDTO;
 import com.bwabwayo.app.domain.product.dto.request.ProductSearchRequestDTO;
-import com.bwabwayo.app.domain.product.dto.response.MessageDTO;
 import com.bwabwayo.app.domain.product.dto.response.ProductCreateResponseDTO;
 import com.bwabwayo.app.domain.product.dto.response.ProductDetailResponseDTO;
 import com.bwabwayo.app.domain.product.dto.response.ProductSearchResponseDTO;
-import com.bwabwayo.app.domain.product.exception.UnauthorizedProductAccessException;
 import com.bwabwayo.app.domain.product.service.ProductService;
 import com.bwabwayo.app.domain.user.annotation.LoginUser;
 import com.bwabwayo.app.domain.user.domain.User;
@@ -16,8 +13,6 @@ import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
-import io.swagger.v3.oas.annotations.responses.ApiResponses;
-import jakarta.persistence.EntityNotFoundException;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -34,133 +29,62 @@ public class ProductController {
     private final ProductService productService;
     
     @Operation(summary = "상품 등록")
-    @ApiResponses({
-            @ApiResponse(
-                    responseCode = "200",
-                    content = @Content(schema = @Schema(implementation = ProductCreateResponseDTO.class))
-            ),
-            @ApiResponse(responseCode = "400"),
-            @ApiResponse(responseCode = "403"),
-            @ApiResponse(responseCode = "500")
-    })
+    @ApiResponse(
+            responseCode = "200",
+            description = "상품 등록 성공",
+            content = @Content(mediaType = "application/json", schema = @Schema(implementation = ProductCreateResponseDTO.class))
+    )
     @PostMapping
-    private ResponseEntity<?> createProduct(
+    public ResponseEntity<?> createProduct(
             @Valid @RequestBody ProductCreateAndUpdateRequestDTO requestDTO,
             @Parameter(hidden = true) @LoginUser User user
     ) {
-        // 로그인하지 않았다면 상품 등록 불가
-        if (user == null) {
-            log.error("ERROR 403: ");
-            return ResponseEntity.status(403).body(ResponseMessage.PRODUCT_UNAUTHORIZATION.getText());
-        }
-
-        try {
-            ProductCreateResponseDTO responseDTO = productService.createProduct(requestDTO, user);
-            return ResponseEntity.ok(responseDTO);
-        } catch (IllegalArgumentException e) {
-            log.error("ERROR 400: ", e);
-            return ResponseEntity.status(400).body(new MessageDTO(ResponseMessage.PRODUCT_BAD_REQUEST.getText()));
-        } catch (Exception e) {
-            log.error("ERROR 500: ", e);
-            return ResponseEntity.status(500).body(new MessageDTO(ResponseMessage.PRODUCT_SERVER_ERROR.getText()));
-        }
+        ProductCreateResponseDTO responseDTO = productService.createProduct(requestDTO, user);
+        return ResponseEntity.ok(responseDTO);
     }
 
     @Operation(summary = "상품 목록 조회")
-    @ApiResponses({
-            @ApiResponse(
-                    responseCode = "200",
-                    content = @Content(schema = @Schema(implementation = ProductSearchResponseDTO.class))
-            ),
-            @ApiResponse(responseCode = "500")
-    })
+    @ApiResponse(
+            responseCode = "200",
+            content = @Content(mediaType = "application/json", schema = @Schema(implementation = ProductSearchResponseDTO.class))
+    )
     @GetMapping
-    public ResponseEntity<?> getProducts(@ModelAttribute ProductSearchRequestDTO requestDTO) {
-        if(requestDTO.getPage() < 1) requestDTO.setPage(1);
-        if(requestDTO.getSize() < 0) requestDTO.setSize(100);
-
-        try{
-            ProductSearchResponseDTO response = productService.searchProducts(requestDTO);
-            return ResponseEntity.ok(response);
-        } catch(Exception e){
-            log.error("ERROR 500: ", e);
-            return ResponseEntity.status(500).body(new MessageDTO(ResponseMessage.PRODUCT_SERVER_ERROR.getText()));
-        }
+    public ResponseEntity<?> getProducts(@Valid @ModelAttribute ProductSearchRequestDTO requestDTO) {
+        ProductSearchResponseDTO response = productService.searchProducts(requestDTO);
+        return ResponseEntity.ok(response);
     }
 
     @Operation(summary = "상품 상세 조회")
-    @ApiResponses({
-            @ApiResponse(
-                    responseCode = "200",
-                    content = @Content(schema = @Schema(implementation = ProductDetailResponseDTO.class))),
-            @ApiResponse(responseCode = "404"),
-            @ApiResponse(responseCode = "500")
-    })
+    @ApiResponse(
+            responseCode = "200",
+            content = @Content(mediaType = "application/json", schema = @Schema(implementation = ProductDetailResponseDTO.class))
+    )
     @GetMapping("/{productId}")
     public ResponseEntity<?> getProductById(@PathVariable Long productId){
-        try{
-            ProductDetailResponseDTO productDetail = productService.getProductDetail(productId);
-            return ResponseEntity.ok(productDetail);
-        } catch (EntityNotFoundException e){
-            log.error("ERROR 404: ", e);
-            return ResponseEntity.status(404).body(new MessageDTO(ResponseMessage.PRODUCT_NOT_FOUND.getText()));
-        } catch(Exception e){
-            log.error("ERROR 500: ", e);
-            return ResponseEntity.status(500).body(new MessageDTO(ResponseMessage.PRODUCT_SERVER_ERROR.getText()));
-        }
+        ProductDetailResponseDTO productDetail = productService.getProductDetail(productId);
+        return ResponseEntity.ok(productDetail);
     }
 
     @Operation(summary = "상품 정보 갱신")
-    @ApiResponses({
-            @ApiResponse(
-                    responseCode = "200",
-                    content = @Content(schema = @Schema(implementation = ProductCreateResponseDTO.class))
-            ),
-            @ApiResponse(responseCode = "403"),
-            @ApiResponse(responseCode = "404"),
-            @ApiResponse(responseCode = "500")
-    })
+    @ApiResponse(responseCode = "200")
     @PutMapping("/{productId}")
-    public ResponseEntity<MessageDTO> updateProduct(
+    public ResponseEntity<?> updateProduct(
             @PathVariable Long productId,
-            @RequestBody ProductCreateAndUpdateRequestDTO requestDTO
+            @RequestBody ProductCreateAndUpdateRequestDTO requestDTO,
+            @Parameter(hidden = true) @LoginUser User user
     ) {
-        try {
-            productService.updateProduct(productId, requestDTO);
-            return ResponseEntity.ok(new MessageDTO(ResponseMessage.PRODUCT_UPDATE_SUCCESS.getText()));
-        } catch (IllegalArgumentException e) {
-            log.error("ERROR 400: ", e);
-            return ResponseEntity.status(400).body(new MessageDTO(e.getMessage()));
-        } catch (Exception e) {
-            log.error("ERROR 500: ", e);
-            return ResponseEntity.status(500).body(new MessageDTO(ResponseMessage.PRODUCT_SERVER_ERROR.getText()));
-        }
+        productService.updateProduct(productId, requestDTO, user);
+        return ResponseEntity.ok().build();
     }
 
     @Operation(summary = "상품 삭제")
-    @ApiResponses({
-            @ApiResponse(responseCode = "200"),
-            @ApiResponse(responseCode = "403"),
-            @ApiResponse(responseCode = "404"),
-            @ApiResponse(responseCode = "500")
-    })
+    @ApiResponse(responseCode = "200")
     @DeleteMapping("/{productId}")
-    public ResponseEntity<MessageDTO> deleteProductById(
+    public ResponseEntity<?> deleteProductById(
             @PathVariable Long productId,
             @Parameter(hidden = true) @LoginUser User user
     ){
-        try{
-            productService.deleteProductById(productId, user);
-            return ResponseEntity.ok(new MessageDTO(ResponseMessage.PRODUCT_DELETE_SUCCESS.getText()));
-        } catch (UnauthorizedProductAccessException e){
-            log.error("ERROR 403: ", e);
-            return ResponseEntity.status(403).body(new MessageDTO(ResponseMessage.PRODUCT_UNAUTHORIZATION.getText()));
-        } catch (EntityNotFoundException e){
-            log.error("ERROR 404: ", e);
-            return ResponseEntity.status(404).body(new MessageDTO(ResponseMessage.PRODUCT_NOT_FOUND.getText()));
-        } catch (Exception e){
-            log.error("ERROR 500: ", e);
-            return ResponseEntity.status(500).body(new MessageDTO(ResponseMessage.PRODUCT_SERVER_ERROR.getText()));
-        }
+        productService.deleteProductById(productId, user);
+        return ResponseEntity.ok().build();
     }
 }

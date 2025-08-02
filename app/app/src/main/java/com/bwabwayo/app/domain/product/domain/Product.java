@@ -20,7 +20,6 @@ import java.util.List;
 @AllArgsConstructor
 @Builder
 @ToString
-// 상품 및 판매글
 public class Product {
 
     @Id
@@ -47,6 +46,7 @@ public class Product {
     @Column(length = 1024, nullable = false)
     private String thumbnail; // 썸네일 key
 
+    @Setter(AccessLevel.NONE)
     @Builder.Default
     @OneToMany(mappedBy = "product", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<ProductImage> productImages = new ArrayList<>(); // 상품 이미지

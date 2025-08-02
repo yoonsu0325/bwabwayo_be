@@ -1,4 +1,4 @@
-package com.bwabwayo.app.global.s3.dto.response;
+package com.bwabwayo.app.domain.product.dto.response;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -12,8 +12,12 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class UploadResponseDTO {
-    private int size; // 업로드한 파일의 수
+public class CategoryResponseDTO {
+    private Long id;
+    private String name;
+
+    private Integer size;
     @Builder.Default
-    private List<UploadFileDTO> result = new ArrayList<>(); // 업로드된 파일의 정보
+    private List<CategoryDTO> subCategories = new ArrayList<>();
 }
+

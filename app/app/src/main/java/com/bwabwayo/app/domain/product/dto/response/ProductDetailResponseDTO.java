@@ -14,8 +14,6 @@ import java.util.List;
 @AllArgsConstructor
 @Builder
 public class ProductDetailResponseDTO {
-    private String message;
-
     private String title;
     private String description;
     private Integer price;

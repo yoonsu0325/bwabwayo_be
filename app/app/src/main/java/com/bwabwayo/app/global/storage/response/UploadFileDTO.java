@@ -1,4 +1,4 @@
-package com.bwabwayo.app.global.s3.dto.response;
+package com.bwabwayo.app.global.storage.response;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
