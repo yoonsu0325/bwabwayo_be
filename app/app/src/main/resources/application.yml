@@ -85,3 +85,8 @@ qdrant:
 logging:
   level:
     com.bwabwayo.app: DEBUG
+
+storage:
+  path:
+    temp: temp
+    productImage: products

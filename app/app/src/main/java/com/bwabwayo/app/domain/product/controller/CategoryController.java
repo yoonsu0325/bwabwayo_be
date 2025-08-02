@@ -1,19 +1,22 @@
 package com.bwabwayo.app.domain.product.controller;
 
-import com.bwabwayo.app.domain.product.dto.response.CategoryListResponseDTO;
-import com.bwabwayo.app.domain.product.dto.response.CategoryTreeDTO;
+import com.bwabwayo.app.domain.product.domain.Category;
+import com.bwabwayo.app.domain.product.dto.response.CategoryAllResponseDTO;
+import com.bwabwayo.app.domain.product.dto.response.CategoryDTO;
+import com.bwabwayo.app.domain.product.dto.response.CategoryResponseDTO;
 import com.bwabwayo.app.domain.product.service.CategoryService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
-import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.ArrayList;
 import java.util.List;
+
 
 @Slf4j
 @RestController
@@ -24,23 +27,44 @@ public class CategoryController {
     private final CategoryService categoryService;
 
     @Operation(summary = "카테고리 목록 조회")
-    @ApiResponses({
-            @ApiResponse(responseCode = "200",
-                    description = "카테고리 조회 성공",
-                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = CategoryListResponseDTO.class))
-            ),
-            @ApiResponse(responseCode = "500", description = "서버 오류 발생")
-    })
+    @ApiResponse(responseCode = "200",
+            description = "카테고리 목록 조회 성공",
+            content = @Content(mediaType = "application/json", schema = @Schema(implementation = CategoryAllResponseDTO.class))
+    )
     @GetMapping
     public ResponseEntity<?> getTopCategories() {
         // 최상위 카테고리 조회
-        List<CategoryTreeDTO> topCategories = categoryService.getTopCategories();
+        CategoryAllResponseDTO response = categoryService.getTopCategories();
 
         // Response 생성
-        CategoryListResponseDTO response = CategoryListResponseDTO.builder()
-                .message("카테고리 조회에 성공했습니다.")
-                .size(topCategories.size())
-                .categories(topCategories)
+        return ResponseEntity.ok(response);
+    }
+
+    @Operation(summary = "카테고리 조회")
+    @ApiResponse(responseCode = "200",
+            description = "카테고리 조회 성공",
+            content = @Content(mediaType = "application/json", schema = @Schema(implementation = CategoryResponseDTO.class))
+    )
+    @GetMapping("/{categoryId}")
+    public ResponseEntity<?> getTopCategories(@PathVariable Long categoryId) {
+        Category category = categoryService.getCategoryById(categoryId);
+        
+        // 카테고리가 존재하지 않음
+        if(category == null){
+            log.warn("조회하려는 카테고리가 존재하지 않음: categoryId={}", categoryId);
+            return ResponseEntity.notFound().build();
+        }
+        
+        // Response 생성
+        List<CategoryDTO> subCategories = new ArrayList<>();
+        category.getChildren().forEach(c-> subCategories.add(new CategoryDTO(c.getId(), c.getName())));
+
+        CategoryResponseDTO response = CategoryResponseDTO
+                .builder()
+                .id(category.getId())
+                .name(category.getName())
+                .subCategories(subCategories)
+                .size(subCategories.size())
                 .build();
 
         return ResponseEntity.ok(response);

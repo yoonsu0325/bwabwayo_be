@@ -16,12 +16,17 @@ import java.util.List;
 @AllArgsConstructor
 @Builder
 public class ProductSearchResponseDTO {
-    private String message;
+    private Integer size;
     private List<ProductSearchResultDTO> result; // 조회된 상품 목록
 
-    private Integer start, last; // 시작, 끝 페이지 번호
-    private Boolean prev, next; // 이전, 다음 페이지 존재 여부
-    private Integer current; // 현재 페이지 번호
+    private Integer start = 1; // 시작 페이지 번혼
+    private Integer last; // 끝 페이지 번호
+
+    private Boolean prev; // 이전 존재 여부
+    private Boolean next; // 다음 페이지 존재 여부
+
+    private Integer current = 1; // 현재 페이지 번호
+
     private Integer totalPages; // 총 페이지 수
     private Long totalItems; // 총 항목 수
 }
