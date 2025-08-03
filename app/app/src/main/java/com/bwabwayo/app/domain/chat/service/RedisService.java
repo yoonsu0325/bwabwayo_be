@@ -49,7 +49,7 @@ public class RedisService {
 
 
 
-    public void saveMessageToRedis(MessageDTO message) {
+    public ChatMessageRedisEntity saveMessageToRedis(MessageDTO message) {
         String redisKey = "chat:room:" + message.getRoomId();
         ChatMessageRedisEntity entity = ChatMessageRedisEntity.of(message);
         redisTemplate.opsForList().leftPush(redisKey, entity);
@@ -67,17 +67,17 @@ public class RedisService {
                 redisTemplate.delete(redisKey); // 캐시 초기화
             }
         }
+        return entity;
     }
 
     public void markAsRead(ChatMessageRedisEntity message) {
         String key = "chat:room:" + message.getRoomId();
-        log.info(String.valueOf(message.getContent()));
+
         List<ChatMessageRedisEntity> list = redisTemplate.opsForList().range(key, 0, -1);
         if (list == null || list.isEmpty()) return;
 
         for (int i = 0; i < list.size(); i++) {
             ChatMessageRedisEntity m = list.get(i);
-            log.info(m.getCreatedAt() +" "+message.getCreatedAt());
             if (Objects.equals(m.getCreatedAt(), message.getCreatedAt())
                     && Objects.equals(m.getSenderId(), message.getSenderId())
                     && Objects.equals(m.getContent(), message.getContent())) {
@@ -87,14 +87,14 @@ public class RedisService {
                 redisTemplate.opsForList().set(key, i, m);
                 break;
             }
-            log.info(String.valueOf(message.getIsRead()));
         }
     }
 
 
     public Optional<ChatMessageRedisEntity> findLastMessage(Long roomId) {
         String key = "chat:room:" + roomId;
-        List<ChatMessageRedisEntity> lastMsgList = redisTemplate.opsForList().range(key, -1, -1);
+        List<ChatMessageRedisEntity> lastMsgList = redisTemplate.opsForList().range(key, 0 , 0);
+        log.info("findLast" + String.valueOf(lastMsgList.get(0).getContent()));
         if (lastMsgList != null && !lastMsgList.isEmpty()) {
             return Optional.of(lastMsgList.get(0));
         }

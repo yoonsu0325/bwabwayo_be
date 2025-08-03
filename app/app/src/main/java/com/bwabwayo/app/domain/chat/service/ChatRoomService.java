@@ -128,8 +128,8 @@ public class ChatRoomService {
                 .filter(r -> r.getLastChatmessageDto() != null)
                 .sorted((o1, o2) -> {
                     try {
-                        LocalDateTime t1 = LocalDateTime.parse(o1.getLastChatmessageDto().getCreatedAt(), formatter);
-                        LocalDateTime t2 = LocalDateTime.parse(o2.getLastChatmessageDto().getCreatedAt(), formatter);
+                        LocalDateTime t1 = parseSafe(o1.getLastChatmessageDto().getCreatedAt());
+                        LocalDateTime t2 = parseSafe(o2.getLastChatmessageDto().getCreatedAt());
                         return t2.compareTo(t1); // 최신순
                     } catch (DateTimeParseException e) {
                         log.warn("⚠️ 시간 파싱 실패: {}", e.getMessage());
@@ -138,6 +138,20 @@ public class ChatRoomService {
                 })
                 .collect(Collectors.toList());
     }
+
+    private LocalDateTime parseSafe(String createdAt) {
+        try {
+            if (createdAt.endsWith("Z")) {
+                return OffsetDateTime.parse(createdAt).toLocalDateTime();
+            } else {
+                return LocalDateTime.parse(createdAt, DateTimeFormatter.ISO_LOCAL_DATE_TIME);
+            }
+        } catch (Exception e) {
+            log.warn("⚠️ 시간 파싱 실패: {}", createdAt);
+            return LocalDateTime.MIN;
+        }
+    }
+
 
     /**
      * Redis에서 채팅 메시지용 room 초기화 (선택 사항)
@@ -164,4 +178,9 @@ public class ChatRoomService {
         return ChatRoomListResponse.fromInitial(chatRoom, userId, seller, buyer, product);
     }
 
+
+    public Optional<ChatRoom> find(CreateChatRoomRequest request, User user) {
+        return chatRoomRepository.findByProductIdAndSellerIdAndBuyerId(
+                request.getProductId(), request.getSellerId(), user.getId());
+    }
 }

@@ -1,5 +1,6 @@
 package com.bwabwayo.app.domain.chat.repository;
 
+import com.bwabwayo.app.domain.chat.dto.MessageSubDTO;
 import com.bwabwayo.app.domain.chat.dto.response.ChatRoomListResponse;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.core.type.TypeReference;

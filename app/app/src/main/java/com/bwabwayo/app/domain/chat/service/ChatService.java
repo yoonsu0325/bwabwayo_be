@@ -1,5 +1,6 @@
 package com.bwabwayo.app.domain.chat.service;
 
+import com.bwabwayo.app.domain.chat.domain.ChatMessageRedisEntity;
 import com.bwabwayo.app.domain.chat.dto.MessageDTO;
 import com.bwabwayo.app.domain.chat.dto.MessageSubDTO;
 import com.bwabwayo.app.domain.chat.dto.response.ChatRoomListResponse;
@@ -23,7 +24,8 @@ public class ChatService {
     public void sendChatMessage(MessageDTO chatMessage) {
         log.info("📢 메시지 브로드캐스트: {}", chatMessage);
 
-        redisService.saveMessageToRedis(chatMessage);
+        ChatMessageRedisEntity redisEntity = redisService.saveMessageToRedis(chatMessage);
+        redisPublisher.publish(redisEntity);
 
         String userId = chatMessage.getSenderId();
         String partnerId;
