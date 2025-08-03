@@ -49,6 +49,7 @@ public class JWTFilter extends OncePerRequestFilter {
                 uri.startsWith("/oauth2/") ||
                 uri.startsWith("/api/") ||
                 uri.startsWith("/be/") ||
+                uri.startsWith("/v3/") ||
                 uri.startsWith("/api/login/oauth2/") ||
                 uri.startsWith("/css/") ||
                 uri.startsWith("/js/") ||
