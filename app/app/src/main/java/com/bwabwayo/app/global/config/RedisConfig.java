@@ -92,13 +92,18 @@ public class RedisConfig {
     //RefreshTokenTemplate(DB1 사용)
     @Bean
     @Primary
-    public RedisTemplate<String, String> redisRefreshToeknTemplate() {
+    public RedisTemplate<String, String> redisRefreshTokenTemplate() {
         //Redis의 key-value 저장을 처리하는 핵심 도구 (String key, Object value)
         RedisTemplate<String, String> template = new RedisTemplate<>();
         //RedisConnectionFactory : Redis 서버와의 연결을 관리하는 객체
         //RedisTemplate 객체 생성 후 Redis 연결 팩토리 주입 (redis 연결할 때 사용)
-        LettuceConnectionFactory factory = new LettuceConnectionFactory(redisHost, redisPort);
-        factory.setDatabase(1);
+        RedisStandaloneConfiguration config = new RedisStandaloneConfiguration();
+        config.setHostName(redisHost);
+        config.setPort(redisPort);
+        config.setPassword(redisPassword); // ✅ 최신 방식
+        config.setDatabase(1);
+
+        LettuceConnectionFactory factory = new LettuceConnectionFactory(config);
         factory.afterPropertiesSet(); // 중요
         template.setConnectionFactory(factory);
 
