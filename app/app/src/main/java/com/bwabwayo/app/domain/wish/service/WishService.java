@@ -3,7 +3,7 @@ package com.bwabwayo.app.domain.wish.service;
 import com.bwabwayo.app.domain.product.domain.Category;
 import com.bwabwayo.app.domain.product.domain.Product;
 import com.bwabwayo.app.domain.product.enums.SaleStatus;
-import com.bwabwayo.app.domain.product.service.ProductService;
+import com.bwabwayo.app.domain.product.repository.ProductRepository;
 import com.bwabwayo.app.domain.user.domain.User;
 import com.bwabwayo.app.domain.wish.domain.Wish;
 import com.bwabwayo.app.domain.wish.dto.response.WishDTO;
@@ -26,7 +26,7 @@ import java.util.List;
 public class WishService {
 
     private final WishRepository wishRepository;
-    private final ProductService productService;
+    private final ProductRepository productRepository;
 
     @Transactional(readOnly = true)
     public WishlistResponseDTO getAllMyWishes(User user, int pageNo, int pageSize) {
@@ -105,7 +105,7 @@ public class WishService {
         wishRepository.save(wish);
         
         // 찜한 사용자의 수 갱신
-        productService.increaseWishCount(product.getId());
+        productRepository.increaseWishCount(product.getId());
     }
 
     /**
@@ -120,7 +120,7 @@ public class WishService {
         wishRepository.deleteByProductIdAndUserId(product.getId(), user.getId());
 
         // 찜한 사용자의 수 갱신
-        productService.decreaseWishCount(product.getId());
+        productRepository.decreaseWishCount(product.getId());
     }
 
     @Transactional(readOnly = true)

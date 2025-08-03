@@ -2,7 +2,11 @@ package com.bwabwayo.app.domain.product.repository;
 
 import com.bwabwayo.app.domain.product.domain.Product;
 import com.bwabwayo.app.domain.product.domain.QProduct;
+import com.bwabwayo.app.domain.product.dto.response.ProductWithWishDTO;
+import com.bwabwayo.app.domain.wish.domain.QWish;
 import com.querydsl.core.BooleanBuilder;
+import com.querydsl.core.types.Projections;
+import com.querydsl.core.types.dsl.Expressions;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
@@ -21,8 +25,9 @@ public class ProductRepositoryImpl implements ProductRepositoryCustom {
     private final JPAQueryFactory queryFactory;
 
     @Override
-    public Page<Product> searchByCondition(String keyword, List<Long> categoryIds, @NonNull Pageable pageable){
+    public Page<ProductWithWishDTO> searchByCondition(String keyword, List<Long> categoryIds, @NonNull Pageable pageable, String userId){
         QProduct product = QProduct.product;
+        QWish wish = QWish.wish;
 
         BooleanBuilder condition = new BooleanBuilder();
 
@@ -36,13 +41,28 @@ public class ProductRepositoryImpl implements ProductRepositoryCustom {
             condition.and(product.category.id.in(categoryIds));
         }
 
-        List<Product> content = queryFactory
-                .selectFrom(product)
-                .where(condition)
-                .offset(pageable.getOffset())
-                .limit(pageable.getPageSize())
-                .orderBy(QuerydslUtil.convertSort(pageable.getSort(), product))
-                .fetch();
+        List<ProductWithWishDTO> content;
+        if(userId != null) {
+            content = queryFactory
+                    .select(Projections.constructor(ProductWithWishDTO.class, product, wish.id.isNotNull()))
+                    .from(product)
+                    .leftJoin(wish)
+                    .on(wish.product.id.eq(product.id).and(wish.user.id.eq(userId)))
+                    .where(condition)
+                    .offset(pageable.getOffset())
+                    .limit(pageable.getPageSize())
+                    .orderBy(QuerydslUtil.convertSort(pageable.getSort(), product))
+                    .fetch();
+        } else {
+            content = queryFactory
+                    .select(Projections.constructor(ProductWithWishDTO.class, product, Expressions.constant(false)))
+                    .from(product)
+                    .where(condition)
+                    .offset(pageable.getOffset())
+                    .limit(pageable.getPageSize())
+                    .orderBy(QuerydslUtil.convertSort(pageable.getSort(), product))
+                    .fetch();
+        }
 
         @SuppressWarnings("DataFlowIssue")
         long total = queryFactory
@@ -52,10 +72,5 @@ public class ProductRepositoryImpl implements ProductRepositoryCustom {
                 .fetchOne();
 
         return new PageImpl<>(content, pageable, total);
-    }
-
-    @Override
-    public Page<Product> searchByCondition(String keyword, long categoryId, @NonNull Pageable pageable){
-        return searchByCondition(keyword, List.of(categoryId), pageable);
     }
 }

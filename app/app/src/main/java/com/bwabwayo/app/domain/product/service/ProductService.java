@@ -9,10 +9,10 @@ import com.bwabwayo.app.domain.product.dto.response.*;
 import com.bwabwayo.app.domain.product.exception.BadRequestException;
 import com.bwabwayo.app.domain.product.exception.ForbiddenException;
 import com.bwabwayo.app.domain.product.exception.NotFoundException;
-import com.bwabwayo.app.domain.product.repository.CategoryRepository;
 import com.bwabwayo.app.domain.product.repository.ProductImageRepository;
 import com.bwabwayo.app.domain.product.repository.ProductRepository;
 import com.bwabwayo.app.domain.user.domain.User;
+import com.bwabwayo.app.domain.wish.service.WishService;
 import com.bwabwayo.app.global.storage.service.StorageService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -36,7 +36,7 @@ public class ProductService {
     private final ProductImageRepository productImageRepository;
     private final CategoryService categoryService;
     private final StorageService storageService;
-    private final CategoryRepository categoryRepository;
+    private final WishService wishService;
 
     @Value("${storage.path.temp}")
     private String tempPath;
@@ -98,7 +98,7 @@ public class ProductService {
      * 상품 검색
      */
     @Transactional(readOnly = true)
-    public ProductSearchResponseDTO searchProducts(ProductSearchRequestDTO requestDTO) {
+    public ProductSearchResponseDTO searchProducts(ProductSearchRequestDTO requestDTO, User user) {
         String keyword = requestDTO.getKeyword();
         Long categoryId = requestDTO.getCategoryId();
         // 페이지는 1부터 시작
@@ -136,10 +136,12 @@ public class ProductService {
         }
         
         // DB 조회
-        Page<Product> pageData = productRepository.searchByCondition(keyword, categoryIds, pageable);
-        List<Product> content = pageData.getContent();
+        Page<ProductWithWishDTO> pageData = productRepository.searchByCondition(keyword, categoryIds, pageable, user.getId());
+        List<ProductWithWishDTO> content = pageData.getContent();
 
-        List<ProductSearchResultDTO> result = content.stream().map(product -> {
+        List<ProductSearchResultDTO> result = content.stream().map(dto -> {
+            Product product = dto.getProduct();
+
             ProductSimpleDTO productDTO = ProductSimpleDTO.builder()
                     .id(product.getId())
                     .categoryId(product.getCategory().getId())
@@ -149,19 +151,19 @@ public class ProductService {
                     .viewCount(product.getViewCount())
                     .wishCount(product.getWishCount())
                     .chatCount(product.getChatCount())
-                    .isLike(false) // 위시 리스트 미구현
+                    .isLike(dto.getIsLike())
                     .canVideoCall(product.isCanVideoCall())
                     .saleStatusCode(product.getSaleStatus().getLevel())
                     .saleStatus(product.getSaleStatus().getDescription())
                     .createdAt(product.getCreatedAt())
                     .build();
 
-            User user = product.getSeller();
-            UserSimpleDTO userDTO = new UserSimpleDTO(user.getId(), user.getNickname());
+            User seller = product.getSeller();
+            UserSimpleDTO sellerDTO = new UserSimpleDTO(seller.getId(), seller.getNickname());
 
             return ProductSearchResultDTO.builder()
                     .product(productDTO)
-                    .seller(userDTO)
+                    .seller(sellerDTO)
                     .build();
         }).toList();
 
@@ -187,7 +189,7 @@ public class ProductService {
      * 상품 상세 정보 조회
      */
     @Transactional(readOnly = true)
-    public ProductDetailResponseDTO getProductDetail(Long id) {
+    public ProductDetailResponseDTO getProductDetail(Long id, User user) {
         Product product = getProductById(id);
         if(product == null){
             throw new NotFoundException("상품이 존재하지 않습니다.");
@@ -222,7 +224,7 @@ public class ProductService {
                 .canDirect(product.isCanDirect())
                 .canDelivery(product.isCanDelivery())
                 .canVideoCall(product.isCanVideoCall())
-                .isWish(false) // TODO: 위시리스트와 연결 필요
+                .isWish(user != null && wishService.existsWish(product, user))
                 .viewCount(product.getViewCount())
                 .wishCount(product.getWishCount())
                 .chatCount(product.getChatCount())
