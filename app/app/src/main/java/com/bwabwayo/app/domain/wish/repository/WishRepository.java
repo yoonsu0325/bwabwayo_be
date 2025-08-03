@@ -9,7 +9,7 @@ import org.springframework.stereotype.Repository;
 @Repository
 public interface WishRepository extends JpaRepository<Wish, Long> {
 
-    void deleteByProductIdAndUserId(Long productId, String userId);
+    long deleteByProductIdAndUserId(Long productId, String userId);
 
     boolean existsByProductIdAndUserId(Long productId, String userId);
 

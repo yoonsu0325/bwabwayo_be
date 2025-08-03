@@ -7,16 +7,16 @@ import com.bwabwayo.app.domain.user.annotation.LoginUser;
 import com.bwabwayo.app.domain.user.domain.User;
 import com.bwabwayo.app.domain.wish.dto.request.WishlistRequestDTO;
 import com.bwabwayo.app.domain.wish.dto.response.ExistsResponseDTO;
-import com.bwabwayo.app.domain.wish.dto.response.WishlistResponseDTO;
+import com.bwabwayo.app.domain.wish.dto.response.WishDTO;
+import com.bwabwayo.app.domain.wish.dto.response.WishPageResponseDTO;
 import com.bwabwayo.app.domain.wish.service.WishService;
+import com.bwabwayo.app.global.page.PageResponseDTO;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import jakarta.validation.Valid;
-import jakarta.validation.constraints.Min;
-import lombok.AllArgsConstructor;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
@@ -34,19 +34,19 @@ public class WishController {
     
     @Operation(summary = "내 위시리스트 조회")
     @ApiResponse(
-            responseCode = "200",
-            description = "위시리스트 조회 성공",
-            content = @Content(mediaType = "application/json", schema = @Schema(implementation = WishlistResponseDTO.class))
+            responseCode = "200"
+            , description = "위시리스트 조회 성공"
+            , content = @Content(mediaType = "application/json", schema = @Schema(implementation = WishPageResponseDTO.class))
     )
     @GetMapping
     public ResponseEntity<?> getAllMyWishes(
             @Valid @ModelAttribute WishlistRequestDTO requestDTO,
-            @Parameter(hidden = true) @LoginUser User user
+            @Parameter(hidden = true) @LoginUser User loginUser
     ) {
         int pageNo = requestDTO.getPageNo();
         int pageSize = requestDTO.getPageSize();
 
-        WishlistResponseDTO responseDTO = wishService.getAllMyWishes(user, pageNo, pageSize);
+        PageResponseDTO<WishDTO> responseDTO = wishService.getAllMyWishes(loginUser, pageNo, pageSize);
 
         return ResponseEntity.ok(responseDTO);
     }
@@ -56,15 +56,16 @@ public class WishController {
     @PostMapping("/{productId}")
     public ResponseEntity<Void> addWishProduct(
             @PathVariable Long productId,
-            @Parameter(hidden = true) @LoginUser User user
+            @Parameter(hidden = true) @LoginUser User loginUser
     ) {
         Product product = productService.getProductById(productId);
+
         if(product == null){
             log.warn("찜하려는 상품이 존재하지 않음: productId={}",productId);
             throw new NotFoundException("찜하려는 상품이 존재하지 않음: productId="+productId);
         }
 
-        wishService.addWish(product, user);
+        wishService.addWish(product, loginUser);
 
         return ResponseEntity.ok().build();
     }
@@ -83,7 +84,7 @@ public class WishController {
             throw new NotFoundException("찜 해제하려는 상품이 존재하지 않음: productId="+productId);
         }
 
-        wishService.removeWish(product, user);
+        wishService.removeWish(product.getId(), user.getId());
 
         return ResponseEntity.ok().build();
     }
@@ -97,7 +98,7 @@ public class WishController {
     @GetMapping("/{productId}")
     public ResponseEntity<?> isWishProduct(
             @PathVariable Long productId,
-            @Parameter(hidden = true) @LoginUser User user
+            @Parameter(hidden = true) @LoginUser User loginUser
     ) {
         Product product = productService.getProductById(productId);
 
@@ -106,7 +107,7 @@ public class WishController {
             throw new NotFoundException("찜 여부를 확인하려는 상품이 존재하지 않음: productId="+productId);
         }
 
-        boolean exists = wishService.existsWish(product, user);
+        boolean exists = wishService.existsWish(product.getId(), loginUser.getId());
 
         ExistsResponseDTO responseDTO = ExistsResponseDTO.builder().exists(exists).build();
 

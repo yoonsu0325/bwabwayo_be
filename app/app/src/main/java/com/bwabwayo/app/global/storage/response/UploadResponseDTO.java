@@ -15,5 +15,5 @@ import java.util.List;
 public class UploadResponseDTO {
     private int size; // 업로드한 파일의 수
     @Builder.Default
-    private List<UploadFileDTO> result = new ArrayList<>(); // 업로드된 파일의 정보
+    private List<UploadFileDTO> results = new ArrayList<>(); // 업로드된 파일의 정보
 }

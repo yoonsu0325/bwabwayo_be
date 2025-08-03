@@ -224,7 +224,7 @@ public class ProductService {
                 .canDirect(product.isCanDirect())
                 .canDelivery(product.isCanDelivery())
                 .canVideoCall(product.isCanVideoCall())
-                .isWish(user != null && wishService.existsWish(product, user))
+                .isWish(user != null && wishService.existsWish(product.getId(), user.getId()))
                 .viewCount(product.getViewCount())
                 .wishCount(product.getWishCount())
                 .chatCount(product.getChatCount())
