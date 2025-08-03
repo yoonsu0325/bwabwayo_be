@@ -5,6 +5,7 @@ import com.bwabwayo.app.domain.product.exception.NotFoundException;
 import com.bwabwayo.app.domain.product.service.ProductService;
 import com.bwabwayo.app.domain.user.annotation.LoginUser;
 import com.bwabwayo.app.domain.user.domain.User;
+import com.bwabwayo.app.domain.wish.dto.response.ExistsResponseDTO;
 import com.bwabwayo.app.domain.wish.service.WishService;
 import io.swagger.v3.oas.annotations.Parameter;
 import lombok.RequiredArgsConstructor;
@@ -63,6 +64,16 @@ public class WishController {
     public ResponseEntity<?> isWishProduct(
             @PathVariable Long productId,
             @Parameter(hidden = true) @LoginUser User user) {
-        throw new UnsupportedOperationException("Not supported yet.");
+        Product product = productService.getProductById(productId);
+        if(product == null){
+            log.warn("찜 여부를 확인하려는 상품이 존재하지 않음: productId={}",productId);
+            throw new NotFoundException("찜 여부를 확인하려는 상품이 존재하지 않음: productId="+productId);
+        }
+
+        boolean exists = wishService.existsWish(product, user);
+
+        ExistsResponseDTO responseDTO = ExistsResponseDTO.builder().exists(exists).build();
+
+        return ResponseEntity.ok(responseDTO);
     }
 }
