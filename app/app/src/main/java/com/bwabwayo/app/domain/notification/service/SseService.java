@@ -1,6 +1,5 @@
 package com.bwabwayo.app.domain.notification.service;
 
-import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -31,18 +30,18 @@ public class SseService {
         if(old != null) old.complete();
 
         // 연결종료, 타임아웃, 에러발생 시 emitter 제거 (메모리 누수 방지)
-        log.debug("SSE 구독 시작: userId={}", userId);
+        log.info("SSE 구독 시작: userId={}", userId);
         emitter.onCompletion(() -> {
             emitters.remove(userId);
-            log.debug("SSE 연결 종료: userId={}", userId);
+            log.info("SSE 연결 종료: userId={}", userId);
         });
         emitter.onTimeout(() -> {
             emitters.remove(userId);
-            log.debug("SSE 타임 아웃: userId={}", userId);
+            log.info("SSE 타임 아웃: userId={}", userId);
         });
         emitter.onError((e) -> {
             emitters.remove(userId);
-            log.debug("SSE 에러 발생: userId={}", userId);
+            log.info("SSE 에러 발생: userId={}", userId);
         });
 
         try {
