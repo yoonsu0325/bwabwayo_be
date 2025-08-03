@@ -1,11 +1,10 @@
 package com.bwabwayo.app.domain.support.service;
 
-import com.bwabwayo.app.domain.support.domain.Inquery;
 import com.bwabwayo.app.domain.support.domain.Report;
-import com.bwabwayo.app.domain.support.dto.response.InqueryResponse;
+import com.bwabwayo.app.domain.support.dto.request.ReportRequest;
 import com.bwabwayo.app.domain.support.dto.response.ReportResponse;
-import com.bwabwayo.app.domain.support.repository.InqueryRepository;
 import com.bwabwayo.app.domain.support.repository.ReportRepository;
+import com.bwabwayo.app.domain.user.domain.User;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -24,15 +23,24 @@ public class ReportService {
 
         Page<Report> reports = reportRepository.findAll(pageable);
 
-        // Inquery response 객체로 변환
         return reports.map(Report ->
                 ReportResponse.builder()
                         .id(Report.getId())
                         .title(Report.getTitle())
+                        .imageUrl(Report.getImageUrl())
                         .targetName(Report.getTarget().getNickname())
                         .description(Report.getDescription())
                         .reply(Report.getReply())
                         .createdAt(Report.getCreatedAt().toString())
                         .build());
+    }
+
+    // 신고 게시물 작성
+    public String save(ReportRequest reportRequest, User user) {
+        Report report = reportRequest.toEntity(reportRequest);
+        report.setReporter(user);
+        reportRepository.save(report);
+
+        return "게시물이 저장되었습니다.";
     }
 }

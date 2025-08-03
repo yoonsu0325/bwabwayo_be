@@ -15,9 +15,11 @@ import lombok.NoArgsConstructor;
 public class ReportResponse {
     private Long id;
     private String title;
+    private String imageUrl;
     private String targetName;
     private String description;
     private String reply;
     private String createdAt;
+    private String repliedAt;
 
 }

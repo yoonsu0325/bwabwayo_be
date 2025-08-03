@@ -71,6 +71,8 @@ dependencies {
 	testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 	testImplementation 'com.h2database:h2'
 
+	// [openvidu]
+	implementation 'io.openvidu:openvidu-java-client:2.29.0'
 }
 
 tasks.named('test') {

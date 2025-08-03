@@ -49,7 +49,7 @@ spring:
 
 jwt:
   secret: "vmfhaltmskdlstkfkdgodyroqkfwkasdadowdqfgrgsgsrgsgrgsrgsrgsefjhgku="
-  access-exp-minutes: 30
+  access-exp-minutes: 3
   refresh-exp-minutes: 10080 #60*24*7
   header: Authorization
   type: Bearer
@@ -85,6 +85,11 @@ qdrant:
 logging:
   level:
     com.bwabwayo.app: DEBUG
+
+openvidu:
+  url: https://i13e202.p.ssafy.io:8443/
+  secret: whddnjsWkd123
+
 
 storage:
   path:

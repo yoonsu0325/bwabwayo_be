@@ -14,8 +14,10 @@ import lombok.NoArgsConstructor;
 public class InqueryResponse {
     private Long id;
     private String title;
+    private String imageUrl;
     private String name;
     private String description;
     private String reply;
     private String createdAt;
+    private String repliedAt;
 }

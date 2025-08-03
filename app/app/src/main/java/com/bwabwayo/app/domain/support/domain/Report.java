@@ -23,6 +23,9 @@ public class Report{
     @Column(nullable = false)
     public String title;
 
+    @Column(name = "image_url", columnDefinition = "TEXT")
+    private String imageUrl;
+
     @Column(nullable = false)
     public String description;
 
