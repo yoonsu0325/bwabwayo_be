@@ -14,7 +14,6 @@ import com.bwabwayo.app.domain.product.repository.ProductImageRepository;
 import com.bwabwayo.app.domain.product.repository.ProductRepository;
 import com.bwabwayo.app.domain.user.domain.User;
 import com.bwabwayo.app.global.storage.service.StorageService;
-import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -391,5 +390,12 @@ public class ProductService {
             // 삭제 실패한 이미지는 로그로 남김
             log.warn("이미지 삭제 실패: file=" + imageKey, e);
         }
+    }
+
+    public void increaseWishCount(Long productId){
+        productRepository.increaseWishCount(productId);
+    }
+    public void decreaseWishCount(Long productId){
+        productRepository.decreaseWishCount(productId);
     }
 }
