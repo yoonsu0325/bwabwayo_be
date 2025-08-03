@@ -5,9 +5,13 @@ import com.bwabwayo.app.domain.product.exception.NotFoundException;
 import com.bwabwayo.app.domain.product.service.ProductService;
 import com.bwabwayo.app.domain.user.annotation.LoginUser;
 import com.bwabwayo.app.domain.user.domain.User;
+import com.bwabwayo.app.domain.wish.dto.request.WishlistRequestDTO;
 import com.bwabwayo.app.domain.wish.dto.response.ExistsResponseDTO;
+import com.bwabwayo.app.domain.wish.dto.response.WishlistResponseDTO;
 import com.bwabwayo.app.domain.wish.service.WishService;
 import io.swagger.v3.oas.annotations.Parameter;
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.Min;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
@@ -24,8 +28,15 @@ public class WishController {
 
 
     @GetMapping
-    public ResponseEntity<?> getAllMyWishes(@Parameter(hidden = true) @LoginUser User user) {
-        throw new UnsupportedOperationException("Not supported yet.");
+    public ResponseEntity<?> getAllMyWishes(
+            @Valid @ModelAttribute WishlistRequestDTO requestDTO,
+            @Parameter(hidden = true) @LoginUser User user) {
+        int pageNo = requestDTO.getPageNo();
+        int pageSize = requestDTO.getPageSize();
+
+        WishlistResponseDTO responseDTO = wishService.getAllMyWishes(user, pageNo, pageSize);
+
+        return ResponseEntity.ok(responseDTO);
     }
 
     @PostMapping("/{productId}")
