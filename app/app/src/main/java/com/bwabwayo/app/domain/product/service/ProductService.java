@@ -361,9 +361,7 @@ public class ProductService {
     }
 
     public Product getProductById(Long id) {
-        return productRepository
-                .findById(id)
-                .orElseThrow(() -> new EntityNotFoundException("상품을 찾을 수 없습니다. id=" + id));
+        return productRepository.getProductById(id);
     }
 
 
