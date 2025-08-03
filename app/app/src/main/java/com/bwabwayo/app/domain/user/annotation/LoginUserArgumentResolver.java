@@ -36,17 +36,29 @@ public class LoginUserArgumentResolver implements HandlerMethodArgumentResolver 
 
     @Override
     public Object resolveArgument(MethodParameter parameter, ModelAndViewContainer mavContainer, NativeWebRequest webRequest, WebDataBinderFactory binderFactory) throws Exception {
-        //웹 요청 객체에서 HttpServletRequet를 얻어와야 헤더를 읽을 수 있어서 가져오기
+        LoginUser loginUser = parameter.getParameterAnnotation(LoginUser.class);
+
+        // 웹 요청 객체에서 HttpServletRequest를 얻어와야 헤더를 읽을 수 있어서 가져오기
         HttpServletRequest request = (HttpServletRequest) webRequest.getNativeRequest();
-        //헤더에서 AccessToken 추출
+        // 헤더에서 AccessToken 추출
         String accessToken = request.getHeader("Authorization");
 
-        //인증이 안된 사용자 (예외 발생), (사실, jwtFilter와 SecurityFilter로 인증 안된 사용자는 걸러지긴 함, 그래도 이중체크)
-        if(accessToken == null) throw new UnauthorizedException("인증에 실패하였습니다.");
-        //AccessToken에서 userId 가져오기
+        // 인증이 안된 사용자 (예외 발생), (사실, jwtFilter와 SecurityFilter로 인증 안된 사용자는 걸러지긴 함, 그래도 이중체크)
+        if(accessToken == null) {
+            if(loginUser.required()) {
+                throw new UnauthorizedException("인증에 실패하였습니다.");
+            }
+            return null;
+        }
+        // AccessToken에서 userId 가져오기
         String userId = jwtUtils.getSubject(jwtUtils.getTokenFromHeader(accessToken));
-        //userId 존재여부 확인
-        if(userId == null) throw new UnauthorizedException("인증에 실패하였습니다.");
-        return userRepository.findById(String.valueOf(userId));
+        // userId 존재여부 확인
+        if(userId == null) {
+            if(loginUser.required()) {
+                throw new UnauthorizedException("인증에 실패하였습니다.");
+            }
+            return null;
+        }
+        return userRepository.findById(userId);
     }
 }
