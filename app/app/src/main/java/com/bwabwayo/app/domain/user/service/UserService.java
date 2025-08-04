@@ -1,5 +1,6 @@
 package com.bwabwayo.app.domain.user.service;
 
+import com.bwabwayo.app.domain.product.exception.NotFoundException;
 import com.bwabwayo.app.domain.user.domain.*;
 import com.bwabwayo.app.domain.auth.dto.request.UserSignUpRequest;
 import com.bwabwayo.app.domain.user.dto.response.UserEvaluationStat;
@@ -9,6 +10,10 @@ import com.bwabwayo.app.domain.user.repository.ReviewAggRepository;
 import com.bwabwayo.app.domain.user.repository.ReviewEvaluationCountRepository;
 import com.bwabwayo.app.domain.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.dao.OptimisticLockingFailureException;
+import org.springframework.retry.annotation.Backoff;
+import org.springframework.retry.annotation.Recover;
+import org.springframework.retry.annotation.Retryable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -50,6 +55,7 @@ public class UserService {
 
     public UserInfoResponse getUserInfo(User user) {
         // 기본 정보
+        String userId = user.getId();
         String nickname = user.getNickname();
         String profileImage = user.getProfileImage();
         int score = user.getScore();
@@ -67,36 +73,43 @@ public class UserService {
         List<UserEvaluationStat> evaluations = reviewEvaluationCountRepository
                 .findEvaluationStatsByUserId(user.getId());
 
-        return UserInfoResponse.of(nickname, profileImage, score, point, createdAt, bio, avgRating, evaluations);
+        return UserInfoResponse.of(userId, nickname, profileImage, score, point, createdAt, bio, avgRating, evaluations);
     }
 
+    public UserInfoResponse getUserInfo(String userId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new NotFoundException("해당 유저가 없습니다."));
+        return getUserInfo(user); // 재사용
+    }
+
+    @Retryable(
+            value = { OptimisticLockingFailureException.class },
+            maxAttempts = 3,
+            backoff = @Backoff(delay = 100) // 100ms 간격 재시도
+    )
     @Transactional
     public void calcPoint(PointEventType type, int pointValue, User user) {
-        try {
-            int currentPoint = user.getPoint();
+        int currentPoint = user.getPoint();
 
-            // 포인트 부족 예외 체크
-            if (currentPoint + pointValue < 0) {
-                throw new IllegalStateException("포인트가 부족합니다.");
-            }
-
-            // 포인트 이력 저장
-            Point point = Point.builder()
-                    .userId(user.getId())
-                    .type(type)
-                    .point(type.isDynamic() ? pointValue : type.getPoint())
-                    .build();
-            pointRepository.save(point);
-
-            // 포인트 반영
-            user.setPoint(currentPoint + pointValue);
-            userRepository.save(user);
-
-        } catch (IllegalStateException e) {
-            // 여기서 로깅이나 알림 등 예외 처리
-            System.out.println("포인트 처리 실패: " + e.getMessage());
-            // 필요하다면 다시 던져도 됨
-            throw e;
+        if (currentPoint + pointValue < 0) {
+            throw new IllegalStateException("포인트가 부족합니다.");
         }
+
+        Point point = Point.builder()
+                .userId(user.getId())
+                .type(type)
+                .point(type.isDynamic() ? pointValue : type.getPoint())
+                .build();
+        pointRepository.save(point);
+
+        user.setPoint(currentPoint + pointValue);
+        userRepository.save(user); // OptimisticLock 충돌 시 여기서 예외 발생
+    }
+
+    // 재시도 실패한 경우 fallback
+    @Recover
+    public void recover(OptimisticLockingFailureException e, PointEventType type, int pointValue, User user) {
+        System.out.println("재시도 3회 실패: " + e.getMessage());
+        throw new IllegalStateException("포인트 처리에 실패했습니다. 다시 시도해주세요.");
     }
 }

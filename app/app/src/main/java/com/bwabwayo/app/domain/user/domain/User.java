@@ -27,6 +27,9 @@ public class User {
     @Column(nullable = false, length = 255)
     private String id; // 소셜 로그인 공급자 ID (ex. kakao_12345)
 
+    @Version
+    private Long version;
+
     @Column(nullable = false, length = 10)
     @Enumerated(EnumType.STRING)
     private Role role;
