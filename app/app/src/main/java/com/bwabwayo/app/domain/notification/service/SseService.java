@@ -32,8 +32,43 @@ public class SseService {
      * 사용자에게 알림을 보낼 수 있도록 등록
      */
     public SseEmitter subscribe(String userId, String lastEventId) {
+//        try {
+//            // 연결 확인용 event 발송
+//            emitter.send(SseEmitter.event()
+//                    .id(String.valueOf(System.currentTimeMillis()))
+//                    .name("connect")
+//                    .data("connected")
+//                    .reconnectTime(3000));
+//        } catch (IOException e) {
+//            emitter.completeWithError(e);
+//        }
+
+        List<Notification> notifications = null;
+        try {
+            try{
+                if(lastEventId != null){
+                    long millis = Long.parseLong(lastEventId);
+                    LocalDateTime lastTime = Instant.ofEpochMilli(millis)
+                            .atZone(ZoneId.of("Asia/Seoul"))
+                            .toLocalDateTime();
+
+                    notifications = notificationRepository
+                            .findAllByReceiverIdAndIsReadFalseAndCreatedAtAfter(userId, lastTime);
+                }
+            } catch (NumberFormatException e){
+                log.warn("LastEventId의 형식이 올바르지 않습니다: LastEventId={}", lastEventId);
+            } finally {
+                if(notifications == null){
+                    notifications = notificationRepository
+                            .findAllByReceiverIdAndIsReadFalseOrderByCreatedAtDesc(userId);
+                }
+            }
+        } catch (Exception e) {
+            log.warn("알림 복원 실패: {}", e.getMessage());
+        }
+
         SseEmitter emitter = new SseEmitter(timeout);
-        
+
         // 이전 연결 제거
         SseEmitter old = emitters.put(userId, emitter);
         if(old != null) old.complete();
@@ -53,50 +88,20 @@ public class SseService {
             log.info("SSE 에러 발생: userId={}", userId);
         });
 
-        try {
-            // 연결 확인용 event 발송
-            emitter.send(SseEmitter.event()
-                    .id(String.valueOf(System.currentTimeMillis()))
-                    .name("connect")
-                    .data("connected")
-                    .reconnectTime(3000));
-        } catch (IOException e) {
-            emitter.completeWithError(e);
-        }
-
-        try {
-            List<Notification> notifications = null;
-            try{
-                if(lastEventId != null){
-                    long millis = Long.parseLong(lastEventId);
-                    LocalDateTime lastTime = Instant.ofEpochMilli(millis)
-                            .atZone(ZoneId.of("Asia/Seoul"))
-                            .toLocalDateTime();
-
-                    notifications = notificationRepository
-                            .findAllByReceiverIdAndIsReadFalseAndCreatedAtAfter(userId, lastTime);
+        if(notifications != null) {
+            try {
+                for (Notification n : notifications) {
+                    log.info("알림 전송: notificationId={}", n.getId());
+                    emitter.send(SseEmitter.event()
+                            .id(String.valueOf(toEpochMilli(n.getCreatedAt())))
+                            .name("notification")
+                            .data(NotificationDTO.fromEntity(n))
+                    );
                 }
-            } catch (NumberFormatException e){
-                log.warn("LastEventId의 형식이 올바르지 않습니다: LastEventId={}", lastEventId);
-            } finally {
-                if(notifications == null){
-                    notifications = notificationRepository
-                            .findAllByReceiverIdAndIsReadFalseOrderByCreatedAtDesc(userId);
-                }
+            } catch (IOException e){
+                    emitter.completeWithError(e);
             }
-
-            for (Notification n : notifications) {
-                log.info("알림 전송: notificationId={}", n.getId());
-                emitter.send(SseEmitter.event()
-                        .id(String.valueOf(toEpochMilli(n.getCreatedAt())))
-                        .name("notification")
-                        .data(NotificationDTO.fromEntity(n))
-                );
-            }
-        } catch (Exception e) {
-            log.warn("알림 복원 실패: {}", e.getMessage());
         }
-
         return emitter;
     }
 
