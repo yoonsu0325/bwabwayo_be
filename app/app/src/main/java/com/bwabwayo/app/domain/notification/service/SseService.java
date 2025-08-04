@@ -86,6 +86,7 @@ public class SseService {
             }
 
             for (Notification n : notifications) {
+                log.info("알림 전송: notificationId={}", n.getId());
                 emitter.send(SseEmitter.event()
                         .id(String.valueOf(toEpochMilli(n.getCreatedAt())))
                         .name("notification")
@@ -111,6 +112,8 @@ public class SseService {
             log.warn("사용자가 현재 알림을 받을 수 없는 상태입니다: user={}, notificationId={}", userId, notification.getId());
 
             try {
+                log.info("알림 전송: notificationId={}", notification.getId());
+
                 emitter.send(SseEmitter.event()
                         .name("notification")
                         .data(NotificationDTO.fromEntity(notification))
