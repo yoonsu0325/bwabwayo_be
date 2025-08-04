@@ -217,6 +217,7 @@ public class ProductService {
         SellerDTO sellerDTO = SellerDTO.builder()
                 .id(seller.getId())
                 .nickname(seller.getNickname())
+                .bio(seller.getBio())
 //                .profileImage(s3Service.getUrl(seller.getProfileImage()))
                 .profileImage(seller.getProfileImage())
                 .score(seller.getScore())

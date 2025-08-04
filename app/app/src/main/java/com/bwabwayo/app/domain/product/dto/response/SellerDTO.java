@@ -12,6 +12,7 @@ import lombok.NoArgsConstructor;
 public class SellerDTO {
     String id;
     String nickname;
+    String bio;
     String profileImage;
     Integer score;
     Double rating;
