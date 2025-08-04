@@ -169,4 +169,8 @@ public class ChatRoomService {
         return chatRoomRepository.findByProductIdAndSellerIdAndBuyerId(
                 request.getProductId(), request.getSellerId(), user.getId());
     }
+
+    public Optional<ChatRoom> findByRoomId(Long roomId) {
+        return chatRoomRepository.findByRoomId(roomId);
+    }
 }

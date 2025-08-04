@@ -1,6 +1,10 @@
 package com.bwabwayo.app.domain.product.service;
 
+import com.bwabwayo.app.domain.chat.dto.request.SetInvoiceNumberRequest;
+import com.bwabwayo.app.domain.chat.dto.request.SetPriceRequest;
+import com.bwabwayo.app.domain.chat.dto.request.SetProductStatusRequest;
 import com.bwabwayo.app.domain.product.domain.Category;
+import com.bwabwayo.app.domain.product.domain.Courier;
 import com.bwabwayo.app.domain.product.domain.Product;
 import com.bwabwayo.app.domain.product.domain.ProductImage;
 import com.bwabwayo.app.domain.product.dto.request.ProductCreateAndUpdateRequestDTO;
@@ -9,6 +13,7 @@ import com.bwabwayo.app.domain.product.dto.response.*;
 import com.bwabwayo.app.domain.product.exception.BadRequestException;
 import com.bwabwayo.app.domain.product.exception.ForbiddenException;
 import com.bwabwayo.app.domain.product.exception.NotFoundException;
+import com.bwabwayo.app.domain.product.repository.CourierRepository;
 import com.bwabwayo.app.domain.product.repository.ProductImageRepository;
 import com.bwabwayo.app.domain.product.repository.ProductRepository;
 import com.bwabwayo.app.domain.user.domain.User;
@@ -37,6 +42,7 @@ public class ProductService {
     private final CategoryService categoryService;
     private final StorageService storageService;
     private final WishService wishService;
+    private final CourierRepository courierRepository;
 
     @Value("${storage.path.temp}")
     private String tempPath;
@@ -399,5 +405,24 @@ public class ProductService {
     }
     public void decreaseWishCount(Long productId){
         productRepository.decreaseWishCount(productId);
+    }
+
+    @Transactional
+    public void setInvoiceNumber(SetInvoiceNumberRequest request, Long productId) {
+        Product product = productRepository.getProductById(productId);
+        product.setInvoiceNumber(request.getTrackingNumber());
+        Courier courier = courierRepository.findByCode(request.getCourierCode());
+        product.setCourier(courier);
+    }
+
+    @Transactional
+    public void setPrice(SetPriceRequest request, Long productId) {
+        Product product = productRepository.getProductById(productId);
+        product.setPrice(request.getPrice());
+    }
+    @Transactional
+    public void setStatus(SetProductStatusRequest request, Long productId) {
+        Product product = productRepository.getProductById(productId);
+        product.setSaleStatus(request.getProductStatus());
     }
 }

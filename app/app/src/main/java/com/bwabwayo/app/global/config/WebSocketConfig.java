@@ -19,8 +19,30 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
 
     @Override
     public void registerStompEndpoints(StompEndpointRegistry registry) {
-        registry.addEndpoint("/ws-stomp").setAllowedOriginPatterns("*").withSockJS();
-        registry.addEndpoint("/ws-stomp").setAllowedOriginPatterns("*");
+        registry.addEndpoint("/ws-stomp")
+                .setAllowedOriginPatterns(
+                        "http://localhost:3000",
+                        "https://localhost:3000",
+                        "http://localhost:3001",
+                        "https://localhost:3001",
+                        "http://localhost:8081",
+                        "https://i13e202.p.ssafy.io",
+                        "https://i13e202.p.ssafy.io/fe/",
+                        "https://i13e202.p.ssafy.io:3000",
+                        "https://i13e202.p.ssafy.io:3001"
+                ).withSockJS();
+        registry.addEndpoint("/ws-stomp")
+                .setAllowedOriginPatterns(
+                        "http://localhost:3000",
+                        "https://localhost:3000",
+                        "http://localhost:3001",
+                        "https://localhost:3001",
+                        "http://localhost:8081",
+                        "https://i13e202.p.ssafy.io",
+                        "https://i13e202.p.ssafy.io/fe/",
+                        "https://i13e202.p.ssafy.io:3000",
+                        "https://i13e202.p.ssafy.io:3001"
+                );
     }
 
 }
