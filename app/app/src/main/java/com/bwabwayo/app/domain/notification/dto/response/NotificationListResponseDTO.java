@@ -20,17 +20,11 @@ public class NotificationListResponseDTO {
     List<NotificationDTO> results = new ArrayList<>();
 
     public static NotificationListResponseDTO fromEntity(List<Notification> notifications){
-        List<NotificationDTO> results = notifications.stream()
-                .map(notification->{
-                    Product product = notification.getProduct();
+        List<NotificationDTO> results = notifications
+                .stream()
+                .map(NotificationDTO::fromEntity)
+                .toList();
 
-                    return NotificationDTO.builder()
-                            .title(product.getTitle())
-                            .thumbnail(product.getThumbnail())
-                            .type(notification.getType().getTitle())
-                            .createdAt(notification.getCreatedAt())
-                            .build();
-                }).toList();
         return NotificationListResponseDTO.builder()
                 .size(results.size())
                 .results(results)

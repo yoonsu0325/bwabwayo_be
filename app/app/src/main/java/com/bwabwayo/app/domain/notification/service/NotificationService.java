@@ -51,4 +51,12 @@ public class NotificationService {
         }
         notification.setRead(true);
     }
+
+    @Transactional
+    public void setReadAll(String userId){
+        List<Notification> notifications = notificationRepository.getNotificationsByReceiverIdAndIsReadFalse(userId);
+        for (Notification notification : notifications){
+            notification.setRead(true);
+        }
+    }
 }
