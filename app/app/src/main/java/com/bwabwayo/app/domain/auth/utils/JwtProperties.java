@@ -15,4 +15,8 @@ public class JwtProperties {
     private long refreshExpMinutes;
     private String header;
     private String type;
+    private String typeRefresh;
+    private String typeAccess;
+    private String aesSecretKey;
+    private String aesIv;
 }

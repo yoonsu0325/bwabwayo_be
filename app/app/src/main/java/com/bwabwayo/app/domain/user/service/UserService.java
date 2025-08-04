@@ -35,7 +35,7 @@ public class UserService {
                 .email(request.getEmail())
                 .phoneNumber(request.getPhoneNumber())
                 .profileImage(request.getProfileImage())
-                .bio("기본값")
+                .bio(request.getNickname() + "의 상점입니다.")
                 .score(500)
                 .point(PointEventType.SIGNUP_FIRST.getPoint())
                 .dealCount(0)

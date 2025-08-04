@@ -1,5 +1,6 @@
 package com.bwabwayo.app.domain.auth.annotation;
 
+import com.bwabwayo.app.domain.auth.utils.JwtProperties;
 import com.bwabwayo.app.domain.user.domain.User;
 import com.bwabwayo.app.domain.auth.exception.UnauthorizedException;
 import com.bwabwayo.app.domain.auth.utils.JWTUtils;
@@ -16,9 +17,11 @@ public class LoginUserArgumentResolver implements HandlerMethodArgumentResolver 
 
     private final UserService userService;
     private final JWTUtils jwtUtils;
-    public LoginUserArgumentResolver(UserService userService, JWTUtils jwtUtils) {
+    private final JwtProperties jwtProperties;
+    public LoginUserArgumentResolver(UserService userService, JWTUtils jwtUtils, JwtProperties jwtProperties) {
         this.userService = userService;
         this.jwtUtils = jwtUtils;
+        this.jwtProperties = jwtProperties;
     }
 
 
@@ -41,21 +44,29 @@ public class LoginUserArgumentResolver implements HandlerMethodArgumentResolver 
         // 웹 요청 객체에서 HttpServletRequest를 얻어와야 헤더를 읽을 수 있어서 가져오기
         HttpServletRequest request = (HttpServletRequest) webRequest.getNativeRequest();
         // 헤더에서 AccessToken 추출
-        String accessToken = request.getHeader("Authorization");
-
+        String accessToken = jwtUtils.getTokenFromHeader(request.getHeader("Authorization"));
         // 인증이 안된 사용자 (예외 발생), (사실, jwtFilter와 SecurityFilter로 인증 안된 사용자는 걸러지긴 함, 그래도 이중체크)
         if(accessToken == null) {
             if(loginUser.required()) {
-                throw new UnauthorizedException("인증에 실패하였습니다.");
+                throw new UnauthorizedException("AccessToken이 존재하지 않습니다. 인증에 실패하였습니다.");
             }
             return null;
         }
+        //AccessToken 여부 확인
+        String type = jwtUtils.getTokenType(accessToken);
+        if(type == null || !type.equals(jwtProperties.getTypeAccess())){
+            if(loginUser.required()) {
+                throw new UnauthorizedException("AcessToken이 아닙니다. 인증에 실패하였습니다.");
+            }
+            return null;
+        }
+
         // AccessToken에서 userId 가져오기
-        String userId = jwtUtils.getSubject(jwtUtils.getTokenFromHeader(accessToken));
+        String userId = jwtUtils.getSubject(accessToken);
         // userId 존재여부 확인
         if(userId == null) {
             if(loginUser.required()) {
-                throw new UnauthorizedException("인증에 실패하였습니다.");
+                throw new UnauthorizedException("userId가 존재하지 않습니다. 인증에 실패하였습니다.");
             }
             return null;
         }

@@ -6,7 +6,7 @@ import javax.naming.AuthenticationException;
 
 @ResponseStatus(HttpStatus.UNAUTHORIZED)
 public class UnauthorizedException extends AuthenticationException {
-    public UnauthorizedException(String message) {
+        public UnauthorizedException(String message) {
         super(message);
     }
 }

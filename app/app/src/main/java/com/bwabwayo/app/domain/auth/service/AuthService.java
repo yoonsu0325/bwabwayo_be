@@ -1,5 +1,6 @@
 package com.bwabwayo.app.domain.auth.service;
 
+import com.bwabwayo.app.domain.product.exception.NotFoundException;
 import com.bwabwayo.app.domain.user.service.AccountService;
 import com.bwabwayo.app.domain.address.service.DeliveryAddressService;
 import com.bwabwayo.app.domain.user.service.UserService;
@@ -31,9 +32,12 @@ public class AuthService {
             throw new IllegalArgumentException("아이디 또는 닉네임이 누락되었습니다.");
         }
         Role role = Role.USER;
-        OAuth2UserRequest oauth2 = new OAuth2UserRequest(request.getId(), role, "", "");
-        String accessToken = jwtUtils.createToken(oauth2, jwtProperties.getAccessExpMinutes(), role);
-        String refreshToken = jwtUtils.createToken(oauth2, jwtProperties.getRefreshExpMinutes(), role);
+        String accessToken = jwtUtils.createToken(request.getId(), jwtProperties.getAccessExpMinutes(), role, jwtProperties.getTypeAccess());
+        String tempId = jwtUtils.generateTempId(request.getId());
+        if (tempId == null) {
+            throw new IllegalStateException("임시 ID 생성 실패: UUID 충돌 또는 내부 오류");
+        }
+        String refreshToken = jwtUtils.createToken(tempId, jwtProperties.getRefreshExpMinutes(), role, jwtProperties.getTypeRefresh());
 
         // 2. User 저장
         User user = userService.createUser(request);

@@ -33,7 +33,7 @@ public class SuccessHandler extends SimpleUrlAuthenticationSuccessHandler {
         CustomOAuth2User oath2user = (CustomOAuth2User) authentication.getPrincipal();
         OAuth2UserRequest user= oath2user.getUser();
         //AT 30분짜리 발행
-        String accessToken = jwtUtils.createToken(user,jwtProperties.getAccessExpMinutes(), user.getRole());
+        String accessToken = jwtUtils.createToken(user.getId() ,jwtProperties.getAccessExpMinutes(), user.getRole(), jwtProperties.getTypeAccess());
 
         //PREUSER면 회원가입 폼으로 이동
         // 프론트에 JSON 응답으로 전달

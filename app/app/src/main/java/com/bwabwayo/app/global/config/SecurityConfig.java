@@ -4,6 +4,7 @@ import com.bwabwayo.app.domain.auth.filter.JWTFilter;
 import com.bwabwayo.app.domain.auth.handler.SuccessHandler;
 import com.bwabwayo.app.domain.auth.service.CustomOAuth2UserService;
 import com.bwabwayo.app.domain.auth.utils.JWTUtils;
+import com.bwabwayo.app.domain.auth.utils.JwtProperties;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -26,6 +27,7 @@ import java.util.List;
 public class SecurityConfig {
     private final CustomOAuth2UserService customOAuth2UserService;
     private final JWTUtils jwtUtils;
+    private final JwtProperties jwtProperties;
     private final SuccessHandler successHandler;
 
     @Bean
@@ -78,7 +80,7 @@ public class SecurityConfig {
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
 
                 //JWTFilter 추가
-                .addFilterBefore(new JWTFilter(jwtUtils), UsernamePasswordAuthenticationFilter.class)
+                .addFilterBefore(new JWTFilter(jwtUtils, jwtProperties), UsernamePasswordAuthenticationFilter.class)
 
                 //session 미사용
                 .sessionManagement(session -> session

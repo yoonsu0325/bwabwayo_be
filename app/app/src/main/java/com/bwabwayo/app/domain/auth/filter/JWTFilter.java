@@ -1,5 +1,6 @@
 package com.bwabwayo.app.domain.auth.filter;
 
+import com.bwabwayo.app.domain.auth.utils.JwtProperties;
 import com.bwabwayo.app.domain.user.domain.Role;
 import com.bwabwayo.app.domain.auth.dto.request.CustomOAuth2User;
 import com.bwabwayo.app.domain.auth.dto.request.OAuth2UserRequest;
@@ -11,6 +12,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
@@ -24,6 +26,7 @@ import java.io.IOException;
 @RequiredArgsConstructor
 public class JWTFilter extends OncePerRequestFilter {
     private final JWTUtils jwtUtils;
+    private final JwtProperties jwtProperties;
 
     //Header 유효성 체크
     private void checkAuthorizationHeader(String header) {
@@ -101,7 +104,10 @@ public class JWTFilter extends OncePerRequestFilter {
         if (userId == null) {
             throw new BadCredentialsException("토큰값이 잘못되었습니다");
         }
-
+        String type = jwtUtils.getTokenType(tokenFromHeader);
+        if (type == null || !type.equals(jwtProperties.getTypeAccess())){
+            throw new AccessDeniedException("Access 토큰이 아닙니다.");
+        }
         //User -> CustomOAuth2User로 가공
         Role role = jwtUtils.getRole(tokenFromHeader);
         OAuth2UserRequest oauth2user = new OAuth2UserRequest(userId, role, "", "");
