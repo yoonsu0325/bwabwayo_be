@@ -65,8 +65,6 @@ public class SseService {
             emitter.completeWithError(e);
         }
 
-
-
         try {
             List<Notification> notifications;
             try{
@@ -104,8 +102,6 @@ public class SseService {
     private long toEpochMilli(LocalDateTime ldt) {
         return ldt.atZone(ZoneId.of("Asia/Seoul")).toInstant().toEpochMilli();
     }
-
-
 
     public void send(String userId, String message) {
         SseEmitter emitter = emitters.get(userId);
