@@ -425,4 +425,8 @@ public class ProductService {
         Product product = productRepository.getProductById(productId);
         product.setSaleStatus(request.getProductStatus());
     }
+
+    public Product findById(Long productId) {
+        return productRepository.findById(productId).orElseThrow(() -> new IllegalArgumentException("해당 상품이 존재하지 않습니다."));
+    }
 }

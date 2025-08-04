@@ -59,6 +59,8 @@ public class ChatRoomService {
         chatRoomRedisRepository.setChatRoom(user.getId(), roomId, buyerPreview);
         chatRoomRedisRepository.setChatRoom(sellerId, roomId, sellerPreview);
 
+        product.addChatCount();
+
         return savedChatRoom;
     }
 

@@ -110,4 +110,8 @@ public class Product {
     public void preUpdate() {
         this.updatedAt = LocalDateTime.now(ZoneId.of("Asia/Seoul"));
     }
+
+    public void addChatCount(){
+        this.chatCount += 1;
+    }
 }
