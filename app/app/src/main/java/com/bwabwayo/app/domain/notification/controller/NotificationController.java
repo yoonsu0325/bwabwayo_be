@@ -1,11 +1,14 @@
 package com.bwabwayo.app.domain.notification.controller;
 
+import com.bwabwayo.app.domain.notification.dto.response.NotificationListResponseDTO;
+import com.bwabwayo.app.domain.notification.service.NotificationService;
 import com.bwabwayo.app.domain.notification.service.SseService;
 import com.bwabwayo.app.domain.auth.annotation.LoginUser;
 import com.bwabwayo.app.domain.user.domain.User;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.MediaType;
@@ -19,6 +22,7 @@ import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 public class NotificationController {
 
     private final SseService sseService;
+    private final NotificationService notificationService;
 
     @Operation(summary = "SSE 알림 구독", description = "로그인한 사용자가 SSE를 통해 실시간 알림을 구독합니다.")
     @ApiResponse(
@@ -40,9 +44,17 @@ public class NotificationController {
     }
 
     @Operation(summary = "내 알림 목록 조회", description = "내 알림 목록을 조회합니다.")
+    @ApiResponse(
+            responseCode = "200"
+            , description = "내 알림 목록을 가져옵니다."
+            , content = @Content(mediaType = "application/json", schema = @Schema(implementation = NotificationListResponseDTO.class))
+    )
     @GetMapping
-    public ResponseEntity<Void> getNotifications(@Parameter(hidden = true) @LoginUser User user){
-        throw new UnsupportedOperationException("Not supported yet.");
+    public ResponseEntity<?> getNotifications(
+            @RequestParam(required = false, defaultValue = "true") Boolean onlyUnread,
+            @Parameter(hidden = true) @LoginUser User loginUser){
+        NotificationListResponseDTO responseDTO = notificationService.getAllMyUnreadNotifications(loginUser.getId(), onlyUnread);
+        return ResponseEntity.ok(responseDTO);
     }
 
     @Operation(summary = "알림 삭제", description = "알림을 삭제합니다.")
