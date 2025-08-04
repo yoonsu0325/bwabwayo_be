@@ -2,12 +2,14 @@ package com.bwabwayo.app.domain.auth.utils;
 
 import com.bwabwayo.app.domain.auth.service.AuthRedisService;
 import com.bwabwayo.app.domain.user.domain.Role;
-import io.jsonwebtoken.ExpiredJwtException;
 import io.jsonwebtoken.JwtException;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
 import jakarta.annotation.PostConstruct;
+import jakarta.servlet.http.Cookie;
+import jakarta.servlet.http.HttpServletRequest;
+import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseCookie;
@@ -22,6 +24,7 @@ import static org.apache.commons.codec.digest.DigestUtils.sha256;
 @Component
 @RequiredArgsConstructor
 @Slf4j
+@Getter
 //JWT에 필요한 여러 함수를 만들어 놓은 Util 클래스
 public class JWTUtils {
     private SecretKey secretKey;
@@ -86,28 +89,6 @@ public class JWTUtils {
         }
     }
 
-    //토큰이 만료되었는 지만 체크 함수
-    public boolean isExpired(String token) {
-        try {
-            Jwts.parserBuilder()
-                    .setSigningKey(secretKey) // 비밀키 설정
-                    .build()
-                    .parseClaimsJws(token); // 토큰 파싱 및 유효성 검증
-            return false;
-        } catch (ExpiredJwtException e) {
-            return true;
-        } catch (JwtException e) {
-            return false;
-        }
-    }
-
-    //토큰 남은 시간 계산 함수
-    public long tokenRemainTime(Integer expTime) {
-        Date expDate = new Date((long) expTime * (1000)); // 초 → 밀리초
-        long remainMs = expDate.getTime() - System.currentTimeMillis(); // 남은 ms
-        return remainMs / (1000 * 60); // 분 단위 반환
-    }
-
     //JWT payload의 "sub"을 꺼내는 함수
     public String getSubject(String jwt) {
         try{
@@ -151,12 +132,21 @@ public class JWTUtils {
         }
     }
 
+    public String extractRefreshTokenFromCookies(HttpServletRequest request) {
+        if (request.getCookies() == null) return null;
+
+        return Arrays.stream(request.getCookies())
+                .filter(cookie -> "refreshToken".equals(cookie.getName()))
+                .map(Cookie::getValue)
+                .findFirst()
+                .orElse(null);
+    }
 
     public static ResponseCookie createHttpOnlyCookie(String refreshToken) { // 수정
         return ResponseCookie.from("refreshToken", refreshToken)
                 .httpOnly(true)  // JavaScript로 접근 불가 (XSS 방지)
                 .secure(true)  // HTTPS 연결에서만 전송
-                .path("/api/auth/refresh") // 이 경로에 접근할 때만 자동 전송됨
+                .path("/be/api/auth/refresh") // 이 경로에 접근할 때만 자동 전송됨
                 .maxAge(Duration.ofDays(7)) // 7일 동안 유지
                 .sameSite("Strict") //일반적으로는 "Lax"사용, 다른 사이트에서 접근 금지
                 .build();

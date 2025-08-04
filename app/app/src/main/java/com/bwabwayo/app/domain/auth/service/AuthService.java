@@ -11,12 +11,21 @@ import com.bwabwayo.app.domain.auth.dto.request.OAuth2UserRequest;
 import com.bwabwayo.app.domain.auth.dto.request.UserSignUpRequest;
 import com.bwabwayo.app.domain.auth.dto.response.UserTokenResponse;
 import com.bwabwayo.app.domain.auth.utils.JWTUtils;
+import jakarta.servlet.http.Cookie;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.ResponseCookie;
 import org.springframework.stereotype.Service;
+
+import java.util.Arrays;
+import java.util.Optional;
+import java.util.stream.Stream;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class AuthService {
 
     private final UserService userService;
@@ -24,6 +33,7 @@ public class AuthService {
     private final DeliveryAddressService deliveryAddressService;
     private final JWTUtils jwtUtils;
     private final JwtProperties jwtProperties;
+    private final AuthRedisService authRedisService;
 
     @Transactional
     public UserTokenResponse signUp(UserSignUpRequest request) {
@@ -38,6 +48,8 @@ public class AuthService {
             throw new IllegalStateException("임시 ID 생성 실패: UUID 충돌 또는 내부 오류");
         }
         String refreshToken = jwtUtils.createToken(tempId, jwtProperties.getRefreshExpMinutes(), role, jwtProperties.getTypeRefresh());
+        // ✅ RT를 Redis에 저장 (TTL: 7일)
+        authRedisService.saveRefreshToken(tempId, request.getId(), refreshToken);
 
         // 2. User 저장
         User user = userService.createUser(request);
@@ -62,6 +74,32 @@ public class AuthService {
         return UserTokenResponse.builder()
                 .accessToken(accessToken)
                 .refreshToken(refreshToken)
+                .build();
+    }
+
+    public void deleteRefreshTokenFromRequest(HttpServletRequest request) {
+        //Cookie를 가져와서 거기서 refreshToken을 찾고 mapping한 뒤에 첫번째거 들고와서
+        //있으면 그대로 받고 없으면 null값
+
+        String refreshToken = jwtUtils.extractRefreshTokenFromCookies(request);
+        //refreshToken이 있는 지 체크
+        if (refreshToken != null) {
+            try {
+                String tempId = jwtUtils.getSubject(refreshToken);
+                if (tempId != null) {
+                    authRedisService.deleteRefreshToken(tempId);
+                }
+            } catch (Exception e) {
+                log.warn("기존 RefreshToken 삭제 실패", e);
+            }
+        }
+    }
+
+    public ResponseCookie generateExpiredRefreshTokenCookie() {
+        return ResponseCookie.from("refreshToken", "")
+                .path("/api/auth/refresh")
+                .maxAge(0)
+                .httpOnly(true)
                 .build();
     }
 }

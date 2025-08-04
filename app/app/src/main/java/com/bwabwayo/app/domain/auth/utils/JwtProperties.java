@@ -19,4 +19,5 @@ public class JwtProperties {
     private String typeAccess;
     private String aesSecretKey;
     private String aesIv;
+    private long refreshReissueThresholdDays;
 }
