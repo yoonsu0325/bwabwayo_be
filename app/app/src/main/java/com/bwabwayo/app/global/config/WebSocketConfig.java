@@ -28,6 +28,8 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
                         "http://localhost:8081",
                         "https://i13e202.p.ssafy.io",
                         "https://i13e202.p.ssafy.io/fe/",
+                        "https://i13e202.p.ssafy.io/be/",
+                        "https://i13e202.p.ssafy.io/api/",
                         "https://i13e202.p.ssafy.io:3000",
                         "https://i13e202.p.ssafy.io:3001"
                 ).withSockJS();
@@ -40,6 +42,8 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
                         "http://localhost:8081",
                         "https://i13e202.p.ssafy.io",
                         "https://i13e202.p.ssafy.io/fe/",
+                        "https://i13e202.p.ssafy.io/be/",
+                        "https://i13e202.p.ssafy.io/api/",
                         "https://i13e202.p.ssafy.io:3000",
                         "https://i13e202.p.ssafy.io:3001"
                 );
