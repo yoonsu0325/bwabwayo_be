@@ -4,6 +4,7 @@ import com.bwabwayo.app.domain.chat.dto.request.SetInvoiceNumberRequest;
 import com.bwabwayo.app.domain.chat.dto.request.SetPriceRequest;
 import com.bwabwayo.app.domain.chat.dto.request.SetProductStatusRequest;
 import com.bwabwayo.app.domain.chat.service.SystemChatService;
+import com.bwabwayo.app.domain.product.enums.SaleStatus;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -29,6 +30,10 @@ public class SystemChatController {
             @PathVariable Long roomId,
             @RequestBody SetPriceRequest request){
 
+        SetProductStatusRequest productStatusRequest = SetProductStatusRequest.builder()
+                .productStatus(SaleStatus.NEGOTIATING).build();
+
+        systemChatService.setProductStatus(roomId, productStatusRequest);
         systemChatService.setFinalPrice(roomId, request);
         return ResponseEntity.ok("최종가격 설정이 완료되었습니다");
     }
