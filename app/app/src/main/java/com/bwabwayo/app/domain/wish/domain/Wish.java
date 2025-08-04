@@ -3,16 +3,14 @@ package com.bwabwayo.app.domain.wish.domain;
 import com.bwabwayo.app.domain.product.domain.Product;
 import com.bwabwayo.app.domain.user.domain.User;
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 
 @Entity
 @Getter
+@Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder

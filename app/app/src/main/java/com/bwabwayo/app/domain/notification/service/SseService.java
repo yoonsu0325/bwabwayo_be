@@ -1,5 +1,8 @@
 package com.bwabwayo.app.domain.notification.service;
 
+import com.bwabwayo.app.domain.notification.domain.Notification;
+import com.bwabwayo.app.domain.notification.dto.response.NotificationDTO;
+import com.bwabwayo.app.domain.notification.repository.NotificationRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -7,6 +10,10 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
 import java.io.IOException;
+import java.time.Instant;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -15,14 +22,16 @@ import java.util.concurrent.ConcurrentHashMap;
 @RequiredArgsConstructor
 public class SseService {
 
+    private final NotificationRepository notificationRepository;
     private final Map<String, SseEmitter> emitters = new ConcurrentHashMap<>();
     @Value("${sse.timeout}")
     private Long timeout;
 
+
     /**
      * 사용자에게 알림을 보낼 수 있도록 등록
      */
-    public SseEmitter subscribe(String userId) {
+    public SseEmitter subscribe(String userId, String lastEventId) {
         SseEmitter emitter = new SseEmitter(timeout);
         
         // 이전 연결 제거
@@ -47,6 +56,7 @@ public class SseService {
         try {
             // 연결 확인용 event 발송
             emitter.send(SseEmitter.event()
+                    .id(String.valueOf(System.currentTimeMillis()))
                     .name("connect")
                     .data("connected")
                     .reconnectTime(3000));
@@ -54,17 +64,56 @@ public class SseService {
             emitter.completeWithError(e);
         }
 
+        try {
+            List<Notification> notifications = null;
+            try{
+                if(lastEventId != null){
+                    long millis = Long.parseLong(lastEventId);
+                    LocalDateTime lastTime = Instant.ofEpochMilli(millis)
+                            .atZone(ZoneId.of("Asia/Seoul"))
+                            .toLocalDateTime();
+
+                    notifications = notificationRepository
+                            .findAllByReceiverIdAndIsReadFalseAndCreatedAtAfter(userId, lastTime);
+                }
+            } catch (NumberFormatException e){
+                log.warn("LastEventId의 형식이 올바르지 않습니다: LastEventId={}", lastEventId);
+            } finally {
+                if(notifications == null){
+                    notifications = notificationRepository
+                            .findAllByReceiverIdAndIsReadFalseOrderByCreatedAtDesc(userId);
+                }
+            }
+
+            for (Notification n : notifications) {
+                emitter.send(SseEmitter.event()
+                        .id(String.valueOf(toEpochMilli(n.getCreatedAt())))
+                        .name("notification")
+                        .data(NotificationDTO.fromEntity(n))
+                );
+            }
+        } catch (Exception e) {
+            log.warn("알림 복원 실패: {}", e.getMessage());
+        }
+
         return emitter;
     }
-    
-    public void send(String userId, String message) {
-        SseEmitter emitter = emitters.get(userId);
 
-        if (emitter != null) {
+    private long toEpochMilli(LocalDateTime ldt) {
+        return ldt.atZone(ZoneId.of("Asia/Seoul")).toInstant().toEpochMilli();
+    }
+
+    public void send(String userId, Notification notification) {
+        notificationRepository.save(notification);
+
+        SseEmitter emitter = emitters.get(userId);
+        if(emitter != null) {
+            log.warn("사용자가 현재 알림을 받을 수 없는 상태입니다: user={}, notificationId={}", userId, notification.getId());
+
             try {
                 emitter.send(SseEmitter.event()
                         .name("notification")
-                        .data(message)
+                        .data(NotificationDTO.fromEntity(notification))
                         .reconnectTime(3000));
             } catch (IOException e) {
                 emitters.remove(userId);
