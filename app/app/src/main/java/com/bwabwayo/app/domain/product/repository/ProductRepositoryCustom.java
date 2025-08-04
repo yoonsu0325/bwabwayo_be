@@ -11,5 +11,5 @@ public interface ProductRepositoryCustom {
     /**
      * 상품 조회
      */
-    Page<ProductWithWishDTO> searchByCondition(String keyword, List<Long> categoryIds, Pageable pageable, String userId);
+    Page<ProductWithWishDTO> searchByCondition(String keyword, List<Long> categoryIds, Pageable pageable, String loginUserId, String sellerId);
 }

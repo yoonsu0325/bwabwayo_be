@@ -98,9 +98,11 @@ public class ProductService {
      * 상품 검색
      */
     @Transactional(readOnly = true)
-    public ProductSearchResponseDTO searchProducts(ProductSearchRequestDTO requestDTO, User user) {
+    public ProductSearchResponseDTO searchProducts(ProductSearchRequestDTO requestDTO, User loginUser) {
         String keyword = requestDTO.getKeyword();
         Long categoryId = requestDTO.getCategoryId();
+        String sellerId = requestDTO.getSellerId();
+
         // 페이지는 1부터 시작
         Integer page = requestDTO.getPage();
         if(page == null || page < 1) page = 1;
@@ -136,7 +138,7 @@ public class ProductService {
         }
         
         // DB 조회
-        Page<ProductWithWishDTO> pageData = productRepository.searchByCondition(keyword, categoryIds, pageable, user != null ? user.getId() : null);
+        Page<ProductWithWishDTO> pageData = productRepository.searchByCondition(keyword, categoryIds, pageable, loginUser != null ? loginUser.getId() : null, sellerId);
         List<ProductWithWishDTO> content = pageData.getContent();
 
         List<ProductSearchResultDTO> result = content.stream().map(dto -> {

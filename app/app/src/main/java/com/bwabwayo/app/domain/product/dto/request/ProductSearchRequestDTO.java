@@ -29,4 +29,6 @@ public class ProductSearchRequestDTO {
 
     @Parameter(example = "latest")
     private String sortBy; // 정렬 기준
+
+    private String sellerId; // 판매자 ID
 }
