@@ -10,6 +10,7 @@ import java.time.ZoneId;
 
 @Entity
 @Getter
+@Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder

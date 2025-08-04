@@ -29,13 +29,13 @@ public class NotificationController {
             responseCode = "200"
             , description = "SSE 연결 성공"
             , content = @Content(mediaType = MediaType.TEXT_EVENT_STREAM_VALUE)
-
     )
     @PostMapping(value="/subscribe", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
     public SseEmitter subscribe(@Parameter(hidden = true) @LoginUser User user){
         return sseService.subscribe(user.getId());
     }
 
+    @Deprecated
     @Operation(summary = "알림 송신", description = "사용자에게 알림을 보냅니다. (TEST)")
     @PostMapping("/send")
     public ResponseEntity<Void> sendNotification(@RequestParam String receiverId, @RequestParam String message) {
@@ -57,9 +57,15 @@ public class NotificationController {
         return ResponseEntity.ok(responseDTO);
     }
 
-    @Operation(summary = "알림 삭제", description = "알림을 삭제합니다.")
+    @Operation(summary = "알림 읽음 처리", description = "알림을 읽음 처리 합니다.")
+    @ApiResponse(
+            responseCode = "200"
+            , description = "알림 읽음 처리 성공"
+            , content = @Content(mediaType = "application/json", schema = @Schema(implementation = Void.class))
+    )
     @DeleteMapping("/{notificationId}")
     public ResponseEntity<Void> deleteNotification(@PathVariable Long notificationId, @Parameter(hidden = true) @LoginUser User user){
-        throw new UnsupportedOperationException("Not supported yet.");
+        notificationService.setReadByNotificationId(notificationId, user.getId());
+        return ResponseEntity.ok().build();
     }
 }
