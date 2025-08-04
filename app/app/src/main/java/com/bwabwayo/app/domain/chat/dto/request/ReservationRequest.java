@@ -8,6 +8,5 @@ import lombok.*;
 @NoArgsConstructor
 @AllArgsConstructor
 public class ReservationRequest {
-    private Long roomId;
     private String startAt;
 }

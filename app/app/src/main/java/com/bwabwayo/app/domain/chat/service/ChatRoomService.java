@@ -10,14 +10,13 @@ import com.bwabwayo.app.domain.product.domain.Product;
 import com.bwabwayo.app.domain.product.repository.ProductRepository;
 import com.bwabwayo.app.domain.user.domain.User;
 import com.bwabwayo.app.domain.user.service.UserService;
+import com.bwabwayo.app.global.common.CommonService;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
-import java.time.OffsetDateTime;
-import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
 import java.util.List;
@@ -34,6 +33,7 @@ public class ChatRoomService {
     private final UserService userService;
     private final ProductRepository productRepository;
     private final RedisService redisService;
+    private final CommonService commonService;
 
     /**
      * 채팅방 생성: MySQL 저장 + Redis 캐싱
@@ -122,14 +122,13 @@ public class ChatRoomService {
      * 마지막 메시지 기준 정렬
      */
     public List<ChatRoomListResponse> sortChatRoomListLatest(List<ChatRoomListResponse> list) {
-        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSS");
 
         return list.stream()
                 .filter(r -> r.getLastChatmessageDto() != null)
                 .sorted((o1, o2) -> {
                     try {
-                        LocalDateTime t1 = parseSafe(o1.getLastChatmessageDto().getCreatedAt());
-                        LocalDateTime t2 = parseSafe(o2.getLastChatmessageDto().getCreatedAt());
+                        LocalDateTime t1 = commonService.parseSafe(o1.getLastChatmessageDto().getCreatedAt());
+                        LocalDateTime t2 = commonService.parseSafe(o2.getLastChatmessageDto().getCreatedAt());
                         return t2.compareTo(t1); // 최신순
                     } catch (DateTimeParseException e) {
                         log.warn("⚠️ 시간 파싱 실패: {}", e.getMessage());
@@ -137,19 +136,6 @@ public class ChatRoomService {
                     }
                 })
                 .collect(Collectors.toList());
-    }
-
-    private LocalDateTime parseSafe(String createdAt) {
-        try {
-            if (createdAt.endsWith("Z")) {
-                return OffsetDateTime.parse(createdAt).toLocalDateTime();
-            } else {
-                return LocalDateTime.parse(createdAt, DateTimeFormatter.ISO_LOCAL_DATE_TIME);
-            }
-        } catch (Exception e) {
-            log.warn("⚠️ 시간 파싱 실패: {}", createdAt);
-            return LocalDateTime.MIN;
-        }
     }
 
 

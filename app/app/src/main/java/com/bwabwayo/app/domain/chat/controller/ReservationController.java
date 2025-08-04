@@ -1,8 +1,8 @@
 package com.bwabwayo.app.domain.chat.controller;
 
+import com.bwabwayo.app.domain.auth.annotation.LoginUser;
 import com.bwabwayo.app.domain.chat.dto.request.ReservationRequest;
 import com.bwabwayo.app.domain.chat.service.ReservationService;
-import com.bwabwayo.app.domain.user.annotation.LoginUser;
 import com.bwabwayo.app.domain.user.domain.User;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -21,14 +21,14 @@ public class ReservationController {
             @LoginUser User user,
             @RequestBody ReservationRequest reservationRequest) throws IllegalAccessException {
         return ResponseEntity.ok(
-                reservationService.makeReservation(user, reservationRequest));
+                reservationService.makeReservation(user, reservationRequest, roomId));
     }
 
     @DeleteMapping("/{scheduleId}")
     public ResponseEntity<?> cancelReservation(
             @PathVariable Long roomId,
             @PathVariable Long scheduleId,
-            @LoginUser User user){
+            @LoginUser User user) throws IllegalAccessException {
         reservationService.cancelReservation(roomId, scheduleId, user);
         return ResponseEntity.ok("예약이 취소되었습니다");
     }

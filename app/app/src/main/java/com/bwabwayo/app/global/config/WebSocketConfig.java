@@ -23,16 +23,4 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
         registry.addEndpoint("/ws-stomp").setAllowedOriginPatterns("*");
     }
 
-    /*
-    로컬 테스트용
-    @Override
-    public void registerStompEndpoints(StompEndpointRegistry registry) {
-        registry.addEndpoint("/ws-stomp")
-                .setAllowedOriginPatterns("http://localhost:8082") // ✅ HTML 열려 있는 주소
-                .withSockJS();
-
-        registry.addEndpoint("/ws-stomp")
-                .setAllowedOriginPatterns("http://localhost:8082"); // ✅ SockJS 아닌 경우도 커버
-    }*/
-
 }

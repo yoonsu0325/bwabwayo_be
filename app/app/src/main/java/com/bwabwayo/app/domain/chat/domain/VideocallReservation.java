@@ -23,11 +23,11 @@ public class VideocallReservation {
     private Long roomId;
     private String startAt;
 
-    public static VideocallReservation of(ReservationRequest reservation, String buyerId, String sellerId){
+    public static VideocallReservation of(ReservationRequest reservation, String buyerId, String sellerId, Long roomId){
         return VideocallReservation.builder()
                 .buyerId(buyerId)
                 .sellerId(sellerId)
-                .roomId(reservation.getRoomId())
+                .roomId(roomId)
                 .startAt(reservation.getStartAt())
                 .build();
     }

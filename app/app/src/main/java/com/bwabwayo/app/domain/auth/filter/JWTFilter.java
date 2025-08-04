@@ -56,6 +56,7 @@ public class JWTFilter extends OncePerRequestFilter {
                 uri.equals("/favicon.ico") ||
                 uri.startsWith("/static/") ||
                 uri.startsWith("/assets/") ||
+                uri.startsWith("/ws-stomp/") ||
                 uri.endsWith(".js") || uri.endsWith(".css") || uri.endsWith(".png") || uri.endsWith(".jpg");
         }
 
