@@ -11,5 +11,5 @@ import lombok.Setter;
 @AllArgsConstructor
 public class SessionRequest {
 
-    private long roomId;
+    private long videoRoomId;
 }

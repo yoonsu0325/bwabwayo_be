@@ -43,7 +43,7 @@ public class OpenViduController {
     public ResponseEntity<String> initializeSession(@RequestBody SessionRequest sessionRequest) throws Exception {
 
         // 세션 생성, 녹화 옵션
-        String customId = String.valueOf(sessionRequest.getRoomId());
+        String customId = String.valueOf(sessionRequest.getVideoRoomId());
 
         SessionProperties props = new SessionProperties.Builder()
                 .customSessionId(customId)

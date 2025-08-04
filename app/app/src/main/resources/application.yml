@@ -87,7 +87,7 @@ logging:
     com.bwabwayo.app: DEBUG
 
 openvidu:
-  url: https://i13e202.p.ssafy.io:8443/
+  url: https://i13e202.p.ssafy.io:8443
   secret: whddnjsWkd123
 
 
