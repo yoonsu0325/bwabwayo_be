@@ -102,11 +102,11 @@ public class ProductService {
         String keyword = requestDTO.getKeyword();
         Long categoryId = requestDTO.getCategoryId();
         // 페이지는 1부터 시작
-        int page = requestDTO.getPage();
-        if(page < 1) page = 1;
+        Integer page = requestDTO.getPage();
+        if(page == null || page < 1) page = 1;
         // 각 페이지에는 최소 0개가 할당
-        int size = requestDTO.getSize();
-        if(size < 0) requestDTO.setSize(100);
+        Integer size = requestDTO.getSize();
+        if(size == null || size < 0) size = 100;
         // 기본 정렬 속성은 '최신순'
         String sortBy = requestDTO.getSortBy();
         if(sortBy == null) sortBy = "latest";
