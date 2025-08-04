@@ -2,7 +2,6 @@ package com.bwabwayo.app.domain.notification.service;
 
 import com.bwabwayo.app.domain.notification.domain.Notification;
 import com.bwabwayo.app.domain.notification.dto.response.NotificationDTO;
-import com.bwabwayo.app.domain.notification.dto.response.NotificationListResponseDTO;
 import com.bwabwayo.app.domain.notification.repository.NotificationRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -66,7 +65,7 @@ public class SseService {
         }
 
         try {
-            List<Notification> notifications;
+            List<Notification> notifications = null;
             try{
                 if(lastEventId != null){
                     long millis = Long.parseLong(lastEventId);
@@ -76,13 +75,14 @@ public class SseService {
 
                     notifications = notificationRepository
                             .findAllByReceiverIdAndIsReadFalseAndCreatedAtAfter(userId, lastTime);
-                } else{
+                }
+            } catch (NumberFormatException e){
+                log.warn("LastEventId의 형식이 올바르지 않습니다: LastEventId={}", lastEventId);
+            } finally {
+                if(notifications == null){
                     notifications = notificationRepository
                             .findAllByReceiverIdAndIsReadFalseOrderByCreatedAtDesc(userId);
                 }
-            } catch (Exception e){
-                notifications = notificationRepository
-                        .findAllByReceiverIdAndIsReadFalseOrderByCreatedAtDesc(userId);
             }
 
             for (Notification n : notifications) {
@@ -103,14 +103,17 @@ public class SseService {
         return ldt.atZone(ZoneId.of("Asia/Seoul")).toInstant().toEpochMilli();
     }
 
-    public void send(String userId, String message) {
-        SseEmitter emitter = emitters.get(userId);
+    public void send(String userId, Notification notification) {
+        notificationRepository.save(notification);
 
-        if (emitter != null) {
+        SseEmitter emitter = emitters.get(userId);
+        if(emitter != null) {
+            log.warn("사용자가 현재 알림을 받을 수 없는 상태입니다: user={}, notificationId={}", userId, notification.getId());
+
             try {
                 emitter.send(SseEmitter.event()
                         .name("notification")
-                        .data(message)
+                        .data(NotificationDTO.fromEntity(notification))
                         .reconnectTime(3000));
             } catch (IOException e) {
                 emitters.remove(userId);

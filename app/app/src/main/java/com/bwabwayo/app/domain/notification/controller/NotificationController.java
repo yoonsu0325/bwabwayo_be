@@ -38,14 +38,6 @@ public class NotificationController {
         return sseService.subscribe(user.getId(), lastEventId);
     }
 
-    @Deprecated
-    @Operation(summary = "[TEST] 알림 송신", description = "사용자에게 알림을 보냅니다.")
-    @PostMapping("/send")
-    public ResponseEntity<Void> sendNotification(@RequestParam String receiverId, @RequestParam String message) {
-        sseService.send(receiverId, message);
-        return ResponseEntity.ok().build();
-    }
-
     @Operation(summary = "내 알림 목록 조회", description = "내 알림 목록을 조회합니다.")
     @ApiResponse(
             responseCode = "200"
