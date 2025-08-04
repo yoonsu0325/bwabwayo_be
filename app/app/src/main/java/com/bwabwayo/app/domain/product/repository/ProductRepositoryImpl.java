@@ -1,8 +1,8 @@
 package com.bwabwayo.app.domain.product.repository;
 
-import com.bwabwayo.app.domain.product.domain.Product;
 import com.bwabwayo.app.domain.product.domain.QProduct;
 import com.bwabwayo.app.domain.product.dto.response.ProductWithWishDTO;
+import com.bwabwayo.app.domain.user.domain.QUser;
 import com.bwabwayo.app.domain.wish.domain.QWish;
 import com.querydsl.core.BooleanBuilder;
 import com.querydsl.core.types.Projections;
@@ -10,8 +10,6 @@ import com.querydsl.core.types.dsl.Expressions;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
@@ -21,11 +19,10 @@ import java.util.List;
 @RequiredArgsConstructor
 public class ProductRepositoryImpl implements ProductRepositoryCustom {
 
-    private static final Logger log = LoggerFactory.getLogger(ProductRepositoryImpl.class);
     private final JPAQueryFactory queryFactory;
 
     @Override
-    public Page<ProductWithWishDTO> searchByCondition(String keyword, List<Long> categoryIds, @NonNull Pageable pageable, String userId){
+    public Page<ProductWithWishDTO> searchByCondition(String keyword, List<Long> categoryIds, @NonNull Pageable pageable, String loginUserId, String sellerId){
         QProduct product = QProduct.product;
         QWish wish = QWish.wish;
 
@@ -41,13 +38,18 @@ public class ProductRepositoryImpl implements ProductRepositoryCustom {
             condition.and(product.category.id.in(categoryIds));
         }
 
+        // 판매자 필터링
+        if(sellerId != null && !sellerId.isEmpty()){
+            condition.and(product.seller.id.eq(sellerId));
+        }
+
         List<ProductWithWishDTO> content;
-        if(userId != null) {
+        if(loginUserId != null) {
             content = queryFactory
                     .select(Projections.constructor(ProductWithWishDTO.class, product, wish.id.isNotNull()))
                     .from(product)
                     .leftJoin(wish)
-                    .on(wish.product.id.eq(product.id).and(wish.user.id.eq(userId)))
+                    .on(wish.product.id.eq(product.id).and(wish.user.id.eq(loginUserId)))
                     .where(condition)
                     .offset(pageable.getOffset())
                     .limit(pageable.getPageSize())
