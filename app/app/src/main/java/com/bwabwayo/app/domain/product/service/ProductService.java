@@ -15,7 +15,6 @@ import com.bwabwayo.app.domain.product.repository.ProductImageRepository;
 import com.bwabwayo.app.domain.product.repository.ProductRepository;
 import com.bwabwayo.app.domain.product.util.CategoryUtil;
 import com.bwabwayo.app.domain.user.domain.User;
-import com.bwabwayo.app.domain.user.repository.ReviewAggRepository;
 import com.bwabwayo.app.domain.user.service.UserService;
 import com.bwabwayo.app.domain.wish.service.WishService;
 import com.bwabwayo.app.global.storage.util.StorageUtil;

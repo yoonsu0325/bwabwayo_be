@@ -60,6 +60,7 @@ public class UserService {
             targetKey = storageUtil.copyToDirectory(profileImage, tempPath, profilePath);
         }
 
+
         User user = User.builder()
                 .id(request.getId())
                 .nickname(request.getNickname())
@@ -122,7 +123,7 @@ public class UserService {
         Account account = accountService.getAccount(user.getId());
         return UserDetailResponse.builder()
                 .nickname(user.getNickname())
-                .profileImage(user.getProfileImage())
+                .profileImage(storageService.getUrlFromKey(user.getProfileImage()))
                 .bio(user.getBio())
                 .accountNumber(Optional.ofNullable(account).map(Account::getAccountNumber).orElse(null))
                 .bankName(Optional.ofNullable(account).map(Account::getBankName).orElse(null))
