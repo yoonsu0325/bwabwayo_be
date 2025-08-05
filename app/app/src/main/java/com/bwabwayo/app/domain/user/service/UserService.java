@@ -81,7 +81,7 @@ public class UserService {
     public UserInfoResponse getUserInfo(User user) {
         // 기본 정보
         String nickname = user.getNickname();
-        String profileImage = user.getProfileImage();
+        String profileImage = storageService.getUrlFromKey(user.getProfileImage());
         int score = user.getScore();
         int point = user.getPoint();
         LocalDate createdAt = user.getCreatedAt().toLocalDate();
@@ -110,7 +110,7 @@ public class UserService {
         Account account = accountRepository.findByUserId(user.getId());
         return UserDetailResponse.of(
                 user.getNickname(),
-                user.getProfileImage(),
+                storageService.getUrlFromKey(user.getProfileImage()),
                 user.getBio(),
                 Optional.ofNullable(account).map(Account::getAccountNumber).orElse(null),
                 Optional.ofNullable(account).map(Account::getBankName).orElse(null),
