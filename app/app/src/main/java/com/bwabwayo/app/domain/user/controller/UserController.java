@@ -1,14 +1,20 @@
 package com.bwabwayo.app.domain.user.controller;
 
 import com.bwabwayo.app.domain.auth.annotation.LoginUser;
+import com.bwabwayo.app.domain.product.domain.Sale;
 import com.bwabwayo.app.domain.product.service.SaleService;
 import com.bwabwayo.app.domain.user.domain.User;
 import com.bwabwayo.app.domain.user.dto.request.UserDetailRequest;
+import com.bwabwayo.app.domain.user.dto.response.UserInfoResponse;
 import com.bwabwayo.app.domain.user.dto.response.UserOrderResponse;
 import com.bwabwayo.app.domain.user.service.UserService;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -45,8 +51,9 @@ public class UserController {
     }
 
     @GetMapping("/orders")
-    public ResponseEntity<?> getOrders(@LoginUser User user) {
-        List<UserOrderResponse> orders = saleService.getOrders(user.getId());
+    public ResponseEntity<?> getOrders(@LoginUser User user,
+    @PageableDefault(size = 10, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable) {
+        Page<UserOrderResponse> orders = saleService.getOrders(user.getId(), pageable);
         return ResponseEntity.ok(orders);
     }
 }

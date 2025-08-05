@@ -1,7 +1,9 @@
 package com.bwabwayo.app.domain.auth.service;
 
+import com.bwabwayo.app.domain.user.domain.ReviewAgg;
 import com.bwabwayo.app.domain.user.service.AccountService;
 import com.bwabwayo.app.domain.address.service.DeliveryAddressService;
+import com.bwabwayo.app.domain.user.service.ReviewAggService;
 import com.bwabwayo.app.domain.user.service.UserService;
 import com.bwabwayo.app.domain.auth.utils.JwtProperties;
 import com.bwabwayo.app.domain.user.domain.Role;
@@ -27,6 +29,7 @@ public class AuthService {
     private final JWTUtils jwtUtils;
     private final JwtProperties jwtProperties;
     private final AuthRedisService authRedisService;
+    private final ReviewAggService reviewAggService;
 
     @Transactional
     public UserTokenResponse signUp(UserSignUpRequest request) {
@@ -63,7 +66,15 @@ public class AuthService {
             deliveryAddressService.createAddress(user, request);
         }
 
-        // 5. 토큰 응답 반환
+        // 5. 리뷰통계테이블에 기본값 설정
+        ReviewAgg reviewAgg = ReviewAgg.builder()
+                .userId(request.getId())
+                .avgRating(0f)
+                .reviewCount(0)
+                .build();
+        reviewAggService.saveReviewAgg(reviewAgg);
+
+        // 6. 토큰 응답 반환
         return UserTokenResponse.builder()
                 .accessToken(accessToken)
                 .refreshToken(refreshToken)

@@ -30,16 +30,16 @@ import java.util.Optional;
 @RequiredArgsConstructor
 public class UserService {
     private final UserRepository userRepository;
-    private final PointRepository pointRepository;
     private final ReviewAggRepository reviewAggRepository;
-    private final ReviewEvaluationCountRepository reviewEvaluationCountRepository;
-    private final AccountRepository accountRepository;
     private final StorageUtil storageUtil;
     private final StorageService storageService;
+    private final AccountService accountService;
+    private final ReviewAggService reviewAggService;
+    private final ReviewEvaluationCountService reviewEvaluationCountService;
+    private final PointService pointService;
 
     @Value("${storage.path.profileImage}")
     private String profilePath;
-
 
     public User findById(String id){
         return userRepository.findUserById(id);
@@ -88,14 +88,14 @@ public class UserService {
         String bio = user.getBio();
 
         // 평점 평균
-        float avgRating = reviewAggRepository
-                .findByUserId(user.getId())
-                .map(ReviewAgg::getAvgRating)
-                .orElse(0f);
+        float avgRating = reviewAggService.getAvgRating(user.getId());
+
+        //리뷰 개수
+        int reviewCount = reviewAggService.getReviewCount(user.getId());
 
         // 평가 항목 통계
-        List<UserEvaluationStat> evaluations = reviewEvaluationCountRepository
-                .findEvaluationStatsByUserId(user.getId());
+        List<UserEvaluationStat> evaluations = reviewEvaluationCountService
+                .getEvaluationStats(user.getId());
 
         return UserInfoResponse.builder()
                 .nickname(nickname)
@@ -105,6 +105,7 @@ public class UserService {
                 .createdAt(createdAt)
                 .bio(bio)
                 .rating(avgRating)
+                .reviewCount(reviewCount)
                 .evaluation(evaluations)
                 .build();
     }
@@ -116,7 +117,7 @@ public class UserService {
     }
 
     public UserDetailResponse getUserDetail(User user){
-        Account account = accountRepository.findByUserId(user.getId());
+        Account account = accountService.getAccount(user.getId());
         return UserDetailResponse.builder()
                 .nickname(user.getNickname())
                 .profileImage(user.getProfileImage())
@@ -139,7 +140,7 @@ public class UserService {
                 request.getAccountHolder() != null;
 
         if (hasAllAccountFields) {
-            Account account = accountRepository.findByUserId(user.getId());
+            Account account = accountService.getAccount(user.getId());
 
             if (account != null) {
                 // 기존 계좌 수정
@@ -156,7 +157,7 @@ public class UserService {
                         .build();
             }
 
-            accountRepository.save(account);
+            accountService.saveAccount(account);
         }
     }
 
@@ -178,7 +179,7 @@ public class UserService {
                 .type(type)
                 .point(type.isDynamic() ? pointValue : type.getPoint())
                 .build();
-        pointRepository.save(point);
+        pointService.savePoint(point);
 
         user.setPoint(currentPoint + pointValue);
         userRepository.save(user); // OptimisticLock 충돌 시 여기서 예외 발생

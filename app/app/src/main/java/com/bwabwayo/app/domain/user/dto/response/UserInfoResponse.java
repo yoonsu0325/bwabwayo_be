@@ -16,6 +16,7 @@ public class UserInfoResponse {
     private LocalDate createdAt;
     private String bio;
     private float rating;
+    private int reviewCount;
     private List<UserEvaluationStat> evaluation;
 }
 

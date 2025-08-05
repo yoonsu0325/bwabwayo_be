@@ -10,6 +10,8 @@ import com.bwabwayo.app.domain.user.domain.User;
 import com.bwabwayo.app.domain.user.dto.response.UserOrderResponse;
 import com.bwabwayo.app.global.storage.service.StorageService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -36,41 +38,38 @@ public class SaleService {
         return saleRepository.save(sale);
     }
 
-    public List<UserOrderResponse> getOrders(String buyerId) {
-        List<Sale> sales = saleRepository.findWithProductAndCourierByBuyerId(buyerId);
-        return sales.stream()
-                .map(sale -> {
-                    Product product = sale.getProduct();
+    public Page<UserOrderResponse> getOrders(String buyerId, Pageable pageable) {
+        Page<Sale> sales = saleRepository.findWithProductAndCourierByBuyerId(buyerId, pageable);
 
-                    // 기본 null 설정
-                    String courierName = null;
-                    String trackingNumber = null;
-                    String deliveryStatus = null;
+        return sales.map(sale -> {
+            Product product = sale.getProduct();
 
-                    if (product.getCourier() != null) {
-                        courierName = product.getCourier().getName();
-                        trackingNumber = product.getInvoiceNumber(); // 송장번호는 Product에 있음
-                        deliveryStatus = product.getDeliveryStatus() != null
-                                ? product.getDeliveryStatus().name()
-                                : null;
-                    }
+            String courierName = null;
+            String trackingNumber = null;
+            String deliveryStatus = null;
 
+            if (product.getCourier() != null) {
+                courierName = product.getCourier().getName();
+                trackingNumber = product.getInvoiceNumber();
+                deliveryStatus = product.getDeliveryStatus() != null
+                        ? product.getDeliveryStatus().name()
+                        : null;
+            }
 
-                    int purchaseConfirmStatus = getPurchaseConfirmStatus(trackingNumber, product);
+            int purchaseConfirmStatus = getPurchaseConfirmStatus(trackingNumber, product);
 
-                    return UserOrderResponse.builder()
-                            .saleId(sale.getId())
-                            .productId(product.getId())
-                            .thumbnail(storageService.getUrlFromKey(product.getThumbnail()))
-                            .title(product.getTitle())
-                            .price(product.getPrice())
-                            .deliveryStatus(deliveryStatus)
-                            .courierName(courierName)
-                            .trackingNumber(trackingNumber)
-                            .PurchaseConfirmStatus(purchaseConfirmStatus)
-                            .build();
-                })
-                .toList();
+            return UserOrderResponse.builder()
+                    .saleId(sale.getId())
+                    .productId(product.getId())
+                    .thumbnail(storageService.getUrlFromKey(product.getThumbnail()))
+                    .title(product.getTitle())
+                    .price(product.getPrice())
+                    .deliveryStatus(deliveryStatus)
+                    .courierName(courierName)
+                    .trackingNumber(trackingNumber)
+                    .PurchaseConfirmStatus(purchaseConfirmStatus)
+                    .build();
+        });
     }
 
     private static int getPurchaseConfirmStatus(String trackingNumber, Product product) {
