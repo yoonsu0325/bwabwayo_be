@@ -4,7 +4,7 @@ import com.bwabwayo.app.domain.chat.domain.ChatMessageRedisEntity;
 import com.bwabwayo.app.domain.chat.domain.ChatRoom;
 import com.bwabwayo.app.domain.chat.dto.MessageDTO;
 import com.bwabwayo.app.domain.product.domain.Product;
-import com.bwabwayo.app.domain.product.enums.SaleStatus;
+import com.bwabwayo.app.domain.user.domain.ReviewAgg;
 import com.bwabwayo.app.domain.user.domain.User;
 import lombok.*;
 
@@ -19,72 +19,57 @@ public class ChatRoomListResponse implements Serializable {
 
     private Long roomId;
 
-    private String buyerId;
-
-    private String sellerId;
-
-    private Long productId;
-
-    private String productName;
-
-    private Integer productPrice;
-
     private String userId;
 
-    private String sellerProfileImageUrl;
+    BuyerInfoResponse buyer;
 
-    private String buyerProfileImageUrl;
+    SellerInfoResponse seller;
 
-    private String productImageUrl;
+    ProductInfoResponse product;
 
-    private String myNickName;
-
-    private String partnerNickName;
-
-    private SaleStatus saleStatus;
-
-    private MessageDTO lastChatmessageDto;
+    private MessageDTO lastMessage;
 
     private Long unreadCount;
 
-    public static ChatRoomListResponse fromInitial(ChatRoom room, String userId, User seller, User buyer, Product product) {
+    private String userNickname;
+
+    private String partnerNickname;
+
+    public static ChatRoomListResponse fromInitial(
+            ChatRoom room, String userId,
+            User seller, ReviewAgg sellerReview, User buyer,
+            Product product, String productImageUrl) {
+
         boolean isBuyer = room.getBuyerId().equals(userId);
         String userNickname = isBuyer ? buyer.getNickname() : seller.getNickname();
         String partnerNickname = isBuyer ? seller.getNickname() : buyer.getNickname();
 
-
         return ChatRoomListResponse.builder()
                 .roomId(room.getRoomId())
-                .buyerId(room.getBuyerId())
-                .sellerId(room.getSellerId())
-                .productId(room.getProductId())
-                .productName(product.getTitle())
-                .productPrice(product.getPrice())
                 .userId(userId)
-                .sellerProfileImageUrl(seller.getProfileImage())
-                .buyerProfileImageUrl(buyer.getProfileImage())
-                .productImageUrl(product.getThumbnail())
-                .myNickName(userNickname)
-                .partnerNickName(partnerNickname)
-                .saleStatus(product.getSaleStatus())
-                .lastChatmessageDto(null)
+                .buyer(BuyerInfoResponse.from(buyer))
+                .seller(SellerInfoResponse.from(seller, sellerReview))
+                .product(ProductInfoResponse.from(product, productImageUrl))
+                .lastMessage(null)
                 .unreadCount(0L)
+                .userNickname(userNickname)
+                .partnerNickname(partnerNickname)
                 .build();
     }
 
     public void updateChatMessageDto(MessageDTO chatMessageDto) {
-        this.lastChatmessageDto = chatMessageDto;
+        this.lastMessage = chatMessageDto;
     }
 
     public void changePartnerInfo() {
-        String tmp = myNickName;
-        this.myNickName = partnerNickName;
-        this.partnerNickName = tmp;
+        String tmp = userNickname;
+        this.userNickname = partnerNickname;
+        this.partnerNickname = tmp;
 
-        if (this.userId.equals(sellerId)) {
-            this.userId = buyerId;
-        } else if (this.userId.equals(buyerId)) {
-            this.userId = sellerId;
+        if (this.userId.equals(seller.getId())) {
+            this.userId = buyer.getId();
+        } else if (this.userId.equals(buyer.getId())) {
+            this.userId = seller.getId();
         }
     }
 
@@ -92,6 +77,6 @@ public class ChatRoomListResponse implements Serializable {
         System.out.println(msg.getContent());
         System.out.println(msg.getIsRead());
 
-        this.lastChatmessageDto = MessageDTO.fromEntity(msg);
+        this.lastMessage = MessageDTO.fromEntity(msg);
     }
 }

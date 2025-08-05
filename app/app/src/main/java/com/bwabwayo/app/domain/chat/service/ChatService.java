@@ -9,7 +9,6 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
-import java.util.ArrayList;
 import java.util.List;
 
 @RequiredArgsConstructor
@@ -36,6 +35,7 @@ public class ChatService {
             newChatRoomList = chatRoomRedisRepository.getChatRoom(userId, chatMessage.getRoomId());
         } else {
             newChatRoomList = chatRoomService.getChatRoomInfo(chatMessage.getRoomId(), userId);
+            log.info("채팅방 리스트 만들기");
         }
 
         partnerId = getPartnerId(chatMessage, newChatRoomList);
@@ -44,7 +44,8 @@ public class ChatService {
         setNewChatRoomInfo(chatMessage, newChatRoomList);
 
         // 3. 마지막 메시지들이 담긴 채팅방 리스트들을 가져온다.
-        List<ChatRoomListResponse> chatRoomListGetResponseList = chatRoomService.getChatRoomList(userId);
+        List<ChatRoomListResponse> chatRoomListGetResponseList =
+                chatRoomService.getChatRoomList(userId);
         // 4. 파트너 채팅방 리스트도 가져온다. (파트너는 userId 로만)
         List<ChatRoomListResponse> partnerChatRoomGetResponseList = chatRoomService.getChatRoomList(partnerId);
 
@@ -69,19 +70,19 @@ public class ChatService {
 
         /** 상대방 채팅 리스트와 내 리스트 둘다 채팅방을 저장한다. */
 
-        if (newChatRoomListResponse.getUserId().equals(newChatRoomListResponse.getSellerId())) {
-            chatRoomRedisRepository.setChatRoom(newChatRoomListResponse.getSellerId(),
+        if (newChatRoomListResponse.getUserId().equals(newChatRoomListResponse.getSeller().getId())) {
+            chatRoomRedisRepository.setChatRoom(newChatRoomListResponse.getSeller().getId(),
                     chatMessage.getRoomId(), newChatRoomListResponse);
 
             newChatRoomListResponse.changePartnerInfo(); //닉네임 체인지
-            chatRoomRedisRepository.setChatRoom(newChatRoomListResponse.getBuyerId(), chatMessage.getRoomId(), newChatRoomListResponse);
+            chatRoomRedisRepository.setChatRoom(newChatRoomListResponse.getBuyer().getId(), chatMessage.getRoomId(), newChatRoomListResponse);
 
-        } else if (newChatRoomListResponse.getUserId().equals(newChatRoomListResponse.getBuyerId())){
-            chatRoomRedisRepository.setChatRoom(newChatRoomListResponse.getBuyerId(),
+        } else if (newChatRoomListResponse.getUserId().equals(newChatRoomListResponse.getBuyer().getId())){
+            chatRoomRedisRepository.setChatRoom(newChatRoomListResponse.getBuyer().getId(),
                     chatMessage.getRoomId(), newChatRoomListResponse);
 
             newChatRoomListResponse.changePartnerInfo(); //닉네임 체인지
-            chatRoomRedisRepository.setChatRoom(newChatRoomListResponse.getSellerId(), chatMessage.getRoomId(), newChatRoomListResponse);
+            chatRoomRedisRepository.setChatRoom(newChatRoomListResponse.getSeller().getId(), chatMessage.getRoomId(), newChatRoomListResponse);
         }
         //다시 원상태로 복귀
         newChatRoomListResponse.changePartnerInfo();
@@ -91,10 +92,10 @@ public class ChatService {
     private String getPartnerId(MessageDTO chatMessageDto, ChatRoomListResponse my) {
         String userId = chatMessageDto.getSenderId();
         String partnerId;
-        if (my.getBuyerId() == userId) {
-            partnerId = my.getSellerId();
+        if (my.getBuyer().getId() == userId) {
+            partnerId = my.getSeller().getId();
         } else {
-            partnerId = my.getBuyerId();
+            partnerId = my.getBuyer().getId();
         }
         return partnerId;
     }

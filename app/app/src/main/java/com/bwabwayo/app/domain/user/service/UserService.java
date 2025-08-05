@@ -99,4 +99,9 @@ public class UserService {
             throw e;
         }
     }
+
+    public ReviewAgg findReviewAggByUser(String userId) {
+        return reviewAggRepository.findByUserId(userId)
+                .orElse(ReviewAgg.builder().userId(userId).build());
+    }
 }

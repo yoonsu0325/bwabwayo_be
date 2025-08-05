@@ -8,9 +8,11 @@ import com.bwabwayo.app.domain.chat.repository.ChatRoomRedisRepository;
 import com.bwabwayo.app.domain.chat.repository.ChatRoomRepository;
 import com.bwabwayo.app.domain.product.domain.Product;
 import com.bwabwayo.app.domain.product.repository.ProductRepository;
+import com.bwabwayo.app.domain.user.domain.ReviewAgg;
 import com.bwabwayo.app.domain.user.domain.User;
 import com.bwabwayo.app.domain.user.service.UserService;
 import com.bwabwayo.app.global.common.CommonService;
+import com.bwabwayo.app.global.storage.service.StorageService;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -34,6 +36,7 @@ public class ChatRoomService {
     private final ProductRepository productRepository;
     private final RedisService redisService;
     private final CommonService commonService;
+    private final StorageService storageService;
 
     /**
      * 채팅방 생성: MySQL 저장 + Redis 캐싱
@@ -51,9 +54,14 @@ public class ChatRoomService {
         User seller = userService.findById(sellerId);
         Product product = productRepository.findById(productId).orElseThrow(() -> new IllegalArgumentException("해당 사용자가 존재하지 않습니다."));
 
+        ReviewAgg reviewAgg = userService.findReviewAggByUser(sellerId);
+        String url = storageService.getUrlFromKey(product.getThumbnail());
+
         // 2. Redis 캐싱용 기본 미리보기 응답 생성
-        ChatRoomListResponse buyerPreview = ChatRoomListResponse.fromInitial(savedChatRoom, user.getId(), seller, user, product);
-        ChatRoomListResponse sellerPreview = ChatRoomListResponse.fromInitial(savedChatRoom, sellerId, seller, user, product);
+        ChatRoomListResponse buyerPreview = ChatRoomListResponse
+                .fromInitial(savedChatRoom, user.getId(), seller, reviewAgg, user, product, url);
+        ChatRoomListResponse sellerPreview = ChatRoomListResponse
+                .fromInitial(savedChatRoom, sellerId, seller, reviewAgg, user, product, url);
 
         // 3. Redis에 캐싱
         chatRoomRedisRepository.setChatRoom(user.getId(), roomId, buyerPreview);
@@ -103,7 +111,11 @@ public class ChatRoomService {
 
                 String partnerId = chatRoom.getOtherUserId(userId); // 상대 유저 ID 구하는 메서드 필요
 
-                ChatRoomListResponse response = ChatRoomListResponse.fromInitial(chatRoom, partnerId, seller, buyer, product);
+                ReviewAgg reviewAgg = userService.findReviewAggByUser(sellerId);
+                String url = storageService.getUrlFromKey(product.getThumbnail());
+
+                ChatRoomListResponse response = ChatRoomListResponse
+                        .fromInitial(chatRoom, partnerId, seller, reviewAgg, buyer, product, url);
                 Optional<ChatMessageRedisEntity> lastMessage = redisService.findLastMessage(chatRoom.getRoomId());
 
                 lastMessage.ifPresent(response::updateLastMessageInfo); // ← 마지막 메시지 내용, 시간, 읽음 여부 업데이트
@@ -126,11 +138,11 @@ public class ChatRoomService {
     public List<ChatRoomListResponse> sortChatRoomListLatest(List<ChatRoomListResponse> list) {
 
         return list.stream()
-                .filter(r -> r.getLastChatmessageDto() != null)
+                .filter(r -> r.getLastMessage() != null)
                 .sorted((o1, o2) -> {
                     try {
-                        LocalDateTime t1 = commonService.parseSafe(o1.getLastChatmessageDto().getCreatedAt());
-                        LocalDateTime t2 = commonService.parseSafe(o2.getLastChatmessageDto().getCreatedAt());
+                        LocalDateTime t1 = commonService.parseSafe(o1.getLastMessage().getCreatedAt());
+                        LocalDateTime t2 = commonService.parseSafe(o2.getLastMessage().getCreatedAt());
                         return t2.compareTo(t1); // 최신순
                     } catch (DateTimeParseException e) {
                         log.warn("⚠️ 시간 파싱 실패: {}", e.getMessage());
@@ -163,7 +175,11 @@ public class ChatRoomService {
         User seller = userService.findById(sellerId);
         Product product = productRepository.findById(productId).orElseThrow(() -> new IllegalArgumentException("해당 사용자가 존재하지 않습니다."));
 
-        return ChatRoomListResponse.fromInitial(chatRoom, userId, seller, buyer, product);
+        ReviewAgg reviewAgg = userService.findReviewAggByUser(sellerId);
+        String url = storageService.getUrlFromKey(product.getThumbnail());
+
+        return ChatRoomListResponse
+                .fromInitial(chatRoom, userId, seller, reviewAgg, buyer, product, url);
     }
 
 
