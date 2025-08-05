@@ -52,11 +52,15 @@ public class StorageUtil {
     }
 
     public void rollbackTemporalImages(List<String> imageKeys, String targetDir){
-        for(String key : imageKeys){
-            if(key.startsWith(tempPath)){
-                String deletingKey = targetDir + key.substring(tempPath.length());
-                safeDelete(deletingKey);
-            }
+        for(String imageKey : imageKeys){
+            rollbackTemporalImages(imageKey, targetDir);
+        }
+    }
+
+    public void rollbackTemporalImages(String imageKey, String targetDir){
+        if(imageKey.startsWith(tempPath)){
+            String deletingKey = targetDir + imageKey.substring(tempPath.length());
+            safeDelete(deletingKey);
         }
     }
 }
