@@ -13,6 +13,7 @@ import com.bwabwayo.app.domain.product.dto.response.*;
 import com.bwabwayo.app.domain.product.repository.CourierRepository;
 import com.bwabwayo.app.domain.product.repository.ProductImageRepository;
 import com.bwabwayo.app.domain.product.repository.ProductRepository;
+import com.bwabwayo.app.domain.product.util.CategoryUtil;
 import com.bwabwayo.app.domain.user.domain.ReviewAgg;
 import com.bwabwayo.app.domain.user.domain.User;
 import com.bwabwayo.app.domain.user.repository.ReviewAggRepository;
@@ -97,7 +98,7 @@ public class ProductService {
         if(categoryId != null){
             if(categoryService.existsCategoryById(categoryId)) {
                 Category topCategory = categoryService.getCategoryById(categoryId);
-                getSubCategoryIds(topCategory, categoryIds);
+                categoryIds = CategoryUtil.getSubCategories(topCategory).stream().map(Category::getId).toList();
             } else {
                 categoryIds.add(categoryId);
             }
@@ -159,7 +160,8 @@ public class ProductService {
     @Transactional(readOnly = true)
     public ProductDetailResponseDTO getProductDetail(Product product, User user) {
         // 상품이 속한 카테고리부터 조상 카테고리까지의 모음
-        List<CategoryDTO> superCategories = resolveSuperCategories(product.getCategory());
+        List<CategoryDTO> superCategories = CategoryUtil.getSupperCategories(product.getCategory())
+                .stream().map(CategoryDTO::fromEntity).toList();
 
         // 상품에 포함된 이미지 URL 모음
         List<String> imageUrls = product.getProductImages().stream()
@@ -226,31 +228,6 @@ public class ProductService {
         // Product 삭제
         productRepository.delete(product);
         imageKeys.forEach(storageUtil::deleteWithoutException);
-    }
-    
-    /**
-     * 현재 카테고리와 그 하위의 카테고리의 ID의 리스트 생성
-     */
-    private void getSubCategoryIds(Category category, List<Long> result){
-        if(category == null) return;
-
-        result.add(category.getId());
-        for(Category subCategory : category.getChildren()){
-            getSubCategoryIds(subCategory, result);
-        }
-    }
-
-    /**
-     * 현재 카테고리와 모든 선조 카테고리의 모음 반환
-     */
-    private List<CategoryDTO> resolveSuperCategories(Category category) {
-        List<CategoryDTO> result = new ArrayList<>();
-        while (category != null) {
-            result.add(new CategoryDTO(category.getId(), category.getName()));
-            category = category.getParent();
-        }
-        Collections.reverse(result);
-        return result;
     }
 
     @Transactional
