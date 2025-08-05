@@ -32,6 +32,16 @@ public class ProductController {
     private final ProductService productService;
     private final ViewCountService viewCountService;
 
+    @Operation(summary = "내 상품 목록 조회")
+    @ApiResponse(
+            responseCode = "200",
+            content = @Content(mediaType = "application/json", schema = @Schema(implementation = ProductSearchResponseDTO.class))
+    )
+    @GetMapping("/my")
+    public ResponseEntity<?> getMyProductList(@Parameter(hidden = true) @LoginUser User loginUser){
+        return getProducts(ProductSearchRequestDTO.builder().sellerId(loginUser.getId()).build(), loginUser);
+    }
+
     @Operation(summary = "상품 등록")
     @ApiResponse(
             responseCode = "200",
