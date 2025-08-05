@@ -44,7 +44,8 @@ public class LoginUserArgumentResolver implements HandlerMethodArgumentResolver 
         // 웹 요청 객체에서 HttpServletRequest를 얻어와야 헤더를 읽을 수 있어서 가져오기
         HttpServletRequest request = (HttpServletRequest) webRequest.getNativeRequest();
         // 헤더에서 AccessToken 추출
-        String accessToken = jwtUtils.getTokenFromHeader(request.getHeader("Authorization"));
+        String header = request.getHeader("Authorization");
+        String accessToken = header != null ? jwtUtils.getTokenFromHeader(header) : null;
         // 인증이 안된 사용자 (예외 발생), (사실, jwtFilter와 SecurityFilter로 인증 안된 사용자는 걸러지긴 함, 그래도 이중체크)
         if(accessToken == null) {
             if(loginUser.required()) {

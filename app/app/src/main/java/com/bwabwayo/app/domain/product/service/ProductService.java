@@ -43,6 +43,7 @@ public class ProductService {
     private final StorageService storageService;
     private final WishService wishService;
     private final CourierRepository courierRepository;
+    private final ViewCountService viewCountService;
 
     @Value("${storage.path.temp}")
     private String tempPath;
@@ -156,7 +157,7 @@ public class ProductService {
                     .thumbnail(storageService.getUrlFromKey(product.getThumbnail()))
                     .title(product.getTitle())
                     .price(product.getPrice())
-                    .viewCount(product.getViewCount())
+                    .viewCount(viewCountService.getViewCount(product.getId()).intValue())
                     .wishCount(product.getWishCount())
                     .chatCount(product.getChatCount())
                     .isLike(dto.getIsLike())
@@ -234,7 +235,7 @@ public class ProductService {
                 .canDelivery(product.isCanDelivery())
                 .canVideoCall(product.isCanVideoCall())
                 .isWish(user != null && wishService.existsWish(product.getId(), user.getId()))
-                .viewCount(product.getViewCount())
+                .viewCount(viewCountService.getViewCount(product.getId()).intValue())
                 .wishCount(product.getWishCount())
                 .chatCount(product.getChatCount())
                 .createdAt(product.getCreatedAt())
