@@ -33,7 +33,7 @@ public class UserController {
     }
 
     @Transactional
-    @PostMapping("/detail")
+    @PutMapping("/detail")
     public ResponseEntity<?> updateUserDetail(@LoginUser User user, @RequestBody UserDetailRequest request) {
         userService.updateUserDetail(request, user);
         return ResponseEntity.ok("");

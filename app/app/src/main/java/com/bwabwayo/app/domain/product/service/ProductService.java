@@ -173,8 +173,7 @@ public class ProductService {
                 .id(seller.getId())
                 .nickname(seller.getNickname())
                 .bio(seller.getBio())
-//                .profileImage(s3Service.getUrl(seller.getProfileImage()))
-                .profileImage(seller.getProfileImage())
+                .profileImage(storageService.getUrlFromKey(seller.getProfileImage()))
                 .score(seller.getScore())
                 .rating(4.5) // TODO: 리뷰 통계와 연결 필요
                 .build();

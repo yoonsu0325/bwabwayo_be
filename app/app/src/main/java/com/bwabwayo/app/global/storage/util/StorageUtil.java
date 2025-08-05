@@ -1,6 +1,6 @@
 package com.bwabwayo.app.global.storage.util;
 
-import com.bwabwayo.app.domain.product.exception.BadRequestException;
+import com.bwabwayo.app.domain.product.exception.NotFoundException;
 import com.bwabwayo.app.global.storage.service.StorageService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -40,7 +40,7 @@ public class StorageUtil {
 
     public String copyToPermanentDirectory(String srcKey, String targetDir) {
         if (!storageService.exists(srcKey)) {
-            throw new BadRequestException("스토리지에 존재하지 않는 이미지 입니다. key=" + srcKey);
+            throw new NotFoundException("스토리지에 존재하지 않는 이미지 입니다. key=" + srcKey);
         }
 
         String targetKey = null;

@@ -102,6 +102,7 @@ storage:
   path:
     temp: temp
     productImage: products
+    profileImage: profiles
 
 
 sse:
