@@ -305,7 +305,7 @@ public class ProductService {
         int oldImageCount;
 
         try {
-            storedImageKeys = storageUtil.copyToPermanentDirectory(requestedImageKeys, productPath);
+            storedImageKeys = storageUtil.copyToDirectory(requestedImageKeys, tempPath, productPath);
             
             // 이전 이미지 제거
             List<ProductImage> productImages = product.getProductImages();
@@ -321,7 +321,7 @@ public class ProductService {
             productRepository.save(product);
         } catch (Exception e) {
             // 상품 등록에 실패하면 영구 저장소로 복사한 이미지 롤백
-            storageUtil.rollbackTemporalImages(requestedImageKeys, productPath);
+            storageUtil.rollback(requestedImageKeys, tempPath, productPath);
             throw e;
         }
 
