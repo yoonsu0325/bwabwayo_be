@@ -19,12 +19,12 @@ public class StorageUtil {
     @Value("${storage.path.temp}")
     private String tempPath;
 
-    public void safeDelete(String key) {
+    public void deleteWithoutException(String key) {
         try {
             storageService.delete(key);
         } catch (Exception e) {
             // 삭제 실패한 이미지는 로그로 남김
-            log.info("삭제 실패: key={}", key, e);
+            log.info("이미지 삭제 실패: key={}", key, e);
         }
     }
 
@@ -60,7 +60,7 @@ public class StorageUtil {
     public void rollbackTemporalImages(String imageKey, String targetDir){
         if(imageKey.startsWith(tempPath)){
             String deletingKey = targetDir + imageKey.substring(tempPath.length());
-            safeDelete(deletingKey);
+            deleteWithoutException(deletingKey);
         }
     }
 }

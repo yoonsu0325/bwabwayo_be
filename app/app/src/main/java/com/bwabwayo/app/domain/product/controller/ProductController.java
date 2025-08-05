@@ -58,12 +58,16 @@ public class ProductController {
             @Valid @RequestBody ProductCreateAndUpdateRequestDTO requestDTO,
             @Parameter(hidden = true) @LoginUser User user
     ) {
-        // 상품 저장
-        Product product = productService.createProduct(requestDTO, user);
-        // 벡터 추가
-        productSimilarityService.savePoint(product);
-        // Response 생성
-        return ResponseEntity.ok(ProductCreateResponseDTO.fromEntity(product));
+        try{
+            // 상품 저장
+            Product product = productService.createProduct(requestDTO, user);
+            // 벡터 추가
+            productSimilarityService.savePoint(product);
+            // Response 생성
+            return ResponseEntity.ok(ProductCreateResponseDTO.fromEntity(product));
+        } catch(IllegalArgumentException e){
+            throw new BadRequestException(e.getMessage());
+        }
     }
 
     @Operation(summary = "상품 목록 조회")

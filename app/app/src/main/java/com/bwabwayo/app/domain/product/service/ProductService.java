@@ -15,7 +15,6 @@ import com.bwabwayo.app.domain.product.repository.ProductImageRepository;
 import com.bwabwayo.app.domain.product.repository.ProductRepository;
 import com.bwabwayo.app.domain.user.domain.ReviewAgg;
 import com.bwabwayo.app.domain.user.domain.User;
-import com.bwabwayo.app.domain.user.repository.AccountRepository;
 import com.bwabwayo.app.domain.user.repository.ReviewAggRepository;
 import com.bwabwayo.app.domain.wish.service.WishService;
 import com.bwabwayo.app.global.storage.util.StorageUtil;
@@ -59,10 +58,7 @@ public class ProductService {
      */
     @Transactional
     public Product createProduct(ProductCreateAndUpdateRequestDTO requestDTO, User user) {
-        Product product = saveDTO(requestDTO, new Product(), user);
-        productRepository.save(product);
-
-        return product;
+        return saveDTO(requestDTO, new Product(), user);
     }
 
     /**
@@ -229,7 +225,7 @@ public class ProductService {
 
         // Product 삭제
         productRepository.delete(product);
-        imageKeys.forEach(storageUtil::safeDelete);
+        imageKeys.forEach(storageUtil::deleteWithoutException);
     }
     
     /**
@@ -289,10 +285,10 @@ public class ProductService {
             throw new IllegalArgumentException("등록하려는 상품이 속한 카테고리가 존재하지 않습니다.");
         }
 
+        // Product 속성 할당
         if(seller != null && product.getSeller() == null) {
             product.setSeller(seller);
         }
-
         product.setCategory(category);
         product.setTitle(dto.getTitle());
         product.setDescription(dto.getDescription());
@@ -304,58 +300,60 @@ public class ProductService {
         product.setCanVideoCall(dto.getCanVideoCall());
 
         // 이미지 저장
-        List<String> originImageKeys = dto.getImages();
+        List<String> requestedImageKeys = dto.getImages();
+        List<String> storedImageKeys;
+        int oldImageCount;
+
         try {
-            List<String> imageKeys = storageUtil.copyToPermanentDirectory(originImageKeys, productPath);
+            storedImageKeys = storageUtil.copyToPermanentDirectory(requestedImageKeys, productPath);
             
             // 이전 이미지 제거
-            int oldImageCount = product.getProductImages() != null ? product.getProductImages().size() : 0;
+            List<ProductImage> productImages = product.getProductImages();
+            oldImageCount = productImages != null ? productImages.size() : 0;
             if(oldImageCount > 0){
                 product.getProductImages().clear();
                 productImageRepository.deleteAllByProduct(product);
                 productImageRepository.flush();
             }
 
-            setProductImages(product, imageKeys);
-
-            // 이전 이미지 중 삭제되는 이미지를 스토리지에서 삭제
-            if(oldImageCount > 0){
-                Set<String> afterImages = new HashSet<>(imageKeys);
-                for (String key : originImageKeys) {
-                    if(!afterImages.contains(key)) {
-                        storageUtil.safeDelete(key);
-                    }
-                }   
-            }
+            setProductImages(product, storedImageKeys);
 
             productRepository.save(product);
         } catch (Exception e) {
             // 상품 등록에 실패하면 영구 저장소로 복사한 이미지 롤백
-            storageUtil.rollbackTemporalImages(originImageKeys, productPath);
+            storageUtil.rollbackTemporalImages(requestedImageKeys, productPath);
             throw e;
+        }
+
+        // 이전 이미지 중 상품에 포함되지 않는 이미지를 삭제
+        if(oldImageCount > 0){
+            Set<String> updatedImages = new HashSet<>(storedImageKeys);
+            for (String key : requestedImageKeys) {
+                if(!updatedImages.contains(key)) {
+                    storageUtil.deleteWithoutException(key);
+                }
+            }
         }
 
         return product;
     }
 
     private void setProductImages(Product product, List<String> imageKeys) {
-        if (imageKeys != null && !imageKeys.isEmpty()) {
-            int index = 0;
-
-            for (String key : imageKeys) {
-                ProductImage image = ProductImage.builder()
-                        .product(product)
-                        .no(++index)
-                        .url(key)
-                        .build();
-                product.getProductImages().add(image);
-            }
-
-            // 썸네일 지정
-            product.setThumbnail(product.getProductImages().get(0).getUrl());
-        } else{
-            throw new NullPointerException("유효한 이미지가 존재하지 않습니다.");
+        if(imageKeys == null || imageKeys.isEmpty()){
+            throw new IllegalArgumentException("유효한 이미지가 존재하지 않습니다.");
         }
-    }
 
+        int index = 0;
+        for (String key : imageKeys) {
+            ProductImage image = ProductImage.builder()
+                    .product(product)
+                    .no(++index)
+                    .url(key)
+                    .build();
+            product.getProductImages().add(image);
+        }
+
+        // 썸네일 지정
+        product.setThumbnail(product.getProductImages().get(0).getUrl());
+    }
 }
