@@ -81,7 +81,7 @@ public class UserService {
     public UserInfoResponse getUserInfo(User user) {
         // 기본 정보
         String nickname = user.getNickname();
-        String profileImage = user.getProfileImage();
+        String profileImage = storageService.getUrlFromKey(user.getProfileImage());
         int score = user.getScore();
         int point = user.getPoint();
         LocalDate createdAt = user.getCreatedAt().toLocalDate();
