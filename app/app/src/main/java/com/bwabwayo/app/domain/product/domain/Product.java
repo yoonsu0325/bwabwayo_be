@@ -31,7 +31,7 @@ public class Product {
     private Category category; // 상품 카테고리
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "seller_id", nullable = false)
+    @JoinColumn(name = "seller_id", nullable = false, updatable = false)
     private User seller; // 판매자
 
     @Column(length = 255, nullable = false)

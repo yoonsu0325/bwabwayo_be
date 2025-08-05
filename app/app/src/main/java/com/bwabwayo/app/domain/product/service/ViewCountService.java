@@ -69,7 +69,6 @@ public class ViewCountService {
     }
 
     @Transactional
-    @Scheduled(cron = "0 0 * * * *")
     public void syncAllToDatabase() {
         // "viewcount:"에 관한 모든 key를 가져옴
         Set<String> keys = viewCountRedisTemplate.keys(PREFIX + "*");

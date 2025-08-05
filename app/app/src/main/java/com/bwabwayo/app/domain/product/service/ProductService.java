@@ -10,14 +10,12 @@ import com.bwabwayo.app.domain.product.domain.ProductImage;
 import com.bwabwayo.app.domain.product.dto.request.ProductCreateAndUpdateRequestDTO;
 import com.bwabwayo.app.domain.product.dto.request.ProductSearchRequestDTO;
 import com.bwabwayo.app.domain.product.dto.response.*;
-import com.bwabwayo.app.domain.product.exception.BadRequestException;
-import com.bwabwayo.app.domain.product.exception.ForbiddenException;
-import com.bwabwayo.app.domain.product.exception.NotFoundException;
 import com.bwabwayo.app.domain.product.repository.CourierRepository;
 import com.bwabwayo.app.domain.product.repository.ProductImageRepository;
 import com.bwabwayo.app.domain.product.repository.ProductRepository;
 import com.bwabwayo.app.domain.user.domain.User;
 import com.bwabwayo.app.domain.wish.service.WishService;
+import com.bwabwayo.app.global.storage.util.StorageUtil;
 import com.bwabwayo.app.global.storage.service.StorageService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -41,6 +39,7 @@ public class ProductService {
     private final ProductImageRepository productImageRepository;
     private final CategoryService categoryService;
     private final StorageService storageService;
+    private final StorageUtil storageUtil;
     private final WishService wishService;
     private final CourierRepository courierRepository;
     private final ViewCountService viewCountService;
@@ -48,57 +47,18 @@ public class ProductService {
     @Value("${storage.path.temp}")
     private String tempPath;
     @Value("${storage.path.productImage}")
-    private String permanentPath;
+    private String productPath;
 
 
     /**
      * 상품 등록
      */
     @Transactional
-    public ProductCreateResponseDTO createProduct(ProductCreateAndUpdateRequestDTO requestDTO, User user) {
-        Category category = categoryService.getCategoryById(requestDTO.getCategoryId());
-        if(category == null){
-            throw new BadRequestException("등록하려는 상품이 속한 카테고리가 존재하지 않습니다.");
-        }
-        
-        // Product 생성
-        Product product = Product.builder()
-                .category(category)
-                .seller(user)
-                .title(requestDTO.getTitle())
-                .description(requestDTO.getDescription())
-                .price(requestDTO.getPrice())
-                .shippingFee(requestDTO.getShippingFee())
-                .canNegotiate(requestDTO.getCanNegotiate())
-                .canDirect(requestDTO.getCanDirect())
-                .canDelivery(requestDTO.getCanDelivery())
-                .canVideoCall(requestDTO.getCanVideoCall())
-                .build();
+    public Product createProduct(ProductCreateAndUpdateRequestDTO requestDTO, User user) {
+        Product product = saveDTO(requestDTO, new Product(), user);
+        productRepository.save(product);
 
-        // ProductImage 생성
-        List<String> originImageKeys = requestDTO.getImages();
-
-        try {
-            List<String> imageKeys = copyToPermanentDirectory(originImageKeys);
-
-            setProductImages(product, imageKeys);
-
-            productRepository.save(product);
-        } catch (Exception e) {
-            // 상품 등록에 실패하면 영구 저장소로 복사한 이미지 롤백
-            for(String key : originImageKeys){
-                if(key.startsWith(tempPath)){
-                    String target = permanentPath + key.substring(tempPath.length());
-                    deleteImage(target);
-                }
-            }
-
-            throw e;
-        }
-
-        return ProductCreateResponseDTO.builder()
-                .id(product.getId())
-                .build();
+        return product;
     }
 
     /**
@@ -125,7 +85,6 @@ public class ProductService {
             case "oldest" -> Sort.Order.asc("createdAt");
             case "views" -> Sort.Order.desc("view_count");
             case "wishes" -> Sort.Order.desc("wish_count");
-//            case "latest" -> Sort.Order.desc("createdAt");
             default -> Sort.Order.desc("createdAt");
         };
         Sort sort = Sort.by(option, Sort.Order.asc("id"));
@@ -198,12 +157,7 @@ public class ProductService {
      * 상품 상세 정보 조회
      */
     @Transactional(readOnly = true)
-    public ProductDetailResponseDTO getProductDetail(Long id, User user) {
-        Product product = getProductById(id);
-        if(product == null){
-            throw new NotFoundException("상품이 존재하지 않습니다.");
-        }
-
+    public ProductDetailResponseDTO getProductDetail(Product product, User user) {
         // 상품이 속한 카테고리부터 조상 카테고리까지의 모음
         List<CategoryDTO> superCategories = resolveSuperCategories(product.getCategory());
 
@@ -250,100 +204,22 @@ public class ProductService {
      * 상품 정보 갱신
      */
     @Transactional
-    public void updateProduct(Long productId, ProductCreateAndUpdateRequestDTO requestDTO, User user) {
-        Product product = getProductById(productId);
-        if(product == null) {
-            throw new BadRequestException("수정하려는 상품이 존재하지 않습니다.");
-        }
-
-        if(!product.getSeller().getId().equals(user.getId())) {
-            throw new ForbiddenException("자신이 등록한 상품만 수정할 수 있습니다.");
-        }
-
-        Category category = categoryService.getCategoryById(requestDTO.getCategoryId());
-        if(category == null) {
-            throw new BadRequestException("등록하려는 상품이 속한 카테고리가 존재하지 않습니다.");
-        }
-
-        product.setCategory(category);
-        product.setTitle(requestDTO.getTitle());
-        product.setDescription(requestDTO.getDescription());
-        product.setPrice(requestDTO.getPrice());
-        product.setShippingFee(requestDTO.getShippingFee());
-        product.setCanNegotiate(requestDTO.getCanNegotiate());
-        product.setCanDirect(requestDTO.getCanDirect());
-        product.setCanDelivery(requestDTO.getCanDelivery());
-        product.setCanVideoCall(requestDTO.getCanVideoCall());
-
-        List<String> originImageKeys = requestDTO.getImages();
-        try {
-            List<String> imageKeys = copyToPermanentDirectory(originImageKeys);
-
-            product.getProductImages().clear();
-            productImageRepository.deleteAllByProduct(product);
-            productImageRepository.flush();
-
-            setProductImages(product, imageKeys);
-
-            // 수정 후 사라지는 이미지 삭제
-            Set<String> afterImages = new HashSet<>(imageKeys);
-            for (String key : originImageKeys) {
-                if(!afterImages.contains(key)) {
-                    deleteImage(key);
-                }
-            }
-
-            productRepository.save(product);
-        } catch (Exception e) {
-            // 상품 등록에 실패하면 영구 저장소로 복사한 이미지 롤백
-            for(String key : originImageKeys){
-                if(key.startsWith(tempPath)){
-                    String target = permanentPath + key.substring(tempPath.length());
-                    deleteImage(target);
-                }
-            }
-
-            throw e;
-        }
-    }
-
-    private void setProductImages(Product product, List<String> imageKeys) {
-        if (!imageKeys.isEmpty()) {
-            int index = 0;
-
-            for (String key : imageKeys) {
-                ProductImage image = ProductImage.builder()
-                        .product(product)
-                        .no(++index)
-                        .url(key)
-                        .build();
-                product.getProductImages().add(image);
-            }
-        }
-        product.setThumbnail(product.getProductImages().get(0).getUrl());
+    public void update(Product product, ProductCreateAndUpdateRequestDTO requestDTO) {
+        saveDTO(requestDTO, product, null);
     }
 
     /**
      * 상품 삭제
      */
     @Transactional
-    public void deleteProductById(Long productId, User user) {
-        // 상품이 존재하는지 확인
-        Product product = getProductById(productId);
-
-        // 상품을 삭제하려는 사용자가 상품의 판매자 또는 관리자인지 확인
-        if(!product.getSeller().getId().equals(user.getId())) {
-            throw new ForbiddenException("상품을 삭제할 권한이 없습니다: 자신이 등록한 상품만 삭제할 수 있습니다.");
-        }
-
+    public void delete(Product product) {
         // 삭제할 이미지 URL 기록
         List<ProductImage> productImages = product.getProductImages();
         List<String> imageKeys = productImages.stream().map(ProductImage::getUrl).toList();
 
         // Product 삭제
         productRepository.delete(product);
-
-        imageKeys.forEach(this::deleteImage);
+        imageKeys.forEach(storageUtil::safeDelete);
     }
     
     /**
@@ -371,46 +247,6 @@ public class ProductService {
         return result;
     }
 
-    public Product getProductById(Long id) {
-        return productRepository.getProductById(id);
-    }
-
-
-    private List<String> copyToPermanentDirectory(List<String> images) {
-        List<String> result = new ArrayList<>();
-
-        for (String key : images) {
-            if (!storageService.exists(key)) {
-                throw new BadRequestException("스토리지에 존재하지 않는 이미지 입니다. key=" + key);
-            }
-
-            if (key.startsWith(tempPath)) {
-                String target = permanentPath + key.substring(tempPath.length());
-
-                storageService.copy(key, target);
-                key = target;
-            }
-            result.add(key);
-        }
-        return result;
-    }
-
-    private void deleteImage(String imageKey) {
-        try{
-            storageService.delete(imageKey);
-        } catch (Exception e){
-            // 삭제 실패한 이미지는 로그로 남김
-            log.warn("이미지 삭제 실패: file=" + imageKey, e);
-        }
-    }
-
-    public void increaseWishCount(Long productId){
-        productRepository.increaseWishCount(productId);
-    }
-    public void decreaseWishCount(Long productId){
-        productRepository.decreaseWishCount(productId);
-    }
-
     @Transactional
     public void setInvoiceNumber(SetInvoiceNumberRequest request, Long productId) {
         Product product = productRepository.getProductById(productId);
@@ -433,4 +269,83 @@ public class ProductService {
     public Product findById(Long productId) {
         return productRepository.findById(productId).orElseThrow(() -> new IllegalArgumentException("해당 상품이 존재하지 않습니다."));
     }
+
+    /**
+     * RequestDTO를 Entity로 변환 후 repository에 저장
+     */
+    private Product saveDTO(ProductCreateAndUpdateRequestDTO dto, Product product, User seller){
+        Category category = categoryService.getCategoryById(dto.getCategoryId());
+        if(category == null){
+            throw new IllegalArgumentException("등록하려는 상품이 속한 카테고리가 존재하지 않습니다.");
+        }
+
+        if(seller != null && product.getSeller() == null) {
+            product.setSeller(seller);
+        }
+
+        product.setCategory(category);
+        product.setTitle(dto.getTitle());
+        product.setDescription(dto.getDescription());
+        product.setPrice(dto.getPrice());
+        product.setShippingFee(dto.getShippingFee());
+        product.setCanNegotiate(dto.getCanNegotiate());
+        product.setCanDirect(dto.getCanDirect());
+        product.setCanDelivery(dto.getCanDelivery());
+        product.setCanVideoCall(dto.getCanVideoCall());
+
+        // 이미지 저장
+        List<String> originImageKeys = dto.getImages();
+        try {
+            List<String> imageKeys = storageUtil.copyToPermanentDirectory(originImageKeys, productPath);
+            
+            // 이전 이미지 제거
+            int oldImageCount = product.getProductImages() != null ? product.getProductImages().size() : 0;
+            if(oldImageCount > 0){
+                product.getProductImages().clear();
+                productImageRepository.deleteAllByProduct(product);
+                productImageRepository.flush();
+            }
+
+            setProductImages(product, imageKeys);
+
+            // 이전 이미지 중 삭제되는 이미지를 스토리지에서 삭제
+            if(oldImageCount > 0){
+                Set<String> afterImages = new HashSet<>(imageKeys);
+                for (String key : originImageKeys) {
+                    if(!afterImages.contains(key)) {
+                        storageUtil.safeDelete(key);
+                    }
+                }   
+            }
+
+            productRepository.save(product);
+        } catch (Exception e) {
+            // 상품 등록에 실패하면 영구 저장소로 복사한 이미지 롤백
+            storageUtil.rollbackTemporalImages(originImageKeys, productPath);
+            throw e;
+        }
+
+        return product;
+    }
+
+    private void setProductImages(Product product, List<String> imageKeys) {
+        if (imageKeys != null && !imageKeys.isEmpty()) {
+            int index = 0;
+
+            for (String key : imageKeys) {
+                ProductImage image = ProductImage.builder()
+                        .product(product)
+                        .no(++index)
+                        .url(key)
+                        .build();
+                product.getProductImages().add(image);
+            }
+
+            // 썸네일 지정
+            product.setThumbnail(product.getProductImages().get(0).getUrl());
+        } else{
+            throw new NullPointerException("유효한 이미지가 존재하지 않습니다.");
+        }
+    }
+
 }

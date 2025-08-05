@@ -58,11 +58,13 @@ public class WishController {
             @PathVariable Long productId,
             @Parameter(hidden = true) @LoginUser User loginUser
     ) {
-        Product product = productService.getProductById(productId);
-
-        if(product == null){
-            log.warn("찜하려는 상품이 존재하지 않음: productId={}",productId);
-            throw new NotFoundException("찜하려는 상품이 존재하지 않음: productId="+productId);
+        // 상품 조회
+        Product product;
+        try{
+            product = productService.findById(productId);
+        } catch(IllegalArgumentException e){
+            log.warn("상품이 존재하지 않음: productId={}",productId);
+            throw new NotFoundException("상품이 존재하지 않음: productId="+productId);
         }
 
         wishService.addWish(product, loginUser);
@@ -77,11 +79,12 @@ public class WishController {
             @PathVariable Long productId,
             @Parameter(hidden = true) @LoginUser User user
     ) {
-        Product product = productService.getProductById(productId);
-
-        if(product == null){
-            log.warn("찜 해제하려는 상품이 존재하지 않음: productId={}",productId);
-            throw new NotFoundException("찜 해제하려는 상품이 존재하지 않음: productId="+productId);
+        Product product;
+        try{
+            product = productService.findById(productId);
+        } catch(IllegalArgumentException e){
+            log.warn("상품이 존재하지 않음: productId={}",productId);
+            throw new NotFoundException("상품이 존재하지 않음: productId="+productId);
         }
 
         wishService.removeWish(product.getId(), user.getId());
@@ -100,11 +103,12 @@ public class WishController {
             @PathVariable Long productId,
             @Parameter(hidden = true) @LoginUser User loginUser
     ) {
-        Product product = productService.getProductById(productId);
-
-        if(product == null){
-            log.warn("찜 여부를 확인하려는 상품이 존재하지 않음: productId={}",productId);
-            throw new NotFoundException("찜 여부를 확인하려는 상품이 존재하지 않음: productId="+productId);
+        Product product;
+        try{
+            product = productService.findById(productId);
+        } catch(IllegalArgumentException e){
+            log.warn("상품이 존재하지 않음: productId={}",productId);
+            throw new NotFoundException("상품이 존재하지 않음: productId="+productId);
         }
 
         boolean exists = wishService.existsWish(product.getId(), loginUser.getId());

@@ -1,6 +1,7 @@
 package com.bwabwayo.app.domain.product.dto.request;
 
 import com.bwabwayo.app.domain.product.annotation.AtLeastOneTrue;
+import com.bwabwayo.app.domain.product.domain.Product;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;

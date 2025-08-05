@@ -1,11 +1,16 @@
 package com.bwabwayo.app.domain.product.controller;
 
+import com.bwabwayo.app.domain.ai.service.ProductSimilarityService;
+import com.bwabwayo.app.domain.product.domain.Product;
 import com.bwabwayo.app.domain.product.dto.request.ProductCreateAndUpdateRequestDTO;
 import com.bwabwayo.app.domain.product.dto.request.ProductSearchRequestDTO;
 import com.bwabwayo.app.domain.product.dto.response.ProductCreateResponseDTO;
 import com.bwabwayo.app.domain.product.dto.response.ProductDetailResponseDTO;
 import com.bwabwayo.app.domain.product.dto.response.ProductSearchResponseDTO;
 import com.bwabwayo.app.domain.product.dto.response.ViewCountResponseDTO;
+import com.bwabwayo.app.domain.product.exception.BadRequestException;
+import com.bwabwayo.app.domain.product.exception.ForbiddenException;
+import com.bwabwayo.app.domain.product.exception.NotFoundException;
 import com.bwabwayo.app.domain.product.service.ProductService;
 import com.bwabwayo.app.domain.auth.annotation.LoginUser;
 import com.bwabwayo.app.domain.product.service.ViewCountService;
@@ -31,10 +36,11 @@ public class ProductController {
 
     private final ProductService productService;
     private final ViewCountService viewCountService;
+    private final ProductSimilarityService productSimilarityService;
+
 
     @Operation(summary = "내 상품 목록 조회")
-    @ApiResponse(
-            responseCode = "200",
+    @ApiResponse(responseCode = "200",
             content = @Content(mediaType = "application/json", schema = @Schema(implementation = ProductSearchResponseDTO.class))
     )
     @GetMapping("/my")
@@ -43,8 +49,7 @@ public class ProductController {
     }
 
     @Operation(summary = "상품 등록")
-    @ApiResponse(
-            responseCode = "200",
+    @ApiResponse(responseCode = "200",
             description = "상품 등록 성공",
             content = @Content(mediaType = "application/json", schema = @Schema(implementation = ProductCreateResponseDTO.class))
     )
@@ -53,8 +58,12 @@ public class ProductController {
             @Valid @RequestBody ProductCreateAndUpdateRequestDTO requestDTO,
             @Parameter(hidden = true) @LoginUser User user
     ) {
-        ProductCreateResponseDTO responseDTO = productService.createProduct(requestDTO, user);
-        return ResponseEntity.ok(responseDTO);
+        // 상품 저장
+        Product product = productService.createProduct(requestDTO, user);
+        // 벡터 추가
+        productSimilarityService.savePoint(product);
+        // Response 생성
+        return ResponseEntity.ok(ProductCreateResponseDTO.fromEntity(product));
     }
 
     @Operation(summary = "상품 목록 조회")
@@ -72,8 +81,7 @@ public class ProductController {
     }
 
     @Operation(summary = "상품 상세 조회")
-    @ApiResponse(
-            responseCode = "200",
+    @ApiResponse(responseCode = "200",
             content = @Content(mediaType = "application/json", schema = @Schema(implementation = ProductDetailResponseDTO.class))
     )
     @GetMapping("/{productId}")
@@ -81,36 +89,78 @@ public class ProductController {
             @PathVariable Long productId,
             @Parameter(hidden = true) @LoginUser(required = false) User user
     ) {
-        ProductDetailResponseDTO productDetail = productService.getProductDetail(productId, user);
+        Product product = validateProduct(productId);
+
+        ProductDetailResponseDTO productDetail = productService.getProductDetail(product, user);
+
         return ResponseEntity.ok(productDetail);
     }
 
     @Operation(summary = "상품 정보 갱신")
     @ApiResponse(responseCode = "200")
     @PutMapping("/{productId}")
-    public ResponseEntity<?> updateProduct(
+    public ResponseEntity<Void> updateProduct(
             @PathVariable Long productId,
             @RequestBody ProductCreateAndUpdateRequestDTO requestDTO,
-            @Parameter(hidden = true) @LoginUser User user
+            @Parameter(hidden = true) @LoginUser User loginUser
     ) {
-        productService.updateProduct(productId, requestDTO, user);
+        Product product = validateProduct(productId, loginUser);
+        try{
+            productService.update(product, requestDTO);
+        } catch(IllegalArgumentException e){
+            throw new BadRequestException(e.getMessage());
+        }
+        // 벡터 갱신
+        productSimilarityService.deletePoint(productId);
+        productSimilarityService.savePoint(product);
+
         return ResponseEntity.ok().build();
     }
 
     @Operation(summary = "상품 삭제")
     @ApiResponse(responseCode = "200")
     @DeleteMapping("/{productId}")
-    public ResponseEntity<?> deleteProductById(
+    public ResponseEntity<Void> deleteProductById(
             @PathVariable Long productId,
-            @Parameter(hidden = true) @LoginUser User user
+            @Parameter(hidden = true) @LoginUser User loginUser
     ){
-        productService.deleteProductById(productId, user);
+        Product product = validateProduct(productId, loginUser);
+        // 상품 삭제
+        productService.delete(product);
+        // 벡터 삭제
+        productSimilarityService.deletePoint(productId);
+        
         return ResponseEntity.ok().build();
     }
-    
+
+    private Product validateProduct(Long productId) {
+        Product product;
+        try{
+            product = productService.findById(productId);
+        } catch (IllegalArgumentException e){
+            log.info("상품을 찾을 수 없음: productId={}", productId);
+            throw new NotFoundException("상품을 찾을 수 없습니다.");
+        }
+        return product;
+    }
+
+    private Product validateProduct(Long productId, User loginUser) {
+        Product product = validateProduct(productId);
+
+        User seller = product.getSeller();
+        if(!seller.getId().equals(loginUser.getId())){
+            log.info("권한 없음: seller={}, loginUser={}", seller.getId(), loginUser.getId());
+            throw new ForbiddenException("상품의 상태를 변경할 권한이 없습니다.");
+        }
+
+        return product;
+    }
+
+    // =================
+    // 조회수
+    // =================
     @Operation(summary = "조회수 증가")
-    @ApiResponse(
-            responseCode = "200",
+    @ApiResponse(responseCode = "200",
             content = @Content(mediaType = "application/json", schema = @Schema(implementation = ViewCountResponseDTO.class))
     )
     @GetMapping("{productId}/view")

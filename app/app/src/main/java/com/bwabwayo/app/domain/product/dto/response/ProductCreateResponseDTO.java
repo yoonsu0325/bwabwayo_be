@@ -1,5 +1,6 @@
 package com.bwabwayo.app.domain.product.dto.response;
 
+import com.bwabwayo.app.domain.product.domain.Product;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -11,4 +12,8 @@ import lombok.NoArgsConstructor;
 @Builder
 public class ProductCreateResponseDTO {
     private Long id;
+
+    public static ProductCreateResponseDTO fromEntity(Product product){
+        return ProductCreateResponseDTO.builder().id(product.getId()).build();
+    }
 }
