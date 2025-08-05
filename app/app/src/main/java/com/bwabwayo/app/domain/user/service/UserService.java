@@ -3,12 +3,11 @@ package com.bwabwayo.app.domain.user.service;
 import com.bwabwayo.app.domain.product.exception.NotFoundException;
 import com.bwabwayo.app.domain.user.domain.*;
 import com.bwabwayo.app.domain.auth.dto.request.UserSignUpRequest;
+import com.bwabwayo.app.domain.user.dto.request.UserDetailRequest;
+import com.bwabwayo.app.domain.user.dto.response.UserDetailResponse;
 import com.bwabwayo.app.domain.user.dto.response.UserEvaluationStat;
 import com.bwabwayo.app.domain.user.dto.response.UserInfoResponse;
-import com.bwabwayo.app.domain.user.repository.PointRepository;
-import com.bwabwayo.app.domain.user.repository.ReviewAggRepository;
-import com.bwabwayo.app.domain.user.repository.ReviewEvaluationCountRepository;
-import com.bwabwayo.app.domain.user.repository.UserRepository;
+import com.bwabwayo.app.domain.user.repository.*;
 import lombok.RequiredArgsConstructor;
 import org.springframework.dao.OptimisticLockingFailureException;
 import org.springframework.retry.annotation.Backoff;
@@ -20,6 +19,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
@@ -28,6 +28,7 @@ public class UserService {
     private final PointRepository pointRepository;
     private final ReviewAggRepository reviewAggRepository;
     private final ReviewEvaluationCountRepository reviewEvaluationCountRepository;
+    private final AccountRepository accountRepository;
 
     public User findById(String id){
         return userRepository.findUserById(id);
@@ -37,6 +38,7 @@ public class UserService {
         User user = User.builder()
                 .id(request.getId())
                 .nickname(request.getNickname())
+                .version(0L)
                 .email(request.getEmail())
                 .phoneNumber(request.getPhoneNumber())
                 .profileImage(request.getProfileImage())
@@ -55,7 +57,6 @@ public class UserService {
 
     public UserInfoResponse getUserInfo(User user) {
         // 기본 정보
-        String userId = user.getId();
         String nickname = user.getNickname();
         String profileImage = user.getProfileImage();
         int score = user.getScore();
@@ -73,13 +74,56 @@ public class UserService {
         List<UserEvaluationStat> evaluations = reviewEvaluationCountRepository
                 .findEvaluationStatsByUserId(user.getId());
 
-        return UserInfoResponse.of(userId, nickname, profileImage, score, point, createdAt, bio, avgRating, evaluations);
+        return UserInfoResponse.of(nickname, profileImage, score, point, createdAt, bio, avgRating, evaluations);
     }
 
     public UserInfoResponse getUserInfo(String userId) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new NotFoundException("해당 유저가 없습니다."));
         return getUserInfo(user); // 재사용
+    }
+
+    public UserDetailResponse getUserDetail(User user){
+        Account account = accountRepository.findByUserId(user.getId());
+        return UserDetailResponse.of(
+                user.getNickname(),
+                user.getProfileImage(),
+                user.getBio(),
+                Optional.ofNullable(account).map(Account::getAccountNumber).orElse(null),
+                Optional.ofNullable(account).map(Account::getBankName).orElse(null),
+                Optional.ofNullable(account).map(Account::getAccountHolder).orElse(null)
+        );
+    }
+
+    public void updateUserDetail(UserDetailRequest request, User user) {
+        if (request.getNickname() != null) {
+            user.setNickname(request.getNickname());
+        }
+//        user.setProfileImage(request.getProfileImage()); 따로 S3에 맞게 코딩해야함
+        boolean hasAllAccountFields = request.getAccountNumber() != null &&
+                request.getBankName() != null &&
+                request.getAccountHolder() != null;
+
+        if (hasAllAccountFields) {
+            Account account = accountRepository.findByUserId(user.getId());
+
+            if (account != null) {
+                // 기존 계좌 수정
+                account.setAccountNumber(request.getAccountNumber());
+                account.setBankName(request.getBankName());
+                account.setAccountHolder(request.getAccountHolder());
+            } else {
+                // 계좌 신규 등록
+                account = Account.builder()
+                        .user(user)
+                        .accountNumber(request.getAccountNumber())
+                        .bankName(request.getBankName())
+                        .accountHolder(request.getAccountHolder())
+                        .build();
+            }
+
+            accountRepository.save(account);
+        }
     }
 
     @Retryable(

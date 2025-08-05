@@ -20,4 +20,8 @@ public class AccountService {
                 .build();
         accountRepository.save(account);
     }
+
+    public Account getAccount(String userId){
+        return accountRepository.findByUserId(userId);
+    }
 }
