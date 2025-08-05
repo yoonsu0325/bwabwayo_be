@@ -1,27 +1,20 @@
 package com.bwabwayo.app.domain.auth.service;
 
-import com.bwabwayo.app.domain.product.exception.NotFoundException;
 import com.bwabwayo.app.domain.user.service.AccountService;
 import com.bwabwayo.app.domain.address.service.DeliveryAddressService;
 import com.bwabwayo.app.domain.user.service.UserService;
 import com.bwabwayo.app.domain.auth.utils.JwtProperties;
 import com.bwabwayo.app.domain.user.domain.Role;
 import com.bwabwayo.app.domain.user.domain.User;
-import com.bwabwayo.app.domain.auth.dto.request.OAuth2UserRequest;
 import com.bwabwayo.app.domain.auth.dto.request.UserSignUpRequest;
 import com.bwabwayo.app.domain.auth.dto.response.UserTokenResponse;
 import com.bwabwayo.app.domain.auth.utils.JWTUtils;
-import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseCookie;
 import org.springframework.stereotype.Service;
-
-import java.util.Arrays;
-import java.util.Optional;
-import java.util.stream.Stream;
 
 @Service
 @RequiredArgsConstructor

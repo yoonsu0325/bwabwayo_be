@@ -4,9 +4,7 @@ package com.bwabwayo.app.domain.auth.controller;
 import com.bwabwayo.app.domain.auth.annotation.LoginUser;
 import com.bwabwayo.app.domain.user.service.UserService;
 import com.bwabwayo.app.domain.auth.utils.JwtProperties;
-import com.bwabwayo.app.domain.user.domain.Role;
 import com.bwabwayo.app.domain.user.domain.User;
-import com.bwabwayo.app.domain.auth.dto.request.OAuth2UserRequest;
 import com.bwabwayo.app.domain.auth.dto.request.UserSignUpRequest;
 import com.bwabwayo.app.domain.auth.dto.response.UserTokenResponse;
 import com.bwabwayo.app.domain.auth.service.AuthService;
@@ -14,9 +12,6 @@ import com.bwabwayo.app.domain.auth.service.AuthRedisService;
 import com.bwabwayo.app.domain.auth.utils.JWTUtils;
 import io.jsonwebtoken.Jwts;
 import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.responses.ApiResponse;
-import io.swagger.v3.oas.annotations.responses.ApiResponses;
-import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
@@ -32,11 +27,8 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import java.util.Arrays;
 import java.util.Date;
 import java.util.Map;
-import java.util.Optional;
-import java.util.stream.Stream;
 
 @RestController
 @RequestMapping("/api/auth")

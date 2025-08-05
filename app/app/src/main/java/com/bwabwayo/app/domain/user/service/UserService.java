@@ -8,7 +8,11 @@ import com.bwabwayo.app.domain.user.dto.response.UserDetailResponse;
 import com.bwabwayo.app.domain.user.dto.response.UserEvaluationStat;
 import com.bwabwayo.app.domain.user.dto.response.UserInfoResponse;
 import com.bwabwayo.app.domain.user.repository.*;
+import com.bwabwayo.app.global.storage.service.StorageService;
+import com.bwabwayo.app.global.storage.util.StorageUtil;
+import com.bwabwayo.app.global.url.URLValidator;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.dao.OptimisticLockingFailureException;
 import org.springframework.retry.annotation.Backoff;
 import org.springframework.retry.annotation.Recover;
@@ -18,6 +22,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.List;
 import java.util.Optional;
 
@@ -29,26 +34,44 @@ public class UserService {
     private final ReviewAggRepository reviewAggRepository;
     private final ReviewEvaluationCountRepository reviewEvaluationCountRepository;
     private final AccountRepository accountRepository;
+    private final StorageUtil storageUtil;
+    private final StorageService storageService;
+
+    @Value("${storage.path.profileImage}")
+    private String profilePath;
+
 
     public User findById(String id){
         return userRepository.findUserById(id);
     }
 
     public User createUser(UserSignUpRequest request) {
+        String profileImage = request.getProfileImage();
+        if(profileImage == null || profileImage.isEmpty()){
+            throw new IllegalArgumentException("프로필 이미지가 존재하지 않습니다.");
+        }
+
+        String targetKey;
+        if (URLValidator.isValidURL(request.getProfileImage())) { // 다운로드 후 S3 업로드
+            targetKey = storageService.upload(profileImage, profilePath);
+        } else { // S3의 profile로 이동
+            targetKey = storageUtil.copyToPermanentDirectory(profileImage, profilePath);
+        }
+
         User user = User.builder()
                 .id(request.getId())
                 .nickname(request.getNickname())
-                .version(0L)
+                .version(null)
                 .email(request.getEmail())
                 .phoneNumber(request.getPhoneNumber())
-                .profileImage(request.getProfileImage())
+                .profileImage(targetKey)
                 .bio(request.getNickname() + "의 상점입니다.")
                 .score(500)
                 .point(PointEventType.SIGNUP_FIRST.getPoint())
                 .dealCount(0)
                 .penaltyCount(0)
-                .createdAt(LocalDateTime.now())
-                .lastLoginAt(LocalDateTime.now())
+                .createdAt(LocalDateTime.now(ZoneId.of("Asia/Seoul")))
+                .lastLoginAt(LocalDateTime.now(ZoneId.of("Asia/Seoul")))
                 .isActive(true)
                 .role(Role.USER)
                 .build();
@@ -99,7 +122,9 @@ public class UserService {
         if (request.getNickname() != null) {
             user.setNickname(request.getNickname());
         }
-//        user.setProfileImage(request.getProfileImage()); 따로 S3에 맞게 코딩해야함
+        String targetKey = storageUtil.copyToPermanentDirectory(request.getProfileImage(), profilePath);
+        user.setProfileImage(targetKey);
+
         boolean hasAllAccountFields = request.getAccountNumber() != null &&
                 request.getBankName() != null &&
                 request.getAccountHolder() != null;

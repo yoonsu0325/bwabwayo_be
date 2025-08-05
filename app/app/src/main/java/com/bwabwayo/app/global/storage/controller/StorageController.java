@@ -20,7 +20,6 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 
 @Slf4j
 @RestController
@@ -32,31 +31,22 @@ public class StorageController {
 
     @Value("${storage.path.temp}")
     private String tempPath;
-//    @Value("${storage.path.productImage}")
-//    private String productPath;
 
-    @Operation(summary = "상품의 이미지 업로드")
-    @ApiResponse(responseCode = "200"
-            , description = "업로드 성공"
-            , content = @Content(mediaType = "application/json", schema = @Schema(implementation = UploadResponseDTO.class))
+
+    @Operation(summary = "파일 업로드")
+    @ApiResponse(responseCode = "200",
+            description = "업로드 성공",
+            content = @Content(mediaType = "application/json", schema = @Schema(implementation = UploadResponseDTO.class))
     )
-    @PostMapping(value = "/upload/product", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public ResponseEntity<?> uploadProductImage(@RequestParam("files") List<MultipartFile> files) {
+    @PostMapping(value = "/upload", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<UploadResponseDTO> uploadFiles(@RequestParam("files") List<MultipartFile> files, @RequestParam("dir") String dirName) {
         List<UploadFileDTO> result = new ArrayList<>();
-        
-        // 파일 검사
-        for (MultipartFile file : files) {
-            String contentType = file.getContentType();
 
-            if (contentType == null || !contentType.startsWith("image/")) {
-                log.warn("이미지 파일만 업로드할 수 있습니다: file={}, contentType={}", file.getOriginalFilename(), contentType);
-                throw new BadRequestException("이미지 파일만 업로드할 수 있습니다: file=" + file.getOriginalFilename() + " contentType=" + contentType);
-            }
-        }
+        validateImages(files);
 
-        try {
+        try{
             for (MultipartFile file : files) {
-                String key = storageService.upload(file, tempPath);
+                String key = storageService.upload(file, dirName);
                 String url = storageService.getUrlFromKey(key);
 
                 UploadFileDTO dto = UploadFileDTO.builder().key(key).url(url).build();
@@ -82,35 +72,36 @@ public class StorageController {
         return ResponseEntity.ok(response);
     }
 
-    @Deprecated
-    @Operation(summary = "파일 업로드")
-    @ApiResponse(responseCode = "200",
-            description = "업로드 성공",
-            content = @Content(mediaType = "application/json", schema = @Schema(implementation = UploadResponseDTO.class))
-    )
-    @PostMapping(value = "/upload", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public ResponseEntity<?> uploadFiles(@RequestParam("files") List<MultipartFile> files, @RequestParam("dir") String dirName) {
-        List<UploadFileDTO> result = new ArrayList<>();
+    @Operation(summary = "이미지 업로드")
+    @ApiResponse(responseCode = "200")
+    @PostMapping(value = "/upload/image", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<UploadResponseDTO> uploadImages(@RequestParam("files") List<MultipartFile> files) {
+        // 이미지 파일만 업로드 가능
+        validateImages(files);
 
-        for (MultipartFile file : files) {
-            String key = storageService.upload(file, dirName);
-            String url = storageService.getUrlFromKey(key);
-
-            UploadFileDTO dto = UploadFileDTO.builder()
-                    .key(key)
-                    .url(url)
-                    .build();
-
-            result.add(dto);
-        }
-
-        UploadResponseDTO response = UploadResponseDTO.builder()
-                .size(result.size())
-                .results(result)
-                .build();
-
-        return ResponseEntity.ok(response);
+        return uploadFiles(files, tempPath);
     }
+
+    @Operation(summary = "상품의 이미지 업로드")
+    @ApiResponse(responseCode = "200")
+    @PostMapping(value = "/upload/product", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<UploadResponseDTO> uploadProductImages(@RequestParam("files") List<MultipartFile> files) {
+        return uploadImages(files);
+    }
+
+    @Operation(summary = "프로필 이미지 업로드")
+    @ApiResponse(responseCode = "200")
+    @PostMapping(value = "/upload/profile", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<UploadResponseDTO> uploadProfileImages(@RequestParam("files") List<MultipartFile> files) {
+        return uploadImages(files);
+    }
+
+    @Operation(summary = "문의 이미지 업로드")
+    @ApiResponse(responseCode = "200")
+    @PostMapping(value = "/upload/inquiry", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<UploadResponseDTO> uploadInquiryImages(@RequestParam("files") List<MultipartFile> files) {
+        return uploadImages(files);
+   }
 
     @Deprecated
     @Operation(summary = "파일 삭제")
@@ -128,5 +119,17 @@ public class StorageController {
     public ResponseEntity<String> generatePresignedUrl(@RequestParam("key") String key, @RequestParam @Min(0) Long expiration) {
         String presignedUrl = storageService.generatePresignedUrl(key, expiration * 1000L);
         return ResponseEntity.ok(presignedUrl);
+    }
+
+
+    private void validateImages(List<MultipartFile> files){
+        for (MultipartFile file : files) {
+            String contentType = file.getContentType();
+
+            if (contentType == null || !contentType.startsWith("image/")) {
+                log.warn("이미지 파일만 업로드할 수 있습니다: file={}, contentType={}", file.getOriginalFilename(), contentType);
+                throw new BadRequestException("이미지 파일만 업로드할 수 있습니다: file=" + file.getOriginalFilename() + " contentType=" + contentType);
+            }
+        }
     }
 }
