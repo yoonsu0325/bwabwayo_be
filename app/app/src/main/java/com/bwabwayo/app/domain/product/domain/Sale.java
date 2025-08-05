@@ -1,34 +1,48 @@
 package com.bwabwayo.app.domain.product.domain;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
+import com.bwabwayo.app.domain.product.domain.Product;
+import jakarta.persistence.*;
 import lombok.*;
 
+import java.time.LocalDateTime;
+
 @Entity
-@Getter @Setter
+@Getter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
 @ToString
 public class Sale {
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-    @JsonProperty("product_id")
-    private Long productId;
-    @JsonProperty("seller_id")
+
+    // ✅ 1:1 관계 (하나의 Product는 하나의 Sale만 가짐)
+    @OneToOne
+    @JoinColumn(name = "product_id", unique = true, nullable = false)
+    private Product product;
+
+    // ✅ 판매자/구매자 (소셜 ID 기반 문자열)
+    @Column(name = "seller_id", nullable = false)
     private String sellerId;
-    @JsonProperty("buyer_id")
+
+    @Column(name = "buyer_id", nullable = false)
     private String buyerId;
-    @JsonProperty("sale_price")
+
+    // ✅ 거래 가격
+    @Column(name = "sale_price", nullable = false)
     private Integer salePrice;
-    @JsonProperty("created_at")
-    private String createdAt;
-    @JsonProperty("is_reviewed")
+
+    // ✅ 생성 시각 (등록 시 자동 저장)
+    @Column(name = "created_at", nullable = false)
+    private LocalDateTime createdAt;
+
+    // ✅ 리뷰 완료 여부
+    @Column(name = "is_reviewed", nullable = false)
     private boolean isReviewed;
-    @JsonProperty("room_id")
+
+    // ✅ 채팅방 id (예약 거래방 등과 연결)
+    @Column(name = "room_id", nullable = true)
     private Long roomId;
 }
