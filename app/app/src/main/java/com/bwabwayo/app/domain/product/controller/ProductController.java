@@ -5,14 +5,17 @@ import com.bwabwayo.app.domain.product.dto.request.ProductSearchRequestDTO;
 import com.bwabwayo.app.domain.product.dto.response.ProductCreateResponseDTO;
 import com.bwabwayo.app.domain.product.dto.response.ProductDetailResponseDTO;
 import com.bwabwayo.app.domain.product.dto.response.ProductSearchResponseDTO;
+import com.bwabwayo.app.domain.product.dto.response.ViewCountResponseDTO;
 import com.bwabwayo.app.domain.product.service.ProductService;
 import com.bwabwayo.app.domain.auth.annotation.LoginUser;
+import com.bwabwayo.app.domain.product.service.ViewCountService;
 import com.bwabwayo.app.domain.user.domain.User;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -27,7 +30,8 @@ import org.springframework.web.bind.annotation.*;
 public class ProductController {
 
     private final ProductService productService;
-    
+    private final ViewCountService viewCountService;
+
     @Operation(summary = "상품 등록")
     @ApiResponse(
             responseCode = "200",
@@ -92,5 +96,23 @@ public class ProductController {
     ){
         productService.deleteProductById(productId, user);
         return ResponseEntity.ok().build();
+    }
+    
+    @Operation(summary = "조회수 증가")
+    @ApiResponse(
+            responseCode = "200",
+            content = @Content(mediaType = "application/json", schema = @Schema(implementation = ViewCountResponseDTO.class))
+    )
+    @GetMapping("{productId}/view")
+    public ResponseEntity<?> increaseViewCount(
+            @PathVariable Long productId,
+            HttpServletRequest request,
+            @Parameter(hidden = true) @LoginUser(required = false) User loginUser
+    ){
+        // 비로그인 사용자는 IP 기준으로 식별
+        String identifier = loginUser != null ? loginUser.getId() : request.getRemoteAddr();
+
+        Long count = viewCountService.increaseViewCount(productId, identifier);
+        return ResponseEntity.ok(new ViewCountResponseDTO(productId, count.intValue()));
     }
 }
