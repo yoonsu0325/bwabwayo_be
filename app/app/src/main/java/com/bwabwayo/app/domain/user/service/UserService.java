@@ -97,7 +97,16 @@ public class UserService {
         List<UserEvaluationStat> evaluations = reviewEvaluationCountRepository
                 .findEvaluationStatsByUserId(user.getId());
 
-        return UserInfoResponse.of(nickname, profileImage, score, point, createdAt, bio, avgRating, evaluations);
+        return UserInfoResponse.builder()
+                .nickname(nickname)
+                .profileImage(profileImage)
+                .score(score)
+                .point(point)
+                .createdAt(createdAt)
+                .bio(bio)
+                .rating(avgRating)
+                .evaluation(evaluations)
+                .build();
     }
 
     public UserInfoResponse getUserInfo(String userId) {
@@ -108,14 +117,14 @@ public class UserService {
 
     public UserDetailResponse getUserDetail(User user){
         Account account = accountRepository.findByUserId(user.getId());
-        return UserDetailResponse.of(
-                user.getNickname(),
-                storageService.getUrlFromKey(user.getProfileImage()),
-                user.getBio(),
-                Optional.ofNullable(account).map(Account::getAccountNumber).orElse(null),
-                Optional.ofNullable(account).map(Account::getBankName).orElse(null),
-                Optional.ofNullable(account).map(Account::getAccountHolder).orElse(null)
-        );
+        return UserDetailResponse.builder()
+                .nickname(user.getNickname())
+                .profileImage(user.getProfileImage())
+                .bio(user.getBio())
+                .accountNumber(Optional.ofNullable(account).map(Account::getAccountNumber).orElse(null))
+                .bankName(Optional.ofNullable(account).map(Account::getBankName).orElse(null))
+                .accountHolder(Optional.ofNullable(account).map(Account::getAccountHolder).orElse(null))
+                .build();
     }
 
     public void updateUserDetail(UserDetailRequest request, User user) {
