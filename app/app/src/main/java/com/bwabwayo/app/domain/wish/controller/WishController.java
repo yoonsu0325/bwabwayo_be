@@ -1,7 +1,7 @@
 package com.bwabwayo.app.domain.wish.controller;
 
 import com.bwabwayo.app.domain.product.domain.Product;
-import com.bwabwayo.app.domain.product.exception.NotFoundException;
+import com.bwabwayo.app.global.exception.NotFoundException;
 import com.bwabwayo.app.domain.product.service.ProductService;
 import com.bwabwayo.app.domain.auth.annotation.LoginUser;
 import com.bwabwayo.app.domain.user.domain.User;

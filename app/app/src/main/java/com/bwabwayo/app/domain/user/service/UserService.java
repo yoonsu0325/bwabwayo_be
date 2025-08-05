@@ -1,6 +1,6 @@
 package com.bwabwayo.app.domain.user.service;
 
-import com.bwabwayo.app.domain.product.exception.NotFoundException;
+import com.bwabwayo.app.global.exception.NotFoundException;
 import com.bwabwayo.app.domain.user.domain.*;
 import com.bwabwayo.app.domain.auth.dto.request.UserSignUpRequest;
 import com.bwabwayo.app.domain.user.dto.request.UserDetailRequest;

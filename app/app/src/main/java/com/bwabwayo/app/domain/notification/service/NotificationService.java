@@ -4,7 +4,7 @@ import com.bwabwayo.app.domain.notification.domain.Notification;
 import com.bwabwayo.app.domain.notification.dto.response.NotificationDTO;
 import com.bwabwayo.app.domain.notification.dto.response.NotificationListResponseDTO;
 import com.bwabwayo.app.domain.notification.repository.NotificationRepository;
-import com.bwabwayo.app.domain.product.exception.ForbiddenException;
+import com.bwabwayo.app.global.exception.ForbiddenException;
 import com.bwabwayo.app.global.storage.service.StorageService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

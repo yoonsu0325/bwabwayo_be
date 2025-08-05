@@ -1,6 +1,6 @@
 package com.bwabwayo.app.global.storage.util;
 
-import com.bwabwayo.app.domain.product.exception.NotFoundException;
+import com.bwabwayo.app.global.exception.NotFoundException;
 import com.bwabwayo.app.global.storage.service.StorageService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

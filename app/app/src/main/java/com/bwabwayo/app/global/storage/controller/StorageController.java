@@ -1,6 +1,6 @@
 package com.bwabwayo.app.global.storage.controller;
 
-import com.bwabwayo.app.domain.product.exception.BadRequestException;
+import com.bwabwayo.app.global.exception.BadRequestException;
 import com.bwabwayo.app.global.storage.response.UploadFileDTO;
 import com.bwabwayo.app.global.storage.response.UploadResponseDTO;
 import com.bwabwayo.app.global.storage.service.S3Service;
