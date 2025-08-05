@@ -13,7 +13,10 @@ import com.bwabwayo.app.domain.product.dto.response.*;
 import com.bwabwayo.app.domain.product.repository.CourierRepository;
 import com.bwabwayo.app.domain.product.repository.ProductImageRepository;
 import com.bwabwayo.app.domain.product.repository.ProductRepository;
+import com.bwabwayo.app.domain.user.domain.ReviewAgg;
 import com.bwabwayo.app.domain.user.domain.User;
+import com.bwabwayo.app.domain.user.repository.AccountRepository;
+import com.bwabwayo.app.domain.user.repository.ReviewAggRepository;
 import com.bwabwayo.app.domain.wish.service.WishService;
 import com.bwabwayo.app.global.storage.util.StorageUtil;
 import com.bwabwayo.app.global.storage.service.StorageService;
@@ -43,6 +46,7 @@ public class ProductService {
     private final WishService wishService;
     private final CourierRepository courierRepository;
     private final ViewCountService viewCountService;
+    private final ReviewAggRepository reviewAggRepository;
 
     @Value("${storage.path.temp}")
     private String tempPath;
@@ -167,6 +171,13 @@ public class ProductService {
         List<String> imageKeys = product.getProductImages().stream()
                 .map(ProductImage::getUrl).toList();
         
+        // 판매자 평균 평점 가져오기
+        double avgRating = reviewAggRepository
+                .findByUserId(product.getSeller().getId())
+                .map(ReviewAgg::getAvgRating)
+                .orElse(0f);
+        avgRating = Math.round(avgRating * 10.) / 10.;
+
         // 판매자 정보
         User seller = product.getSeller();
         SellerDTO sellerDTO = SellerDTO.builder()
@@ -175,7 +186,7 @@ public class ProductService {
                 .bio(seller.getBio())
                 .profileImage(storageService.getUrlFromKey(seller.getProfileImage()))
                 .score(seller.getScore())
-                .rating(4.5) // TODO: 리뷰 통계와 연결 필요
+                .rating(avgRating)
                 .build();
 
         return ProductDetailResponseDTO.builder()
