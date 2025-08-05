@@ -25,7 +25,7 @@ import java.util.Map;
 @Slf4j
 @RestController
 @RequiredArgsConstructor
-@RequestMapping(value = { "/api/storage", "/api/s3"})
+@RequestMapping(value = { "/api/storage"})
 public class StorageController {
     private final StorageService storageService;
     private final S3Service s3Service;
