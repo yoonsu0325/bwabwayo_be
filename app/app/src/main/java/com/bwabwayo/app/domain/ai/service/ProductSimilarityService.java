@@ -37,23 +37,18 @@ public class ProductSimilarityService {
     /**
      * 유사도 검색
      */
-    public ResponseEntity<List<SimilarResultResponse>> searchSimilarTitles(String title) {
-        String inputTitle = title;
-
+    public List<SimilarResultResponse> searchSimilarTitles(String title, int n) {
         // 벡터화
-        List<Double> queryVector = openAiClient.getEmbedding(inputTitle);
+        List<Double> queryVector = openAiClient.getEmbedding(title);
 
-        // 유사도 검색 (Top 3)
-        List<SimilarResultResponse> similarTitles = embeddingService.searchSimilarTitles(queryVector, 3);
-
-        return ResponseEntity.ok(similarTitles);
+        // 유사도 검색 (Top N)
+        return embeddingService.searchSimilarTitles(queryVector, n);
     }
 
     /**
      * 벡터 삭제
      */
-    public ResponseEntity<?> deletePoint(Long productId) {
+    public void deletePoint(Long productId) {
         embeddingService.deleteFromQdrantById(productId);
-        return ResponseEntity.ok().build();
     }
 }
