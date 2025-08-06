@@ -21,6 +21,7 @@ public class ReviewService {
     private final ReviewEvaluationCountService reviewEvaluationCountService;
     private final ReviewAggService reviewAggService;
     private final SaleService saleService;
+    private final UserService userService;
 
     @Transactional
     public void submitReview(ReviewRequest request) {
@@ -70,6 +71,9 @@ public class ReviewService {
         sale.setReviewed(true);
         saleService.saveSale(sale);
 
+        //6. 리뷰 등록(buyer) 시 포인트 획득
+        userService.calcPoint(PointEventType.REVIEW_WRITTEN, PointEventType.REVIEW_WRITTEN.getPoint(),
+                userService.findById(request.getBuyerId()));
 
         // 6. (선택) 신뢰도 업데이트 등 추가 로직
 //        userService.updateTrustScore(request.getSellerId(), request.getRating());

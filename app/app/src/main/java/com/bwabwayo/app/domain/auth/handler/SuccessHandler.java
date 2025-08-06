@@ -69,9 +69,13 @@ public class SuccessHandler extends SimpleUrlAuthenticationSuccessHandler {
             int loginPoint = 0;
             if (lastLoginAt.isBefore(todayStartInSeoul)) {
                 // 오늘 처음 로그인한 유저
+                // 포인트 갱신
                 userService.calcPoint(PointEventType.ATTENDANCE, PointEventType.ATTENDANCE.getPoint(), defaultUser);
                 loginPoint = PointEventType.ATTENDANCE.getPoint();
             }
+            //마지막 로그인 갱신
+            defaultUser.setLastLoginAt(lastLoginAt);
+            userService.saveUser(defaultUser);
             String redirectUrl = UriComponentsBuilder
                     .fromUriString("https://i13e202.p.ssafy.io/fe/logincallback")
                     .queryParam("accessToken", accessToken)

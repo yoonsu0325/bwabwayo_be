@@ -52,7 +52,11 @@ public class AuthController {
 
             return ResponseEntity.ok()
                     .header(HttpHeaders.SET_COOKIE, refreshTokenCookie.toString())
-                    .body(Map.of("accessToken", tokens.getAccessToken())); //accessToken 바디 추가
+                    .body(Map.of(
+                            "accessToken", tokens.getAccessToken(),
+                            "loginPoint", tokens.getLoginPoint(),
+                            "signUpPoint", tokens.getSignUpPoint()
+                    ));
         } catch (DataIntegrityViolationException e) {
             // 중복 이메일, 닉네임, 전화번호 등 제약조건 위반
             String message = e.getMostSpecificCause().getMessage();

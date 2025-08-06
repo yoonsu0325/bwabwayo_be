@@ -16,6 +16,7 @@ public class ReviewAggService {
     public Optional<ReviewAgg> getReviewAgg(String userId) {
         return reviewAggRepository.findByUserId(userId);
     }
+    
 
     public Float getAvgRating(String userId){
         return reviewAggRepository

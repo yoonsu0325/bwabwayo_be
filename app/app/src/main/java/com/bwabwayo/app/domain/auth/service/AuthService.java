@@ -19,6 +19,10 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseCookie;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
+
 @Service
 @RequiredArgsConstructor
 @Slf4j
@@ -48,24 +52,70 @@ public class AuthService {
         // ✅ RT를 Redis에 저장 (TTL: 7일)
         authRedisService.saveRefreshToken(tempId, request.getId(), refreshToken);
 
-        // 2. User 저장
-        User user = userService.createUser(request);
-        userService.calcPoint(PointEventType.SIGNUP_FIRST, PointEventType.SIGNUP_FIRST.getPoint(), user);
 
-        // 3. Account 저장 조건 검사
-        if (request.getAccountNumber() != null &&
-                request.getAccountHolder() != null &&
-                request.getBankName() != null) {
-            accountService.createAccount(user, request);
-        }
+        User defaultUser = userService.findById(request.getId());
+        int loginPoint = 0;
+        int signUpPoint = 0;
+        if(defaultUser != null && !defaultUser.isActive()){
+            //재가입 유저
 
-        // 4. DeliveryAddress 저장 조건 검사
-        if (request.getRecipientName() != null &&
-                request.getRecipientPhoneNumber() != null &&
-                request.getZipcode() != null &&
-                request.getAddress() != null &&
-                request.getAddressDetail() != null) {
-            deliveryAddressService.createAddress(user, request);
+            //출석체크
+            LocalDateTime lastLoginAt = defaultUser.getLastLoginAt();
+            // 오늘 00:00 (즉, 오늘의 시작 시각)
+            ZoneId seoulZone = ZoneId.of("Asia/Seoul");
+            LocalDateTime todayStartInSeoul = LocalDate.now(seoulZone).atStartOfDay();
+            if (lastLoginAt.isBefore(todayStartInSeoul)) {
+                // 오늘 처음 로그인한 유저
+                // 포인트 갱신
+                userService.calcPoint(PointEventType.ATTENDANCE, PointEventType.ATTENDANCE.getPoint(), defaultUser);
+                loginPoint = PointEventType.ATTENDANCE.getPoint();
+            }
+            //2. User 저장
+            defaultUser = userService.updateUser(defaultUser, request);
+
+            // 3. Account 저장 조건 검사
+            if (request.getAccountNumber() != null &&
+                    request.getAccountHolder() != null &&
+                    request.getBankName() != null) {
+                accountService.updateAccount(defaultUser, request);
+            }
+
+            // 4. DeliveryAddress 저장 조건 검사
+            if (request.getRecipientName() != null &&
+                    request.getRecipientPhoneNumber() != null &&
+                    request.getZipcode() != null &&
+                    request.getAddress() != null &&
+                    request.getAddressDetail() != null) {
+                deliveryAddressService.updateAddress(defaultUser, request);
+            }
+
+
+        } else {
+            //신규가입 유저
+
+            // 2. User 저장
+            User user = userService.createUser(request);
+            //포인트 얻기
+            signUpPoint = PointEventType.SIGNUP_FIRST.getPoint();
+            loginPoint = PointEventType.ATTENDANCE.getPoint();
+            userService.calcPoint(PointEventType.SIGNUP_FIRST, PointEventType.SIGNUP_FIRST.getPoint(), user);
+            userService.calcPoint(PointEventType.ATTENDANCE, PointEventType.ATTENDANCE.getPoint(), user);
+
+            // 3. Account 저장 조건 검사
+            if (request.getAccountNumber() != null &&
+                    request.getAccountHolder() != null &&
+                    request.getBankName() != null) {
+                accountService.createAccount(user, request);
+            }
+
+            // 4. DeliveryAddress 저장 조건 검사
+            if (request.getRecipientName() != null &&
+                    request.getRecipientPhoneNumber() != null &&
+                    request.getZipcode() != null &&
+                    request.getAddress() != null &&
+                    request.getAddressDetail() != null) {
+                deliveryAddressService.createAddress(user, request);
+            }
         }
 
         // 5. 리뷰통계테이블에 기본값 설정
@@ -76,10 +126,13 @@ public class AuthService {
                 .build();
         reviewAggService.saveReviewAgg(reviewAgg);
 
+
         // 6. 토큰 응답 반환
         return UserTokenResponse.builder()
                 .accessToken(accessToken)
                 .refreshToken(refreshToken)
+                .loginPoint(loginPoint)
+                .signUpPoint(signUpPoint)
                 .build();
     }
 

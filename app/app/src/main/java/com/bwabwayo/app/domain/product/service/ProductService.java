@@ -15,6 +15,7 @@ import com.bwabwayo.app.domain.product.repository.ProductImageRepository;
 import com.bwabwayo.app.domain.product.repository.ProductRepository;
 import com.bwabwayo.app.domain.product.util.CategoryUtil;
 import com.bwabwayo.app.domain.user.domain.User;
+import com.bwabwayo.app.domain.user.service.ReviewAggService;
 import com.bwabwayo.app.domain.user.service.UserService;
 import com.bwabwayo.app.domain.wish.service.WishService;
 import com.bwabwayo.app.global.page.PageResponseDTO;
@@ -48,6 +49,7 @@ public class ProductService {
     private final ViewCountService viewCountService;
     private final UserService userService;
     private final ProductSimilarityService productSimilarityService;
+    private final ReviewAggService reviewAggService;
 
     @Value("${storage.path.temp}")
     private String tempPath;
@@ -174,9 +176,9 @@ public class ProductService {
 
         
         // 판매자 평균 평점 가져오기
-        float avgRating = userService.getAvgRating(product.getSeller().getId());
+        float avgRating = reviewAggService.getAvgRating(product.getSeller().getId());
         avgRating = Math.round(avgRating * 10.f) / 10.f;
-        long reviewCount = userService.reviewCount(product.getSeller().getId());
+        long reviewCount = reviewAggService.getReviewCount(product.getSeller().getId());
 
         // 판매자 정보
         User seller = product.getSeller();

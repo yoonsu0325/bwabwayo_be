@@ -41,7 +41,6 @@ public class UserService {
     private final ReviewAggService reviewAggService;
     private final ReviewEvaluationCountService reviewEvaluationCountService;
     private final PointService pointService;
-    private final AuthService authService;
 
     @Value("${storage.path.temp}")
     private String tempPath;
@@ -83,6 +82,34 @@ public class UserService {
                 .isActive(true)
                 .role(Role.USER)
                 .build();
+        return userRepository.save(user);
+    }
+
+    public User updateUser(User user, UserSignUpRequest request) {
+        String profileImage = request.getProfileImage();
+        if(profileImage == null || profileImage.isEmpty()){
+            throw new IllegalArgumentException("프로필 이미지가 존재하지 않습니다.");
+        }
+
+        String targetKey;
+        if (URLValidator.isValidURL(request.getProfileImage())) { // 다운로드 후 S3 업로드
+            targetKey = storageService.upload(profileImage, profilePath);
+        } else { // S3의 profile로 이동
+            targetKey = storageUtil.copyToDirectory(profileImage, tempPath, profilePath);
+        }
+        user.setNickname(request.getNickname());
+        user.setEmail(request.getEmail());
+        user.setPhoneNumber(request.getPhoneNumber());
+        user.setProfileImage(targetKey);
+        user.setBio(request.getNickname() + "의 상점입니다.");
+        user.setScore(500);
+        user.setPoint(0);
+        user.setDealCount(0);
+        user.setPenaltyCount(0);
+        user.setCreatedAt(LocalDateTime.now(ZoneId.of("Asia/Seoul")));
+        user.setLastLoginAt(LocalDateTime.now(ZoneId.of("Asia/Seoul")));
+        user.setActive(true);
+        user.setRole(Role.USER);
         return userRepository.save(user);
     }
 
@@ -179,20 +206,16 @@ public class UserService {
         }
 
         try {
-            // 2. RefreshToken 삭제
-            authService.deleteRefreshTokenFromRequest(request);
-        } catch (Exception e) {
-            log.error("RefreshToken 삭제 실패: {}", e.getMessage(), e);
-        }
-
-        try {
-            // 3. 프로필 이미지 삭제
+            // 2. 프로필 이미지 삭제
             storageUtil.deleteWithoutException(user.getProfileImage()); // 메서드 자체가 예외 없이 동작한다면 생략 가능
         } catch (Exception e) {
             log.warn("프로필 이미지 삭제 실패: {}", e.getMessage(), e);
         }
     }
 
+    public void saveUser(User user){
+        userRepository.save(user);
+    }
 
     @Retryable(
             value = { OptimisticLockingFailureException.class },

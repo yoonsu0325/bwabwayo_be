@@ -23,4 +23,14 @@ public class DeliveryAddressService {
         deliveryAddressRepository.save(address);
     }
 
+    public void updateAddress(User user, UserSignUpRequest request) {
+        DeliveryAddress deliveryAddress = deliveryAddressRepository.findByUser_Id(user.getId());
+        deliveryAddress.setAddress(request.getAddress());
+        deliveryAddress.setZipcode(request.getZipcode());
+        deliveryAddress.setAddressDetail(request.getAddressDetail());
+        deliveryAddress.setRecipientName(request.getRecipientName());
+        deliveryAddress.setRecipientPhoneNumber(request.getRecipientPhoneNumber());
+        deliveryAddressRepository.save(deliveryAddress);
+    }
+
 }
