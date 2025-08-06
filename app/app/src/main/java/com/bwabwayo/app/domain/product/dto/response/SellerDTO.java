@@ -2,6 +2,9 @@ package com.bwabwayo.app.domain.product.dto.response;
 
 import lombok.*;
 
+import java.util.ArrayList;
+import java.util.List;
+
 @Getter
 @NoArgsConstructor
 @AllArgsConstructor
@@ -14,4 +17,6 @@ public class SellerDTO {
     Integer score;
     Float rating;
     Long reviewCount;
+    @Builder.Default
+    List<ProductSimpleDTO> otherProducts = new ArrayList<>();
 }

@@ -54,6 +54,11 @@ public class ProductService {
     @Value("${storage.path.productImage}")
     private String productPath;
 
+    @Value("${product.detail.others}")
+    private Integer otherCount;
+    @Value("${product.detail.similarities}")
+    private Integer similarityCount;
+
 
     /**
      * 상품 등록
@@ -71,6 +76,12 @@ public class ProductService {
         String keyword = requestDTO.getKeyword();
         Long categoryId = requestDTO.getCategoryId();
         String sellerId = requestDTO.getSellerId();
+        Boolean canVideoCall = requestDTO.getCanVideoCall();
+        Boolean canNegotiate = requestDTO.getCanNegotiate();
+        Boolean canDirect =  requestDTO.getCanDirect();
+        Boolean canDelivery = requestDTO.getCanDelivery();
+        Integer minPrice = requestDTO.getMinPrice();
+        Integer maxPrice = requestDTO.getMaxPrice();
 
         // 페이지는 1부터 시작
         Integer page = requestDTO.getPage();
@@ -103,7 +114,19 @@ public class ProductService {
         }
         
         // DB 조회
-        Page<ProductWithWishDTO> pageData = productRepository.searchByCondition(keyword, categoryIds, pageable, loginUser != null ? loginUser.getId() : null, sellerId);
+        Page<ProductWithWishDTO> pageData = productRepository.searchByCondition(
+                keyword,
+                categoryIds,
+                pageable,
+                loginUser != null ? loginUser.getId() : null,
+                sellerId,
+                canVideoCall,
+                canNegotiate,
+                canDelivery,
+                canDirect,
+                minPrice,
+                maxPrice
+        );
 
         return PageResponseDTO.fromEntity(pageData, dto -> {
             Product product = dto.getProduct();
@@ -138,7 +161,7 @@ public class ProductService {
      * 상품 상세 정보 조회
      */
     @Transactional(readOnly = true)
-    public ProductDetailResponseDTO getProductDetail(Product product, User user) {
+    public ProductDetailResponseDTO getProductDetail(Product product, User loginUser) {
         // 상품이 속한 카테고리부터 조상 카테고리까지의 모음
         List<CategoryDTO> superCategories = CategoryUtil.getSupperCategories(product.getCategory())
                 .stream().map(CategoryDTO::fromEntity).toList();
@@ -157,6 +180,13 @@ public class ProductService {
 
         // 판매자 정보
         User seller = product.getSeller();
+        List<ProductSimpleDTO> others = searchProducts(ProductSearchRequestDTO.builder().sellerId(seller.getId()).size(otherCount + 1).build(), loginUser)
+                .getResult().stream()
+                .map(ProductSearchResultDTO::getProduct)
+                .filter(p ->!p.getId().equals(product.getId()))
+                .limit(otherCount)
+                .toList();
+
         SellerDTO sellerDTO = SellerDTO.builder()
                 .id(seller.getId())
                 .nickname(seller.getNickname())
@@ -165,13 +195,14 @@ public class ProductService {
                 .score(seller.getScore())
                 .rating(avgRating)
                 .reviewCount(reviewCount)
+                .otherProducts(others)
                 .build();
 
         // 유사한 상품 목록
-        List<Long> similarities = productSimilarityService.searchSimilarTitles(product.getTitle(), 4 + 1);
+        List<Long> similarities = productSimilarityService.searchSimilarTitles(product.getTitle(), similarityCount + 1);
         List<ProductSimpleDTO> productSimpleDTOS = similarities
                 .stream()
-                .filter(id-> !Objects.equals(id, product.getId()))
+                .filter(id-> !id.equals(product.getId()))
                 .map(productRepository::getProductById)
                 .filter(Objects::nonNull)
                 .map(p-> ProductSimpleDTO.builder()
@@ -183,7 +214,7 @@ public class ProductService {
                         .viewCount(viewCountService.getViewCount(p.getId()).intValue())
                         .wishCount(p.getWishCount())
                         .chatCount(p.getChatCount())
-                        .isLike(user != null && wishService.existsWish(p.getId(), user.getId()))
+                        .isLike(loginUser != null && wishService.existsWish(p.getId(), loginUser.getId()))
                         .canVideoCall(p.isCanVideoCall())
                         .saleStatusCode(p.getSaleStatus().getLevel())
                         .saleStatus(p.getSaleStatus().getDescription())
@@ -200,7 +231,7 @@ public class ProductService {
                 .canDirect(product.isCanDirect())
                 .canDelivery(product.isCanDelivery())
                 .canVideoCall(product.isCanVideoCall())
-                .isLike(user != null && wishService.existsWish(product.getId(), user.getId()))
+                .isLike(loginUser != null && wishService.existsWish(product.getId(), loginUser.getId()))
                 .viewCount(viewCountService.getViewCount(product.getId()).intValue())
                 .wishCount(product.getWishCount())
                 .chatCount(product.getChatCount())

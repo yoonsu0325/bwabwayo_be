@@ -113,3 +113,8 @@ toss:
     secret-key: test_sk_pP2YxJ4K87d7epemDNwv3RGZwXLO
   url:
     confirm: https://api.tosspayments.com/v1/payments/confirm
+
+product:
+  detail:
+    others: 5
+    similarities: 4

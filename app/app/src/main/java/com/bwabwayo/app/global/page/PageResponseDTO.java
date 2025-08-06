@@ -37,7 +37,7 @@ public class PageResponseDTO<T> {
                 .toList();
 
         return PageResponseDTO.<R>builder()
-                .size(page.getSize())
+                .size((int)page.getTotalElements())
                 .result(mapped)
                 .currentPage(current)
                 .startPage(start)
