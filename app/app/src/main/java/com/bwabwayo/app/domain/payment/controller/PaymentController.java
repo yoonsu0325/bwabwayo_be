@@ -1,21 +1,25 @@
 package com.bwabwayo.app.domain.payment.controller;
 
+import com.bwabwayo.app.domain.payment.dto.request.PaymentConfirmRequestDTO;
 import com.bwabwayo.app.global.exception.BadRequestException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.json.simple.JSONObject;
+import org.json.simple.parser.JSONParser;
+import org.json.simple.parser.ParseException;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.http.*;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 import org.springframework.web.client.RestTemplate;
 
+import java.io.*;
+import java.net.HttpURLConnection;
+import java.net.URL;
+import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.Base64;
-import java.util.HashMap;
-import java.util.Map;
 
 @Slf4j
 @RestController
@@ -24,27 +28,25 @@ import java.util.Map;
 public class PaymentController {
     @Value("${toss.url.confirm}")
     private String TOSS_CONFIRM_URL;
-    @Value("${toss.key.client-key}")
-    private String TOSS_CLIENT_KEY;
     @Value("${toss.key.secret-key}")
     private String TOSS_SECRET_KEY;
 
 
     private final RestTemplate restTemplate;
     RedisTemplate<String, Integer> paymentRedisTemplate;
+    private final ObjectMapper objectMapper;
+
 
     /**
      * 결제 금액 임시 저장
      */
     @PostMapping("/saveAmount")
     public ResponseEntity<?> tempSave(@RequestParam String orderId, @RequestParam Integer amount) {
-        // Redis에 결제 금액 저장 (예: 유효 시간 10분 설정)
         String key = "payment:amount:" + orderId;
         paymentRedisTemplate.opsForValue().set(key, amount, Duration.ofMinutes(10));
 
         return ResponseEntity.ok().build();
     }
-
 
     /**
      * 결제 금액을 검증
@@ -69,33 +71,54 @@ public class PaymentController {
      * 토스에 결제 승인받기
      */
     @PostMapping("/confirm")
-    public ResponseEntity<?> confirmPayment(@RequestParam String orderId,
-            @RequestParam Integer amount, @RequestParam String paymentKey
-    ) {
-        // 1. Authorization 헤더 생성
-        String encodedAuth = Base64.getEncoder().encodeToString((TOSS_SECRET_KEY + ":").getBytes());
-        HttpHeaders headers = new HttpHeaders();
-        headers.setContentType(MediaType.APPLICATION_JSON);
-        headers.set("Authorization", "Basic " + encodedAuth);
+    public ResponseEntity<?> confirmPayment(@RequestBody PaymentConfirmRequestDTO requestDTO) throws IOException {
+        String jsonBody = serialize(requestDTO);
+        JSONObject response = sendRequest(parseRequestData(jsonBody), TOSS_SECRET_KEY, TOSS_CONFIRM_URL);
+        int statusCode = response.containsKey("error") ? 400 : 200;
+        return ResponseEntity.status(statusCode).body(response);
+    }
 
-        // 2. Request Body 구성
-        Map<String, Object> requestBody = new HashMap<>();
-        requestBody.put("paymentKey", paymentKey);
-        requestBody.put("orderId", orderId);
-        requestBody.put("amount", amount);
-
-        // 3. HttpEntity 생성
-        HttpEntity<Map<String, Object>> entity = new HttpEntity<>(requestBody, headers);
-
-        // 4. POST 요청
-        try {
-            ResponseEntity<String> response = restTemplate.postForEntity(TOSS_CONFIRM_URL, entity, String.class);
-            log.info("응답: {}", response.getBody());
-            System.out.println();
-        } catch (Exception e) {
-            log.info("결제 승인 실패: {}", e.getMessage());
+    private JSONObject sendRequest(JSONObject requestData, String secretKey, String urlString) throws IOException {
+        HttpURLConnection connection = createConnection(secretKey, urlString);
+        try (OutputStream os = connection.getOutputStream()) {
+            os.write(requestData.toString().getBytes(StandardCharsets.UTF_8));
         }
 
-        return ResponseEntity.ok().build();
+        try (InputStream responseStream = connection.getResponseCode() == 200 ? connection.getInputStream() : connection.getErrorStream();
+             Reader reader = new InputStreamReader(responseStream, StandardCharsets.UTF_8)) {
+            return (JSONObject) new JSONParser().parse(reader);
+        } catch (Exception e) {
+            log.error("Error reading response", e);
+            JSONObject errorResponse = new JSONObject();
+            errorResponse.put("error", "Error reading response");
+            return errorResponse;
+        }
+    }
+
+    private HttpURLConnection createConnection(String secretKey, String urlString) throws IOException {
+        URL url = new URL(urlString);
+        HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+        connection.setRequestProperty("Authorization", "Basic " + Base64.getEncoder().encodeToString((secretKey + ":").getBytes(StandardCharsets.UTF_8)));
+        connection.setRequestProperty("Content-Type", "application/json");
+        connection.setRequestMethod("POST");
+        connection.setDoOutput(true);
+        return connection;
+    }
+
+    private JSONObject parseRequestData(String jsonBody) {
+        try {
+            return (JSONObject) new JSONParser().parse(jsonBody);
+        } catch (ParseException e) {
+            log.error("JSON Parsing Error", e);
+            return new JSONObject();
+        }
+    }
+
+    private String serialize(Object dto) {
+        try {
+            return objectMapper.writeValueAsString(dto);
+        } catch (Exception e) {
+            throw new RuntimeException("직렬화 실패: " + e.getMessage(), e);
+        }
     }
 }
