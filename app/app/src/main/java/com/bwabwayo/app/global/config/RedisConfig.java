@@ -64,6 +64,11 @@ public class RedisConfig {
         return createFactory(2);
     }
 
+    @Bean
+    public RedisConnectionFactory redisConnectionFactory3() {
+        return createFactory(3);
+    }
+
 
     // ObjectMapper (직렬화 기본 설정)
     @Bean
@@ -107,6 +112,20 @@ public class RedisConfig {
         return template;
     }
 
+    @Bean
+    public RedisTemplate<String, Integer> redisPaymentTemplate(@Qualifier("redisConnectionFactory3") RedisConnectionFactory redisConnectionFactory) {
+        RedisTemplate<String, Integer> template = new RedisTemplate<>();
+        template.setConnectionFactory(redisConnectionFactory);
+
+        template.setKeySerializer(new StringRedisSerializer());
+        template.setHashKeySerializer(new StringRedisSerializer());
+
+        template.setValueSerializer(new GenericToStringSerializer<>(Integer.class));
+        template.setHashValueSerializer(new GenericToStringSerializer<>(Integer.class));
+
+        template.afterPropertiesSet();
+        return template;
+    }
 
     /** 조회수 */
     @Bean

@@ -34,4 +34,12 @@ public class ProductSearchRequestDTO {
     private String sortBy = "latest"; // 정렬 기준
 
     private String sellerId; // 판매자 ID
+
+    private Boolean canVideoCall;
+    private Boolean canNegotiate;
+    private Boolean canDirect;
+    private Boolean canDelivery;
+
+    private Integer minPrice;
+    private Integer maxPrice;
 }

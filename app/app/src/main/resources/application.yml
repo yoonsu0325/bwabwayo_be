@@ -104,6 +104,17 @@ storage:
     productImage: products
     profileImage: profiles
 
-
 sse:
   timeout: 1800000
+
+toss:
+  key:
+    client-key: test_ck_yL0qZ4G1VOKNp2R5jMxkVoWb2MQY
+    secret-key: test_sk_pP2YxJ4K87d7epemDNwv3RGZwXLO
+  url:
+    confirm: https://api.tosspayments.com/v1/payments/confirm
+
+product:
+  detail:
+    others: 5
+    similarities: 4
