@@ -1,13 +1,13 @@
 package com.bwabwayo.app.domain.user.controller;
 
+import com.amazonaws.Response;
 import com.bwabwayo.app.domain.auth.annotation.LoginUser;
-import com.bwabwayo.app.domain.product.domain.Sale;
 import com.bwabwayo.app.domain.product.service.SaleService;
 import com.bwabwayo.app.domain.user.domain.User;
 import com.bwabwayo.app.domain.user.dto.request.UserDetailRequest;
-import com.bwabwayo.app.domain.user.dto.response.UserInfoResponse;
 import com.bwabwayo.app.domain.user.dto.response.UserOrderResponse;
 import com.bwabwayo.app.domain.user.service.UserService;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -17,8 +17,6 @@ import org.springframework.data.domain.Sort;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.List;
 
 @RestController
 @RequestMapping("/api/users")
@@ -47,7 +45,7 @@ public class UserController {
     @PutMapping("/detail")
     public ResponseEntity<?> updateUserDetail(@LoginUser User user, @RequestBody UserDetailRequest request) {
         userService.updateUserDetail(request, user);
-        return ResponseEntity.ok("");
+        return ResponseEntity.ok("회원 정보 수정 완료");
     }
 
     @GetMapping("/orders")
@@ -55,5 +53,12 @@ public class UserController {
     @PageableDefault(size = 10, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable) {
         Page<UserOrderResponse> orders = saleService.getOrders(user.getId(), pageable);
         return ResponseEntity.ok(orders);
+    }
+
+    @Transactional
+    @DeleteMapping
+    public ResponseEntity<?> deleteUser(@LoginUser User user, HttpServletRequest request) {
+        userService.deleteUser(user, request);
+        return ResponseEntity.ok("회원 탈퇴 완료");
     }
 }

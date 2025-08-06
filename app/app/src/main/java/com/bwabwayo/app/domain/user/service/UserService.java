@@ -1,6 +1,8 @@
 package com.bwabwayo.app.domain.user.service;
 
 import com.bwabwayo.app.global.exception.NotFoundException;
+import com.bwabwayo.app.domain.auth.service.AuthService;
+import com.bwabwayo.app.domain.product.exception.NotFoundException;
 import com.bwabwayo.app.domain.user.domain.*;
 import com.bwabwayo.app.domain.auth.dto.request.UserSignUpRequest;
 import com.bwabwayo.app.domain.user.dto.request.UserDetailRequest;
@@ -39,6 +41,7 @@ public class UserService {
     private final ReviewAggService reviewAggService;
     private final ReviewEvaluationCountService reviewEvaluationCountService;
     private final PointService pointService;
+    private final AuthService authService;
 
     @Value("${storage.path.temp}")
     private String tempPath;
@@ -93,7 +96,7 @@ public class UserService {
         String bio = user.getBio();
 
         // 평점 평균
-        float avgRating = getAvgRating(user.getId());
+        float avgRating = reviewAggService.getAvgRating(user.getId());
 
         //리뷰 개수
         int reviewCount = reviewAggService.getReviewCount(user.getId());
@@ -166,6 +169,13 @@ public class UserService {
         }
     }
 
+    public void deleteUser(User user, HttpServletRequest request) {
+        user.setActive(false);
+        userRepository.save(user);
+        authService.deleteRefreshTokenFromRequest(request);
+        //S3 이미지 삭제
+    }
+
     @Retryable(
             value = { OptimisticLockingFailureException.class },
             maxAttempts = 3,
@@ -200,16 +210,5 @@ public class UserService {
     public ReviewAgg findReviewAggByUser(String userId) {
         return reviewAggRepository.findByUserId(userId)
                 .orElse(ReviewAgg.builder().userId(userId).build());
-    }
-
-    public float getAvgRating(String userId){
-        return reviewAggRepository
-                .findByUserId(userId)
-                .map(ReviewAgg::getAvgRating)
-                .orElse(0f);
-    }
-
-    public int reviewCount(String userId){
-        return reviewAggService.getReviewCount(userId);
     }
 }

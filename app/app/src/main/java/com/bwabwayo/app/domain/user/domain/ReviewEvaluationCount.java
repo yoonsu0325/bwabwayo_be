@@ -27,4 +27,8 @@ public class ReviewEvaluationCount {
     // 항목이 평가된 총 개수
     @Column(nullable = false)
     private int count;
+
+    public void increment() {
+        count++;
+    }
 }

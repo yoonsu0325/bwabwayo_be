@@ -67,19 +67,14 @@ public class JWTFilter extends OncePerRequestFilter {
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
         String authHeader = request.getHeader("Authorization");
-        String uri = request.getRequestURI();
-        System.out.println("🔥 TokenAuthFilter: " + uri);
         try {
             checkAuthorizationHeader(authHeader);   // header 가 올바른 형식인지 체크
             //Header로부터 authentication 가져오기
             Authentication authentication = getAuthentication(authHeader);
 
-            //로그
-            log.info("authentication = {}", authentication);
-
             //SecuritycontextHolder에 넣어서 다음 인증 때 사용
             SecurityContextHolder.getContext().setAuthentication(authentication);
-            System.out.println("Token 인증 완료");
+            log.info("Token 인증 완료");
             filterChain.doFilter(request, response);    // 다음 필터로 이동
         } catch (Exception e) {
             response.setContentType("application/json; charset=UTF-8");
@@ -112,8 +107,6 @@ public class JWTFilter extends OncePerRequestFilter {
         Role role = jwtUtils.getRole(tokenFromHeader);
         OAuth2UserRequest oauth2user = new OAuth2UserRequest(userId, role, "", "");
         CustomOAuth2User customOAuth2User = new CustomOAuth2User(oauth2user);
-
-        System.out.println(customOAuth2User.getName());
 
         return new UsernamePasswordAuthenticationToken(
                 customOAuth2User,

@@ -10,6 +10,7 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.web.authentication.SimpleUrlAuthenticationSuccessHandler;
 import org.springframework.stereotype.Component;
@@ -22,6 +23,7 @@ import java.nio.charset.StandardCharsets;
 
 @Component
 @RequiredArgsConstructor
+@Slf4j
 public class SuccessHandler extends SimpleUrlAuthenticationSuccessHandler {
     private final JWTUtils jwtUtils;
     private final JwtProperties jwtProperties;
@@ -29,7 +31,7 @@ public class SuccessHandler extends SimpleUrlAuthenticationSuccessHandler {
     @Override
     @Transactional
     public void onAuthenticationSuccess(HttpServletRequest request, HttpServletResponse response, Authentication authentication) throws IOException, ServletException {
-        System.out.println("인증성공");
+        log.info("인증 성공");
         CustomOAuth2User oath2user = (CustomOAuth2User) authentication.getPrincipal();
         OAuth2UserRequest user= oath2user.getUser();
         //AT 30분짜리 발행
@@ -41,7 +43,6 @@ public class SuccessHandler extends SimpleUrlAuthenticationSuccessHandler {
         response.setContentType("application/json");
         response.setCharacterEncoding("UTF-8");
         if (user.getRole() == Role.PREUSER) {
-            System.out.println("PREUSER");
             String redirectUrl = UriComponentsBuilder
                     .fromUriString("https://i13e202.p.ssafy.io/fe/logincallback")
                     .queryParam("accessToken", accessToken)
@@ -54,7 +55,6 @@ public class SuccessHandler extends SimpleUrlAuthenticationSuccessHandler {
 
             response.sendRedirect(redirectUrl);
         }else { //AT 토큰 발행 후 전달, RT를 여기서 발급하면 kakao쪽으로 응답이 가버림
-            System.out.println("USER");
 
             String redirectUrl = UriComponentsBuilder
                     .fromUriString("https://i13e202.p.ssafy.io/fe/logincallback")

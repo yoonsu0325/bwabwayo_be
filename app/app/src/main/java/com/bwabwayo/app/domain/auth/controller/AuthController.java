@@ -56,7 +56,6 @@ public class AuthController {
         } catch (DataIntegrityViolationException e) {
             // 중복 이메일, 닉네임, 전화번호 등 제약조건 위반
             String message = e.getMostSpecificCause().getMessage();
-            System.out.println("제약 조건 위반: " + message);
 
             if (message.contains("unique_user_nickname")) {
                 return ResponseEntity.badRequest().body(Map.of(
