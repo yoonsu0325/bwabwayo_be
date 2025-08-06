@@ -1,6 +1,6 @@
 package com.bwabwayo.app.domain.product.controller;
 
-import com.bwabwayo.app.domain.ai.service.ProductSimilarityService;
+import com.bwabwayo.app.domain.product.service.ProductSimilarityService;
 import com.bwabwayo.app.domain.product.domain.Product;
 import com.bwabwayo.app.domain.product.dto.request.ProductCreateAndUpdateRequestDTO;
 import com.bwabwayo.app.domain.product.dto.request.ProductSearchRequestDTO;

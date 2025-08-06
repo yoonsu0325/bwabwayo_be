@@ -45,4 +45,7 @@ public class ProductDetailResponseDTO {
     private List<String> imageKeys = new ArrayList<>();
 
     private SellerDTO seller;
+
+    @Builder.Default
+    private List<ProductSimpleDTO> similarities = new ArrayList<>();
 }
