@@ -75,6 +75,7 @@ dependencies {
 
 	// [openvidu]
 	implementation 'io.openvidu:openvidu-java-client:2.29.0'
+	implementation 'org.springframework.boot:spring-boot-starter-quartz'
 }
 
 tasks.named('test') {
