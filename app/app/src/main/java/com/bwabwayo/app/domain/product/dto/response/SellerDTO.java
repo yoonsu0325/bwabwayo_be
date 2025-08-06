@@ -1,9 +1,6 @@
 package com.bwabwayo.app.domain.product.dto.response;
 
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
 @Getter
 @NoArgsConstructor
@@ -15,5 +12,6 @@ public class SellerDTO {
     String bio;
     String profileImage;
     Integer score;
-    Double rating;
+    Float rating;
+    Long reviewCount;
 }

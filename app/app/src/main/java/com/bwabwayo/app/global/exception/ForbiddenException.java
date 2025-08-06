@@ -1,4 +1,4 @@
-package com.bwabwayo.app.domain.product.exception;
+package com.bwabwayo.app.global.exception;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.ResponseStatus;

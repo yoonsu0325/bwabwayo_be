@@ -1,6 +1,6 @@
 package com.bwabwayo.app.domain.user.service;
 
-import com.bwabwayo.app.domain.product.exception.NotFoundException;
+import com.bwabwayo.app.global.exception.NotFoundException;
 import com.bwabwayo.app.domain.user.domain.*;
 import com.bwabwayo.app.domain.auth.dto.request.UserSignUpRequest;
 import com.bwabwayo.app.domain.user.dto.request.UserDetailRequest;
@@ -26,6 +26,8 @@ import java.time.ZoneId;
 import java.util.List;
 import java.util.Optional;
 
+import static com.bwabwayo.app.domain.user.domain.QUser.user;
+
 @Service
 @RequiredArgsConstructor
 public class UserService {
@@ -38,6 +40,8 @@ public class UserService {
     private final ReviewEvaluationCountService reviewEvaluationCountService;
     private final PointService pointService;
 
+    @Value("${storage.path.temp}")
+    private String tempPath;
     @Value("${storage.path.profileImage}")
     private String profilePath;
 
@@ -55,8 +59,9 @@ public class UserService {
         if (URLValidator.isValidURL(request.getProfileImage())) { // 다운로드 후 S3 업로드
             targetKey = storageService.upload(profileImage, profilePath);
         } else { // S3의 profile로 이동
-            targetKey = storageUtil.copyToPermanentDirectory(profileImage, profilePath);
+            targetKey = storageUtil.copyToDirectory(profileImage, tempPath, profilePath);
         }
+
 
         User user = User.builder()
                 .id(request.getId())
@@ -88,7 +93,7 @@ public class UserService {
         String bio = user.getBio();
 
         // 평점 평균
-        float avgRating = reviewAggService.getAvgRating(user.getId());
+        float avgRating = getAvgRating(user.getId());
 
         //리뷰 개수
         int reviewCount = reviewAggService.getReviewCount(user.getId());
@@ -120,7 +125,7 @@ public class UserService {
         Account account = accountService.getAccount(user.getId());
         return UserDetailResponse.builder()
                 .nickname(user.getNickname())
-                .profileImage(user.getProfileImage())
+                .profileImage(storageService.getUrlFromKey(user.getProfileImage()))
                 .bio(user.getBio())
                 .accountNumber(Optional.ofNullable(account).map(Account::getAccountNumber).orElse(null))
                 .bankName(Optional.ofNullable(account).map(Account::getBankName).orElse(null))
@@ -132,7 +137,7 @@ public class UserService {
         if (request.getNickname() != null) {
             user.setNickname(request.getNickname());
         }
-        String targetKey = storageUtil.copyToPermanentDirectory(request.getProfileImage(), profilePath);
+        String targetKey = storageUtil.copyToDirectory(request.getProfileImage(), tempPath, profilePath);
         user.setProfileImage(targetKey);
 
         boolean hasAllAccountFields = request.getAccountNumber() != null &&
@@ -195,5 +200,16 @@ public class UserService {
     public ReviewAgg findReviewAggByUser(String userId) {
         return reviewAggRepository.findByUserId(userId)
                 .orElse(ReviewAgg.builder().userId(userId).build());
+    }
+
+    public float getAvgRating(String userId){
+        return reviewAggRepository
+                .findByUserId(userId)
+                .map(ReviewAgg::getAvgRating)
+                .orElse(0f);
+    }
+
+    public int reviewCount(String userId){
+        return reviewAggService.getReviewCount(userId);
     }
 }
