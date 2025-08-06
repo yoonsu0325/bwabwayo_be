@@ -1,6 +1,5 @@
 package com.bwabwayo.app.domain.user.controller;
 
-import com.amazonaws.Response;
 import com.bwabwayo.app.domain.auth.annotation.LoginUser;
 import com.bwabwayo.app.domain.product.service.SaleService;
 import com.bwabwayo.app.domain.user.domain.User;

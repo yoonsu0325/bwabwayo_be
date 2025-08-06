@@ -1,5 +1,6 @@
 package com.bwabwayo.app.domain.auth.service;
 
+import com.bwabwayo.app.domain.user.domain.PointEventType;
 import com.bwabwayo.app.domain.user.domain.ReviewAgg;
 import com.bwabwayo.app.domain.user.service.AccountService;
 import com.bwabwayo.app.domain.address.service.DeliveryAddressService;
@@ -49,6 +50,7 @@ public class AuthService {
 
         // 2. User 저장
         User user = userService.createUser(request);
+        userService.calcPoint(PointEventType.SIGNUP_FIRST, PointEventType.SIGNUP_FIRST.getPoint(), user);
 
         // 3. Account 저장 조건 검사
         if (request.getAccountNumber() != null &&

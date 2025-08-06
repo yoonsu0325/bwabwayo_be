@@ -38,13 +38,14 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
         User userEntity =
                 userService.findById(oAuth2UserInfo.getProviderId());
         OAuth2UserRequest user;
-        if (userEntity == null) {
+        //null이면 새가입자, isActive가 false면 재가입자
+        if (userEntity == null || !userEntity.isActive()) {
             user = new OAuth2UserRequest();
             user.setId(oAuth2UserInfo.getProviderId());
             user.setEmail(oAuth2UserInfo.getEmail());
             user.setProfileImage(oAuth2UserInfo.getProfileImage());
             user.setRole(Role.PREUSER);
-        } else {
+        } else { //탈퇴하지 않은 기본유저
             user = new OAuth2UserRequest(userEntity);
             user.setRole(Role.USER);
         }

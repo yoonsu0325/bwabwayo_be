@@ -2,7 +2,6 @@ package com.bwabwayo.app.domain.user.service;
 
 import com.bwabwayo.app.global.exception.NotFoundException;
 import com.bwabwayo.app.domain.auth.service.AuthService;
-import com.bwabwayo.app.domain.product.exception.NotFoundException;
 import com.bwabwayo.app.domain.user.domain.*;
 import com.bwabwayo.app.domain.auth.dto.request.UserSignUpRequest;
 import com.bwabwayo.app.domain.user.dto.request.UserDetailRequest;
@@ -13,7 +12,9 @@ import com.bwabwayo.app.domain.user.repository.*;
 import com.bwabwayo.app.global.storage.service.StorageService;
 import com.bwabwayo.app.global.storage.util.StorageUtil;
 import com.bwabwayo.app.global.url.URLValidator;
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.dao.OptimisticLockingFailureException;
 import org.springframework.retry.annotation.Backoff;
@@ -28,10 +29,9 @@ import java.time.ZoneId;
 import java.util.List;
 import java.util.Optional;
 
-import static com.bwabwayo.app.domain.user.domain.QUser.user;
-
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class UserService {
     private final UserRepository userRepository;
     private final ReviewAggRepository reviewAggRepository;
@@ -170,11 +170,29 @@ public class UserService {
     }
 
     public void deleteUser(User user, HttpServletRequest request) {
-        user.setActive(false);
-        userRepository.save(user);
-        authService.deleteRefreshTokenFromRequest(request);
-        //S3 이미지 삭제
+        try {
+            // 1. 사용자 비활성화
+            user.setActive(false);
+            userRepository.save(user);
+        } catch (Exception e) {
+            log.error("사용자 비활성화 실패: {}", e.getMessage(), e);
+        }
+
+        try {
+            // 2. RefreshToken 삭제
+            authService.deleteRefreshTokenFromRequest(request);
+        } catch (Exception e) {
+            log.error("RefreshToken 삭제 실패: {}", e.getMessage(), e);
+        }
+
+        try {
+            // 3. 프로필 이미지 삭제
+            storageUtil.deleteWithoutException(user.getProfileImage()); // 메서드 자체가 예외 없이 동작한다면 생략 가능
+        } catch (Exception e) {
+            log.warn("프로필 이미지 삭제 실패: {}", e.getMessage(), e);
+        }
     }
+
 
     @Retryable(
             value = { OptimisticLockingFailureException.class },

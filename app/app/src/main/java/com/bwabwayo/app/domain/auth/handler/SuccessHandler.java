@@ -2,10 +2,12 @@ package com.bwabwayo.app.domain.auth.handler;
 
 import com.bwabwayo.app.domain.auth.dto.request.CustomOAuth2User;
 import com.bwabwayo.app.domain.auth.dto.request.OAuth2UserRequest;
-import com.bwabwayo.app.domain.auth.service.AuthRedisService;
 import com.bwabwayo.app.domain.auth.utils.JWTUtils;
 import com.bwabwayo.app.domain.auth.utils.JwtProperties;
+import com.bwabwayo.app.domain.user.domain.PointEventType;
 import com.bwabwayo.app.domain.user.domain.Role;
+import com.bwabwayo.app.domain.user.domain.User;
+import com.bwabwayo.app.domain.user.service.UserService;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -20,6 +22,9 @@ import org.springframework.web.util.UriComponentsBuilder;
 import java.io.IOException;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
 
 @Component
 @RequiredArgsConstructor
@@ -27,7 +32,7 @@ import java.nio.charset.StandardCharsets;
 public class SuccessHandler extends SimpleUrlAuthenticationSuccessHandler {
     private final JWTUtils jwtUtils;
     private final JwtProperties jwtProperties;
-    private final AuthRedisService authRedisService;
+    private final UserService userService;
     @Override
     @Transactional
     public void onAuthenticationSuccess(HttpServletRequest request, HttpServletResponse response, Authentication authentication) throws IOException, ServletException {
@@ -55,11 +60,23 @@ public class SuccessHandler extends SimpleUrlAuthenticationSuccessHandler {
 
             response.sendRedirect(redirectUrl);
         }else { //AT 토큰 발행 후 전달, RT를 여기서 발급하면 kakao쪽으로 응답이 가버림
-
+            User defaultUser = userService.findById(user.getId());
+            LocalDateTime lastLoginAt = defaultUser.getLastLoginAt();
+            // 오늘 00:00 (즉, 오늘의 시작 시각)
+            ZoneId seoulZone = ZoneId.of("Asia/Seoul");
+            LocalDateTime todayStartInSeoul = LocalDate.now(seoulZone).atStartOfDay();
+            // 비교
+            int loginPoint = 0;
+            if (lastLoginAt.isBefore(todayStartInSeoul)) {
+                // 오늘 처음 로그인한 유저
+                userService.calcPoint(PointEventType.ATTENDANCE, PointEventType.ATTENDANCE.getPoint(), defaultUser);
+                loginPoint = PointEventType.ATTENDANCE.getPoint();
+            }
             String redirectUrl = UriComponentsBuilder
                     .fromUriString("https://i13e202.p.ssafy.io/fe/logincallback")
                     .queryParam("accessToken", accessToken)
                     .queryParam("isNewUser", false)
+                    .queryParam("loginPoint", loginPoint)
                     .build()
                     .toUriString();
 
