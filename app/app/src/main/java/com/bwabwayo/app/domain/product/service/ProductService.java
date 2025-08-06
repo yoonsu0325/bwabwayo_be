@@ -17,6 +17,7 @@ import com.bwabwayo.app.domain.product.util.CategoryUtil;
 import com.bwabwayo.app.domain.user.domain.User;
 import com.bwabwayo.app.domain.user.service.UserService;
 import com.bwabwayo.app.domain.wish.service.WishService;
+import com.bwabwayo.app.global.page.PageResponseDTO;
 import com.bwabwayo.app.global.storage.util.StorageUtil;
 import com.bwabwayo.app.global.storage.service.StorageService;
 import lombok.RequiredArgsConstructor;
@@ -65,20 +66,17 @@ public class ProductService {
      * 상품 검색
      */
     @Transactional(readOnly = true)
-    public ProductSearchResponseDTO searchProducts(ProductSearchRequestDTO requestDTO, User loginUser) {
+    public PageResponseDTO<ProductSearchResultDTO> searchProducts(ProductSearchRequestDTO requestDTO, User loginUser) {
         String keyword = requestDTO.getKeyword();
         Long categoryId = requestDTO.getCategoryId();
         String sellerId = requestDTO.getSellerId();
 
         // 페이지는 1부터 시작
         Integer page = requestDTO.getPage();
-        if(page == null || page < 1) page = 1;
         // 각 페이지에는 최소 0개가 할당
         Integer size = requestDTO.getSize();
-        if(size == null || size < 0) size = 100;
         // 기본 정렬 속성은 '최신순'
         String sortBy = requestDTO.getSortBy();
-        if(sortBy == null) sortBy = "latest";
 
         // 정렬 조건 생성
         Sort.Order option = switch (sortBy){
@@ -105,9 +103,8 @@ public class ProductService {
         
         // DB 조회
         Page<ProductWithWishDTO> pageData = productRepository.searchByCondition(keyword, categoryIds, pageable, loginUser != null ? loginUser.getId() : null, sellerId);
-        List<ProductWithWishDTO> content = pageData.getContent();
 
-        List<ProductSearchResultDTO> result = content.stream().map(dto -> {
+        return PageResponseDTO.fromEntity(pageData, dto -> {
             Product product = dto.getProduct();
 
             ProductSimpleDTO productDTO = ProductSimpleDTO.builder()
@@ -133,24 +130,7 @@ public class ProductService {
                     .product(productDTO)
                     .seller(sellerDTO)
                     .build();
-        }).toList();
-
-        int current = pageData.getNumber() + 1;
-        int end = (int) Math.ceil(current / 10.0) * 10; // 마지막 페이지 블록
-        int start = end - 9; // 처음 페이지 블록
-        int last = Math.min(end, pageData.getTotalPages()); // 실제 마지막 페이지 블록
-
-        return ProductSearchResponseDTO.builder()
-                .size(result.size())
-                .result(result)
-                .start(start)
-                .last(last)
-                .prev(current > 1)
-                .next(pageData.hasNext()) // end >= last
-                .current(current)
-                .totalPages(pageData.getTotalPages())
-                .totalItems(pageData.getTotalElements())
-                .build();
+        });
     }
 
     /**

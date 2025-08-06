@@ -21,14 +21,17 @@ public class ProductSearchRequestDTO {
 
     @Parameter(example = "1")
     @Min(1)
-    private Integer page; // 페이지 번호
+    @Builder.Default
+    private Integer page = 1; // 페이지 번호
 
     @Parameter(example = "100")
     @Min(0)
-    private Integer size; // 상품 수
+    @Builder.Default
+    private Integer size = 100; // 상품 수
 
     @Parameter(example = "latest")
-    private String sortBy; // 정렬 기준
+    @Builder.Default
+    private String sortBy = "latest"; // 정렬 기준
 
     private String sellerId; // 판매자 ID
 }

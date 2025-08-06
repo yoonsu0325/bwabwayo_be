@@ -4,6 +4,7 @@ import com.bwabwayo.app.domain.ai.service.ProductSimilarityService;
 import com.bwabwayo.app.domain.product.domain.Product;
 import com.bwabwayo.app.domain.product.dto.request.ProductCreateAndUpdateRequestDTO;
 import com.bwabwayo.app.domain.product.dto.request.ProductSearchRequestDTO;
+import com.bwabwayo.app.domain.product.dto.response.*;
 import com.bwabwayo.app.domain.product.dto.response.ProductCreateResponseDTO;
 import com.bwabwayo.app.domain.product.dto.response.ProductDetailResponseDTO;
 import com.bwabwayo.app.domain.product.dto.response.ProductSearchResponseDTO;
@@ -72,15 +73,14 @@ public class ProductController {
     @Operation(summary = "상품 목록 조회")
     @ApiResponse(
             responseCode = "200",
-            content = @Content(mediaType = "application/json", schema = @Schema(implementation = ProductSearchResponseDTO.class))
+            content = @Content(mediaType = "application/json", schema = @Schema(implementation = ProductPageResponseDTO.class))
     )
     @GetMapping
     public ResponseEntity<?> getProducts(
             @Valid @ModelAttribute ProductSearchRequestDTO requestDTO,
             @LoginUser(required = false) User user
     ) {
-        ProductSearchResponseDTO response = productService.searchProducts(requestDTO, user);
-        return ResponseEntity.ok(response);
+        return ResponseEntity.ok(productService.searchProducts(requestDTO, user));
     }
 
     @Operation(summary = "상품 상세 조회")
