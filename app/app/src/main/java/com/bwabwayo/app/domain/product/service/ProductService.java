@@ -13,11 +13,11 @@ import com.bwabwayo.app.domain.product.dto.response.*;
 import com.bwabwayo.app.domain.product.repository.CourierRepository;
 import com.bwabwayo.app.domain.product.repository.ProductImageRepository;
 import com.bwabwayo.app.domain.product.repository.ProductRepository;
-import com.bwabwayo.app.domain.user.domain.ReviewAgg;
+import com.bwabwayo.app.domain.product.util.CategoryUtil;
 import com.bwabwayo.app.domain.user.domain.User;
-import com.bwabwayo.app.domain.user.repository.AccountRepository;
-import com.bwabwayo.app.domain.user.repository.ReviewAggRepository;
+import com.bwabwayo.app.domain.user.service.UserService;
 import com.bwabwayo.app.domain.wish.service.WishService;
+import com.bwabwayo.app.global.page.PageResponseDTO;
 import com.bwabwayo.app.global.storage.util.StorageUtil;
 import com.bwabwayo.app.global.storage.service.StorageService;
 import lombok.RequiredArgsConstructor;
@@ -46,7 +46,8 @@ public class ProductService {
     private final WishService wishService;
     private final CourierRepository courierRepository;
     private final ViewCountService viewCountService;
-    private final ReviewAggRepository reviewAggRepository;
+    private final UserService userService;
+    private final ProductSimilarityService productSimilarityService;
 
     @Value("${storage.path.temp}")
     private String tempPath;
@@ -59,30 +60,24 @@ public class ProductService {
      */
     @Transactional
     public Product createProduct(ProductCreateAndUpdateRequestDTO requestDTO, User user) {
-        Product product = saveDTO(requestDTO, new Product(), user);
-        productRepository.save(product);
-
-        return product;
+        return saveDTO(requestDTO, new Product(), user);
     }
 
     /**
      * 상품 검색
      */
     @Transactional(readOnly = true)
-    public ProductSearchResponseDTO searchProducts(ProductSearchRequestDTO requestDTO, User loginUser) {
+    public PageResponseDTO<ProductSearchResultDTO> searchProducts(ProductSearchRequestDTO requestDTO, User loginUser) {
         String keyword = requestDTO.getKeyword();
         Long categoryId = requestDTO.getCategoryId();
         String sellerId = requestDTO.getSellerId();
 
         // 페이지는 1부터 시작
         Integer page = requestDTO.getPage();
-        if(page == null || page < 1) page = 1;
         // 각 페이지에는 최소 0개가 할당
         Integer size = requestDTO.getSize();
-        if(size == null || size < 0) size = 100;
         // 기본 정렬 속성은 '최신순'
         String sortBy = requestDTO.getSortBy();
-        if(sortBy == null) sortBy = "latest";
 
         // 정렬 조건 생성
         Sort.Order option = switch (sortBy){
@@ -101,7 +96,7 @@ public class ProductService {
         if(categoryId != null){
             if(categoryService.existsCategoryById(categoryId)) {
                 Category topCategory = categoryService.getCategoryById(categoryId);
-                getSubCategoryIds(topCategory, categoryIds);
+                categoryIds = CategoryUtil.getSubCategories(topCategory).stream().map(Category::getId).toList();
             } else {
                 categoryIds.add(categoryId);
             }
@@ -109,9 +104,8 @@ public class ProductService {
         
         // DB 조회
         Page<ProductWithWishDTO> pageData = productRepository.searchByCondition(keyword, categoryIds, pageable, loginUser != null ? loginUser.getId() : null, sellerId);
-        List<ProductWithWishDTO> content = pageData.getContent();
 
-        List<ProductSearchResultDTO> result = content.stream().map(dto -> {
+        return PageResponseDTO.fromEntity(pageData, dto -> {
             Product product = dto.getProduct();
 
             ProductSimpleDTO productDTO = ProductSimpleDTO.builder()
@@ -137,24 +131,7 @@ public class ProductService {
                     .product(productDTO)
                     .seller(sellerDTO)
                     .build();
-        }).toList();
-
-        int current = pageData.getNumber() + 1;
-        int end = (int) Math.ceil(current / 10.0) * 10; // 마지막 페이지 블록
-        int start = end - 9; // 처음 페이지 블록
-        int last = Math.min(end, pageData.getTotalPages()); // 실제 마지막 페이지 블록
-
-        return ProductSearchResponseDTO.builder()
-                .size(result.size())
-                .result(result)
-                .start(start)
-                .last(last)
-                .prev(current > 1)
-                .next(pageData.hasNext()) // end >= last
-                .current(current)
-                .totalPages(pageData.getTotalPages())
-                .totalItems(pageData.getTotalElements())
-                .build();
+        });
     }
 
     /**
@@ -163,20 +140,20 @@ public class ProductService {
     @Transactional(readOnly = true)
     public ProductDetailResponseDTO getProductDetail(Product product, User user) {
         // 상품이 속한 카테고리부터 조상 카테고리까지의 모음
-        List<CategoryDTO> superCategories = resolveSuperCategories(product.getCategory());
+        List<CategoryDTO> superCategories = CategoryUtil.getSupperCategories(product.getCategory())
+                .stream().map(CategoryDTO::fromEntity).toList();
 
         // 상품에 포함된 이미지 URL 모음
-        List<String> imageUrls = product.getProductImages().stream()
-                .map(i -> storageService.getUrlFromKey(i.getUrl())).toList();
         List<String> imageKeys = product.getProductImages().stream()
                 .map(ProductImage::getUrl).toList();
+        List<String> imageUrls = imageKeys.stream()
+                .map(storageService::getUrlFromKey).toList();
+
         
         // 판매자 평균 평점 가져오기
-        double avgRating = reviewAggRepository
-                .findByUserId(product.getSeller().getId())
-                .map(ReviewAgg::getAvgRating)
-                .orElse(0f);
-        avgRating = Math.round(avgRating * 10.) / 10.;
+        float avgRating = userService.getAvgRating(product.getSeller().getId());
+        avgRating = Math.round(avgRating * 10.f) / 10.f;
+        long reviewCount = userService.reviewCount(product.getSeller().getId());
 
         // 판매자 정보
         User seller = product.getSeller();
@@ -187,7 +164,32 @@ public class ProductService {
                 .profileImage(storageService.getUrlFromKey(seller.getProfileImage()))
                 .score(seller.getScore())
                 .rating(avgRating)
+                .reviewCount(reviewCount)
                 .build();
+
+        // 유사한 상품 목록
+        List<Long> similarities = productSimilarityService.searchSimilarTitles(product.getTitle(), 4 + 1);
+        List<ProductSimpleDTO> productSimpleDTOS = similarities
+                .stream()
+                .filter(id-> !Objects.equals(id, product.getId()))
+                .map(productRepository::getProductById)
+                .filter(Objects::nonNull)
+                .map(p-> ProductSimpleDTO.builder()
+                        .id(p.getId())
+                        .categoryId(p.getCategory().getId())
+                        .thumbnail(storageService.getUrlFromKey(p.getThumbnail()))
+                        .title(p.getTitle())
+                        .price(p.getPrice())
+                        .viewCount(viewCountService.getViewCount(p.getId()).intValue())
+                        .wishCount(p.getWishCount())
+                        .chatCount(p.getChatCount())
+                        .isLike(user != null && wishService.existsWish(p.getId(), user.getId()))
+                        .canVideoCall(p.isCanVideoCall())
+                        .saleStatusCode(p.getSaleStatus().getLevel())
+                        .saleStatus(p.getSaleStatus().getDescription())
+                        .createdAt(p.getCreatedAt())
+                        .build()
+                ).toList();
 
         return ProductDetailResponseDTO.builder()
                 .title(product.getTitle())
@@ -198,7 +200,7 @@ public class ProductService {
                 .canDirect(product.isCanDirect())
                 .canDelivery(product.isCanDelivery())
                 .canVideoCall(product.isCanVideoCall())
-                .isWish(user != null && wishService.existsWish(product.getId(), user.getId()))
+                .isLike(user != null && wishService.existsWish(product.getId(), user.getId()))
                 .viewCount(viewCountService.getViewCount(product.getId()).intValue())
                 .wishCount(product.getWishCount())
                 .chatCount(product.getChatCount())
@@ -207,6 +209,7 @@ public class ProductService {
                 .imageUrls(imageUrls)
                 .imageKeys(imageKeys)
                 .seller(sellerDTO)
+                .similarities(productSimpleDTOS)
                 .build();
     }
 
@@ -229,32 +232,7 @@ public class ProductService {
 
         // Product 삭제
         productRepository.delete(product);
-        imageKeys.forEach(storageUtil::safeDelete);
-    }
-    
-    /**
-     * 현재 카테고리와 그 하위의 카테고리의 ID의 리스트 생성
-     */
-    private void getSubCategoryIds(Category category, List<Long> result){
-        if(category == null) return;
-
-        result.add(category.getId());
-        for(Category subCategory : category.getChildren()){
-            getSubCategoryIds(subCategory, result);
-        }
-    }
-
-    /**
-     * 현재 카테고리와 모든 선조 카테고리의 모음 반환
-     */
-    private List<CategoryDTO> resolveSuperCategories(Category category) {
-        List<CategoryDTO> result = new ArrayList<>();
-        while (category != null) {
-            result.add(new CategoryDTO(category.getId(), category.getName()));
-            category = category.getParent();
-        }
-        Collections.reverse(result);
-        return result;
+        imageKeys.forEach(storageUtil::deleteWithoutException);
     }
 
     @Transactional
@@ -289,10 +267,10 @@ public class ProductService {
             throw new IllegalArgumentException("등록하려는 상품이 속한 카테고리가 존재하지 않습니다.");
         }
 
+        // Product 속성 할당
         if(seller != null && product.getSeller() == null) {
             product.setSeller(seller);
         }
-
         product.setCategory(category);
         product.setTitle(dto.getTitle());
         product.setDescription(dto.getDescription());
@@ -304,58 +282,60 @@ public class ProductService {
         product.setCanVideoCall(dto.getCanVideoCall());
 
         // 이미지 저장
-        List<String> originImageKeys = dto.getImages();
+        List<String> requestedImageKeys = dto.getImages();
+        List<String> storedImageKeys;
+        int oldImageCount;
+
         try {
-            List<String> imageKeys = storageUtil.copyToPermanentDirectory(originImageKeys, productPath);
+            storedImageKeys = storageUtil.copyToDirectory(requestedImageKeys, tempPath, productPath);
             
             // 이전 이미지 제거
-            int oldImageCount = product.getProductImages() != null ? product.getProductImages().size() : 0;
+            List<ProductImage> productImages = product.getProductImages();
+            oldImageCount = productImages != null ? productImages.size() : 0;
             if(oldImageCount > 0){
                 product.getProductImages().clear();
                 productImageRepository.deleteAllByProduct(product);
                 productImageRepository.flush();
             }
 
-            setProductImages(product, imageKeys);
-
-            // 이전 이미지 중 삭제되는 이미지를 스토리지에서 삭제
-            if(oldImageCount > 0){
-                Set<String> afterImages = new HashSet<>(imageKeys);
-                for (String key : originImageKeys) {
-                    if(!afterImages.contains(key)) {
-                        storageUtil.safeDelete(key);
-                    }
-                }   
-            }
+            setProductImages(product, storedImageKeys);
 
             productRepository.save(product);
         } catch (Exception e) {
             // 상품 등록에 실패하면 영구 저장소로 복사한 이미지 롤백
-            storageUtil.rollbackTemporalImages(originImageKeys, productPath);
+            storageUtil.rollback(requestedImageKeys, tempPath, productPath);
             throw e;
+        }
+
+        // 이전 이미지 중 상품에 포함되지 않는 이미지를 삭제
+        if(oldImageCount > 0){
+            Set<String> updatedImages = new HashSet<>(storedImageKeys);
+            for (String key : requestedImageKeys) {
+                if(!updatedImages.contains(key)) {
+                    storageUtil.deleteWithoutException(key);
+                }
+            }
         }
 
         return product;
     }
 
     private void setProductImages(Product product, List<String> imageKeys) {
-        if (imageKeys != null && !imageKeys.isEmpty()) {
-            int index = 0;
-
-            for (String key : imageKeys) {
-                ProductImage image = ProductImage.builder()
-                        .product(product)
-                        .no(++index)
-                        .url(key)
-                        .build();
-                product.getProductImages().add(image);
-            }
-
-            // 썸네일 지정
-            product.setThumbnail(product.getProductImages().get(0).getUrl());
-        } else{
-            throw new NullPointerException("유효한 이미지가 존재하지 않습니다.");
+        if(imageKeys == null || imageKeys.isEmpty()){
+            throw new IllegalArgumentException("유효한 이미지가 존재하지 않습니다.");
         }
-    }
 
+        int index = 0;
+        for (String key : imageKeys) {
+            ProductImage image = ProductImage.builder()
+                    .product(product)
+                    .no(++index)
+                    .url(key)
+                    .build();
+            product.getProductImages().add(image);
+        }
+
+        // 썸네일 지정
+        product.setThumbnail(product.getProductImages().get(0).getUrl());
+    }
 }

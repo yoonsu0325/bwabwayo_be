@@ -17,7 +17,7 @@ import java.util.function.Function;
 public class PageResponseDTO<T> {
     private Integer size;
     @Builder.Default
-    private List<T> results = new ArrayList<>();
+    private List<T> result = new ArrayList<>();
 
     private Integer currentPage;
     private Integer startPage, lastPage;
@@ -38,7 +38,7 @@ public class PageResponseDTO<T> {
 
         return PageResponseDTO.<R>builder()
                 .size(page.getSize())
-                .results(mapped)
+                .result(mapped)
                 .currentPage(current)
                 .startPage(start)
                 .lastPage(last)
