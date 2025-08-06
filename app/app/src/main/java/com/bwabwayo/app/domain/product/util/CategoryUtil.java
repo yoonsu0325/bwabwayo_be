@@ -1,7 +1,6 @@
 package com.bwabwayo.app.domain.product.util;
 
 import com.bwabwayo.app.domain.product.domain.Category;
-import com.bwabwayo.app.domain.product.dto.response.CategoryDTO;
 
 import java.util.ArrayList;
 import java.util.Collections;

@@ -38,6 +38,8 @@ public class UserService {
     private final ReviewEvaluationCountService reviewEvaluationCountService;
     private final PointService pointService;
 
+    @Value("${storage.path.temp}")
+    private String tempPath;
     @Value("${storage.path.profileImage}")
     private String profilePath;
 
@@ -55,7 +57,7 @@ public class UserService {
         if (URLValidator.isValidURL(request.getProfileImage())) { // 다운로드 후 S3 업로드
             targetKey = storageService.upload(profileImage, profilePath);
         } else { // S3의 profile로 이동
-            targetKey = storageUtil.copyToPermanentDirectory(profileImage, profilePath);
+            targetKey = storageUtil.copyToDirectory(profileImage, tempPath, profilePath);
         }
 
         User user = User.builder()
@@ -88,7 +90,7 @@ public class UserService {
         String bio = user.getBio();
 
         // 평점 평균
-        float avgRating = reviewAggService.getAvgRating(user.getId());
+        float avgRating = getAvgRating(user.getId());
 
         //리뷰 개수
         int reviewCount = reviewAggService.getReviewCount(user.getId());
@@ -132,7 +134,7 @@ public class UserService {
         if (request.getNickname() != null) {
             user.setNickname(request.getNickname());
         }
-        String targetKey = storageUtil.copyToPermanentDirectory(request.getProfileImage(), profilePath);
+        String targetKey = storageUtil.copyToDirectory(request.getProfileImage(), tempPath, profilePath);
         user.setProfileImage(targetKey);
 
         boolean hasAllAccountFields = request.getAccountNumber() != null &&
@@ -195,5 +197,12 @@ public class UserService {
     public ReviewAgg findReviewAggByUser(String userId) {
         return reviewAggRepository.findByUserId(userId)
                 .orElse(ReviewAgg.builder().userId(userId).build());
+    }
+
+    public float getAvgRating(String userId){
+        return reviewAggRepository
+                .findByUserId(userId)
+                .map(ReviewAgg::getAvgRating)
+                .orElse(0f);
     }
 }

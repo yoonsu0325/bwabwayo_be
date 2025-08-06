@@ -14,9 +14,9 @@ import com.bwabwayo.app.domain.product.repository.CourierRepository;
 import com.bwabwayo.app.domain.product.repository.ProductImageRepository;
 import com.bwabwayo.app.domain.product.repository.ProductRepository;
 import com.bwabwayo.app.domain.product.util.CategoryUtil;
-import com.bwabwayo.app.domain.user.domain.ReviewAgg;
 import com.bwabwayo.app.domain.user.domain.User;
 import com.bwabwayo.app.domain.user.repository.ReviewAggRepository;
+import com.bwabwayo.app.domain.user.service.UserService;
 import com.bwabwayo.app.domain.wish.service.WishService;
 import com.bwabwayo.app.global.storage.util.StorageUtil;
 import com.bwabwayo.app.global.storage.service.StorageService;
@@ -46,7 +46,7 @@ public class ProductService {
     private final WishService wishService;
     private final CourierRepository courierRepository;
     private final ViewCountService viewCountService;
-    private final ReviewAggRepository reviewAggRepository;
+    private final UserService userService;
 
     @Value("${storage.path.temp}")
     private String tempPath;
@@ -164,17 +164,15 @@ public class ProductService {
                 .stream().map(CategoryDTO::fromEntity).toList();
 
         // 상품에 포함된 이미지 URL 모음
-        List<String> imageUrls = product.getProductImages().stream()
-                .map(i -> storageService.getUrlFromKey(i.getUrl())).toList();
         List<String> imageKeys = product.getProductImages().stream()
                 .map(ProductImage::getUrl).toList();
+        List<String> imageUrls = imageKeys.stream()
+                .map(storageService::getUrlFromKey).toList();
+
         
         // 판매자 평균 평점 가져오기
-        double avgRating = reviewAggRepository
-                .findByUserId(product.getSeller().getId())
-                .map(ReviewAgg::getAvgRating)
-                .orElse(0f);
-        avgRating = Math.round(avgRating * 10.) / 10.;
+        float avgRating = userService.getAvgRating(product.getSeller().getId());
+        avgRating = Math.round(avgRating * 10.f) / 10.f;
 
         // 판매자 정보
         User seller = product.getSeller();
