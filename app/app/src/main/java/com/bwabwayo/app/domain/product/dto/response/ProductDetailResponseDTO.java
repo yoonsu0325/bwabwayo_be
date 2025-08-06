@@ -27,7 +27,7 @@ public class ProductDetailResponseDTO {
     private Boolean canDelivery;
     private Boolean canVideoCall;
 
-    private Boolean isWish;
+    private Boolean isLike;
 
     private Integer viewCount;
     private Integer wishCount;

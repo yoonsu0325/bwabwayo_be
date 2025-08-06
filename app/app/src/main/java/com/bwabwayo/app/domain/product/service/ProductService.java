@@ -153,6 +153,7 @@ public class ProductService {
         // 판매자 평균 평점 가져오기
         float avgRating = userService.getAvgRating(product.getSeller().getId());
         avgRating = Math.round(avgRating * 10.f) / 10.f;
+        long reviewCount = userService.reviewCount(product.getSeller().getId());
 
         // 판매자 정보
         User seller = product.getSeller();
@@ -163,6 +164,7 @@ public class ProductService {
                 .profileImage(storageService.getUrlFromKey(seller.getProfileImage()))
                 .score(seller.getScore())
                 .rating(avgRating)
+                .reviewCount(reviewCount)
                 .build();
 
         // 유사한 상품 목록
@@ -198,7 +200,7 @@ public class ProductService {
                 .canDirect(product.isCanDirect())
                 .canDelivery(product.isCanDelivery())
                 .canVideoCall(product.isCanVideoCall())
-                .isWish(user != null && wishService.existsWish(product.getId(), user.getId()))
+                .isLike(user != null && wishService.existsWish(product.getId(), user.getId()))
                 .viewCount(viewCountService.getViewCount(product.getId()).intValue())
                 .wishCount(product.getWishCount())
                 .chatCount(product.getChatCount())

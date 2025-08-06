@@ -26,6 +26,8 @@ import java.time.ZoneId;
 import java.util.List;
 import java.util.Optional;
 
+import static com.bwabwayo.app.domain.user.domain.QUser.user;
+
 @Service
 @RequiredArgsConstructor
 public class UserService {
@@ -205,5 +207,9 @@ public class UserService {
                 .findByUserId(userId)
                 .map(ReviewAgg::getAvgRating)
                 .orElse(0f);
+    }
+
+    public int reviewCount(String userId){
+        return reviewAggService.getReviewCount(userId);
     }
 }

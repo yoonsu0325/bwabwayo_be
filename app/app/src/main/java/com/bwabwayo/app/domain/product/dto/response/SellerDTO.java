@@ -13,4 +13,5 @@ public class SellerDTO {
     String profileImage;
     Integer score;
     Float rating;
+    Long reviewCount;
 }
