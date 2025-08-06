@@ -1,22 +1,22 @@
 package com.bwabwayo.app.domain.product.controller;
 
-import com.bwabwayo.app.domain.ai.service.ProductSimilarityService;
+import com.bwabwayo.app.domain.product.service.ProductSimilarityService;
 import com.bwabwayo.app.domain.product.domain.Product;
 import com.bwabwayo.app.domain.product.dto.request.ProductCreateAndUpdateRequestDTO;
 import com.bwabwayo.app.domain.product.dto.request.ProductSearchRequestDTO;
+import com.bwabwayo.app.domain.product.dto.response.*;
 import com.bwabwayo.app.domain.product.dto.response.ProductCreateResponseDTO;
 import com.bwabwayo.app.domain.product.dto.response.ProductDetailResponseDTO;
 import com.bwabwayo.app.domain.product.dto.response.ProductSearchResponseDTO;
 import com.bwabwayo.app.domain.product.dto.response.ViewCountResponseDTO;
-import com.bwabwayo.app.domain.product.exception.BadRequestException;
-import com.bwabwayo.app.domain.product.exception.ForbiddenException;
-import com.bwabwayo.app.domain.product.exception.NotFoundException;
+import com.bwabwayo.app.global.exception.BadRequestException;
+import com.bwabwayo.app.global.exception.ForbiddenException;
+import com.bwabwayo.app.global.exception.NotFoundException;
 import com.bwabwayo.app.domain.product.service.ProductService;
 import com.bwabwayo.app.domain.auth.annotation.LoginUser;
 import com.bwabwayo.app.domain.product.service.ViewCountService;
 import com.bwabwayo.app.domain.user.domain.User;
 import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -44,7 +44,7 @@ public class ProductController {
             content = @Content(mediaType = "application/json", schema = @Schema(implementation = ProductSearchResponseDTO.class))
     )
     @GetMapping("/my")
-    public ResponseEntity<?> getMyProductList(@Parameter(hidden = true) @LoginUser User loginUser){
+    public ResponseEntity<?> getMyProductList(@LoginUser User loginUser){
         return getProducts(ProductSearchRequestDTO.builder().sellerId(loginUser.getId()).build(), loginUser);
     }
 
@@ -56,28 +56,31 @@ public class ProductController {
     @PostMapping
     public ResponseEntity<?> createProduct(
             @Valid @RequestBody ProductCreateAndUpdateRequestDTO requestDTO,
-            @Parameter(hidden = true) @LoginUser User user
+            @LoginUser User user
     ) {
-        // 상품 저장
-        Product product = productService.createProduct(requestDTO, user);
-        // 벡터 추가
-        productSimilarityService.savePoint(product);
-        // Response 생성
-        return ResponseEntity.ok(ProductCreateResponseDTO.fromEntity(product));
+        try{
+            // 상품 저장
+            Product product = productService.createProduct(requestDTO, user);
+            // 벡터 추가
+            productSimilarityService.savePoint(product);
+            // Response 생성
+            return ResponseEntity.ok(ProductCreateResponseDTO.fromEntity(product));
+        } catch(IllegalArgumentException e){
+            throw new BadRequestException(e.getMessage());
+        }
     }
 
     @Operation(summary = "상품 목록 조회")
     @ApiResponse(
             responseCode = "200",
-            content = @Content(mediaType = "application/json", schema = @Schema(implementation = ProductSearchResponseDTO.class))
+            content = @Content(mediaType = "application/json", schema = @Schema(implementation = ProductPageResponseDTO.class))
     )
     @GetMapping
     public ResponseEntity<?> getProducts(
             @Valid @ModelAttribute ProductSearchRequestDTO requestDTO,
-            @Parameter(hidden = true) @LoginUser(required = false) User user
+            @LoginUser(required = false) User user
     ) {
-        ProductSearchResponseDTO response = productService.searchProducts(requestDTO, user);
-        return ResponseEntity.ok(response);
+        return ResponseEntity.ok(productService.searchProducts(requestDTO, user));
     }
 
     @Operation(summary = "상품 상세 조회")
@@ -87,7 +90,7 @@ public class ProductController {
     @GetMapping("/{productId}")
     public ResponseEntity<?> getProductById(
             @PathVariable Long productId,
-            @Parameter(hidden = true) @LoginUser(required = false) User user
+            @LoginUser(required = false) User user
     ) {
         Product product = validateProduct(productId);
 
@@ -102,7 +105,7 @@ public class ProductController {
     public ResponseEntity<Void> updateProduct(
             @PathVariable Long productId,
             @RequestBody ProductCreateAndUpdateRequestDTO requestDTO,
-            @Parameter(hidden = true) @LoginUser User loginUser
+            @LoginUser User loginUser
     ) {
         Product product = validateProduct(productId, loginUser);
         try{
@@ -122,7 +125,7 @@ public class ProductController {
     @DeleteMapping("/{productId}")
     public ResponseEntity<Void> deleteProductById(
             @PathVariable Long productId,
-            @Parameter(hidden = true) @LoginUser User loginUser
+            @LoginUser User loginUser
     ){
         Product product = validateProduct(productId, loginUser);
         // 상품 삭제
@@ -167,7 +170,7 @@ public class ProductController {
     public ResponseEntity<?> increaseViewCount(
             @PathVariable Long productId,
             HttpServletRequest request,
-            @Parameter(hidden = true) @LoginUser(required = false) User loginUser
+            @LoginUser(required = false) User loginUser
     ){
         // 비로그인 사용자는 IP 기준으로 식별
         String identifier = loginUser != null ? loginUser.getId() : request.getRemoteAddr();
