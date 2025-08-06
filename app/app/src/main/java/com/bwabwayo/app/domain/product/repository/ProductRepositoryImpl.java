@@ -21,7 +21,17 @@ public class ProductRepositoryImpl implements ProductRepositoryCustom {
     private final JPAQueryFactory queryFactory;
 
     @Override
-    public Page<ProductWithWishDTO> searchByCondition(String keyword, List<Long> categoryIds, @NonNull Pageable pageable, String loginUserId, String sellerId){
+    public Page<ProductWithWishDTO> searchByCondition(
+            String keyword,
+            List<Long> categoryIds,
+            @NonNull Pageable pageable,
+            String loginUserId,
+            String sellerId,
+            Boolean canVideoCall,
+            Boolean canNegotiate,
+            Boolean canDelivery,
+            Boolean canDirect
+    ){
         QProduct product = QProduct.product;
         QWish wish = QWish.wish;
 
@@ -40,6 +50,19 @@ public class ProductRepositoryImpl implements ProductRepositoryCustom {
         // 판매자 필터링
         if(sellerId != null && !sellerId.isEmpty()){
             condition.and(product.seller.id.eq(sellerId));
+        }
+
+        if(canVideoCall != null){
+            condition.and(product.canVideoCall.eq(canVideoCall));
+        }
+        if(canNegotiate != null){
+            condition.and(product.canNegotiate.eq(canNegotiate));
+        }
+        if(canDelivery != null){
+            condition.and(product.canDelivery.eq(canDelivery));
+        }
+        if(canDirect!=null){
+            condition.and(product.canDirect.eq(canDirect));
         }
 
         List<ProductWithWishDTO> content;

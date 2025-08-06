@@ -76,6 +76,10 @@ public class ProductService {
         String keyword = requestDTO.getKeyword();
         Long categoryId = requestDTO.getCategoryId();
         String sellerId = requestDTO.getSellerId();
+        Boolean canVideoCall = requestDTO.getCanVideoCall();
+        Boolean canNegotiate = requestDTO.getCanNegotiate();
+        Boolean canDirect =  requestDTO.getCanDirect();
+        Boolean canDelivery = requestDTO.getCanDelivery();
 
         // 페이지는 1부터 시작
         Integer page = requestDTO.getPage();
@@ -108,7 +112,17 @@ public class ProductService {
         }
         
         // DB 조회
-        Page<ProductWithWishDTO> pageData = productRepository.searchByCondition(keyword, categoryIds, pageable, loginUser != null ? loginUser.getId() : null, sellerId);
+        Page<ProductWithWishDTO> pageData = productRepository.searchByCondition(
+                keyword,
+                categoryIds,
+                pageable,
+                loginUser != null ? loginUser.getId() : null,
+                sellerId,
+                canVideoCall,
+                canNegotiate,
+                canDelivery,
+                canDirect
+        );
 
         return PageResponseDTO.fromEntity(pageData, dto -> {
             Product product = dto.getProduct();
