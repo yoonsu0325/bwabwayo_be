@@ -6,6 +6,7 @@ import com.bwabwayo.app.domain.chat.dto.request.ReservationRequest;
 import com.bwabwayo.app.domain.chat.dto.response.ReservationResponse;
 import com.bwabwayo.app.domain.chat.repository.ChatRoomRepository;
 import com.bwabwayo.app.domain.chat.repository.ReservationRepository;
+import com.bwabwayo.app.domain.openvidu.domain.OpenViduJob;
 import com.bwabwayo.app.domain.product.domain.Product;
 import com.bwabwayo.app.domain.product.repository.ProductRepository;
 import com.bwabwayo.app.domain.user.domain.PointEventType;
@@ -14,10 +15,13 @@ import com.bwabwayo.app.domain.user.service.UserService;
 import com.bwabwayo.app.global.common.CommonService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.quartz.*;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 import java.util.Optional;
 
@@ -31,9 +35,12 @@ public class ReservationService {
     private final UserService userService;
     private final ProductRepository productRepository;
     private final CommonService commonService;
+    private final Scheduler scheduler;
     private final Integer RESERVATION_POINT = 1000;
 
-    public VideocallReservation makeReservation(User user, ReservationRequest reservationRequest, Long roomId) throws IllegalAccessException {
+    public VideocallReservation makeReservation(
+            User user, ReservationRequest reservationRequest, Long roomId) throws IllegalAccessException {
+
         ChatRoom chatRoom = chatRoomRepository.findByRoomId(roomId).orElseThrow(() -> new IllegalArgumentException("해당 채팅방이 존재하지 않습니다."));
 
         if(!chatRoom.getBuyerId().equals(user.getId()))
@@ -41,8 +48,46 @@ public class ReservationService {
 
         // 포인트 소비
         userService.calcPoint(PointEventType.VIDEO_CALL, -1 * RESERVATION_POINT, user);
-        return reservationRepository.save(
+        VideocallReservation reservation = reservationRepository.save(
                 VideocallReservation.of(reservationRequest, user.getId(), chatRoom.getSellerId(), roomId));
+
+        //스케줄링하기
+        scheduleOpenViduJob(reservation);
+        return reservation;
+    }
+
+    private void scheduleOpenViduJob(VideocallReservation reservation) {
+        try {
+            // 1) JobDataMap에 reservationId 담기
+            JobDataMap dataMap = new JobDataMap();
+            dataMap.put("reservationId", reservation.getId());
+
+            // 2) JobDetail 생성
+            JobDetail jobDetail = JobBuilder.newJob(OpenViduJob.class)
+                    .withIdentity("openvidu-job-" + reservation.getId())
+                    .usingJobData(dataMap)
+                    .build();
+
+            // 3) Trigger 생성 (예약 시간에 딱 실행)
+
+            LocalDateTime reservedTime = commonService.parseSafe(reservation.getStartAt());
+
+            Date startAt = Date.from(
+                            reservedTime
+                            .atZone(ZoneId.systemDefault())
+                            .toInstant()
+            );
+            Trigger trigger = TriggerBuilder.newTrigger()
+                    .forJob(jobDetail)
+                    .startAt(startAt)
+                    .build();
+
+            // 4) 스케줄러에 등록
+            scheduler.scheduleJob(jobDetail, trigger);
+
+        } catch (SchedulerException e) {
+            throw new RuntimeException("예약 스케줄 등록 실패", e);
+        }
     }
 
     public void cancelReservation(Long roomId, Long scheduleId, User user) throws IllegalAccessException {

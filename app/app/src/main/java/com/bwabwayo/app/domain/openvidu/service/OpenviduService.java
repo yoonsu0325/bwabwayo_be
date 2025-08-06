@@ -1,17 +1,11 @@
-package com.bwabwayo.app.domain.chat.service;
+package com.bwabwayo.app.domain.openvidu.service;
 
 
-import com.bwabwayo.app.domain.openvidu.dto.request.SessionRequest;
 import io.openvidu.java.client.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
 import org.springframework.scheduling.TaskScheduler;
 import org.springframework.stereotype.Service;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
 
 import java.util.Date;
 import java.util.concurrent.TimeUnit;
@@ -38,10 +32,10 @@ public class OpenviduService {
             .build();
 
     // 세선 생성( 화상채팅 오픈, 자동 녹화, 30분뒤 자동 종료)
-    public ResponseEntity<String> initializeSession(@RequestBody SessionRequest sessionRequest) throws Exception {
+    public String initializeSession(Long reservationId) throws Exception {
 
         // 세션 생성, 녹화 옵션
-        String customId = String.valueOf(sessionRequest.getVideoRoomId());
+        String customId = String.valueOf(reservationId);
 
         SessionProperties props = new SessionProperties.Builder()
                 .customSessionId(customId)
@@ -70,7 +64,7 @@ public class OpenviduService {
             }
         }, runAt);
 
-        return new ResponseEntity<>(session.getSessionId(), HttpStatus.OK);
+        return session.getSessionId();
     }
 
 }
