@@ -80,6 +80,8 @@ public class ProductService {
         Boolean canNegotiate = requestDTO.getCanNegotiate();
         Boolean canDirect =  requestDTO.getCanDirect();
         Boolean canDelivery = requestDTO.getCanDelivery();
+        Integer minPrice = requestDTO.getMinPrice();
+        Integer maxPrice = requestDTO.getMaxPrice();
 
         // 페이지는 1부터 시작
         Integer page = requestDTO.getPage();
@@ -121,7 +123,9 @@ public class ProductService {
                 canVideoCall,
                 canNegotiate,
                 canDelivery,
-                canDirect
+                canDirect,
+                minPrice,
+                maxPrice
         );
 
         return PageResponseDTO.fromEntity(pageData, dto -> {

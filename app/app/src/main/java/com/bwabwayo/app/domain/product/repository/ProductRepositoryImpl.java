@@ -30,7 +30,9 @@ public class ProductRepositoryImpl implements ProductRepositoryCustom {
             Boolean canVideoCall,
             Boolean canNegotiate,
             Boolean canDelivery,
-            Boolean canDirect
+            Boolean canDirect,
+            Integer minPrice,
+            Integer maxPrice
     ){
         QProduct product = QProduct.product;
         QWish wish = QWish.wish;
@@ -63,6 +65,14 @@ public class ProductRepositoryImpl implements ProductRepositoryCustom {
         }
         if(canDirect!=null){
             condition.and(product.canDirect.eq(canDirect));
+        }
+
+        if(minPrice != null && maxPrice != null){
+            condition.and(product.price.between(minPrice, minPrice));
+        } else if(minPrice != null){
+            condition.and(product.price.goe(minPrice));
+        } else  if(maxPrice != null){
+            condition.and(product.price.loe(maxPrice));
         }
 
         List<ProductWithWishDTO> content;

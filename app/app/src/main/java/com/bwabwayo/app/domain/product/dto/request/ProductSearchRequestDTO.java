@@ -39,4 +39,7 @@ public class ProductSearchRequestDTO {
     private Boolean canNegotiate;
     private Boolean canDirect;
     private Boolean canDelivery;
+
+    private Integer minPrice;
+    private Integer maxPrice;
 }

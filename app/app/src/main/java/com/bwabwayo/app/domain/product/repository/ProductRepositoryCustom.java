@@ -20,6 +20,8 @@ public interface ProductRepositoryCustom {
             Boolean canVideoCall,
             Boolean canNegotiate,
             Boolean canDelivery,
-            Boolean canDirect
+            Boolean canDirect,
+            Integer minPrice,
+            Integer maxPrice
     );
 }
