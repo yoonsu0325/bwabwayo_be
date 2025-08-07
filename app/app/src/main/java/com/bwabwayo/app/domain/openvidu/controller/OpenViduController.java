@@ -13,6 +13,8 @@ import org.springframework.web.bind.annotation.*;
 import java.io.IOException;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.Date;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
@@ -129,6 +131,7 @@ public class OpenViduController {
                 res.setVideoCallUrl(s3Service.upload(url, "video"));
                 reservationRepository.save(res);
             });
+            Files.deleteIfExists(Paths.get("/opt/openvidu/recordings/" + sessionId + "/" + sessionId + ".mp4"));
         } catch (Exception e) {
             e.printStackTrace();
         }
