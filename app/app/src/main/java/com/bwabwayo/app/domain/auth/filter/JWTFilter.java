@@ -5,6 +5,7 @@ import com.bwabwayo.app.domain.user.domain.Role;
 import com.bwabwayo.app.domain.auth.dto.request.CustomOAuth2User;
 import com.bwabwayo.app.domain.auth.dto.request.OAuth2UserRequest;
 import com.bwabwayo.app.domain.auth.utils.JWTUtils;
+import com.bwabwayo.app.domain.user.service.UserService;
 import io.jsonwebtoken.ExpiredJwtException;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
@@ -12,12 +13,14 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpStatus;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.filter.OncePerRequestFilter;
+import org.springframework.web.server.ResponseStatusException;
 
 import javax.naming.AuthenticationException;
 import java.io.IOException;
@@ -27,6 +30,7 @@ import java.io.IOException;
 public class JWTFilter extends OncePerRequestFilter {
     private final JWTUtils jwtUtils;
     private final JwtProperties jwtProperties;
+    private final UserService userService;
 
     //Header 유효성 체크
     private void checkAuthorizationHeader(String header) {
@@ -78,7 +82,6 @@ public class JWTFilter extends OncePerRequestFilter {
             filterChain.doFilter(request, response);    // 다음 필터로 이동
         } catch (Exception e) {
             response.setContentType("application/json; charset=UTF-8");
-
             if (e instanceof ExpiredJwtException) {
                 response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Token expired");
             } else if (e instanceof BadCredentialsException || e instanceof AuthenticationException) {
@@ -90,14 +93,16 @@ public class JWTFilter extends OncePerRequestFilter {
     }
 
     private Authentication getAuthentication(String authHeader) throws AuthenticationException {
-        System.out.println(authHeader);
-
         String tokenFromHeader = jwtUtils.getTokenFromHeader(authHeader);
         String userId = jwtUtils.getSubject(tokenFromHeader); // 실제로 subject를 반환함
 
         //Id값 체크, null이라면 만료된 토큰
         if (userId == null) {
             throw new BadCredentialsException("토큰값이 잘못되었습니다");
+        }
+        boolean isActive = userService.findById(userId).isActive();
+        if (!isActive) {
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "비활성화된 사용자입니다.");
         }
         String type = jwtUtils.getTokenType(tokenFromHeader);
         if (type == null || !type.equals(jwtProperties.getTypeAccess())){

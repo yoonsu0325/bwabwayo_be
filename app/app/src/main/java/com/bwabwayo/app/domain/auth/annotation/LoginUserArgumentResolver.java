@@ -71,6 +71,16 @@ public class LoginUserArgumentResolver implements HandlerMethodArgumentResolver 
             }
             return null;
         }
+
+        // AccessToken에서 userId 가져오기
+        boolean isActive = userService.findById(userId).isActive();
+        // userId 존재여부 확인
+        if(!isActive) {
+            if(loginUser.required()) {
+                throw new UnauthorizedException("비활성화된 사용자입니다.");
+            }
+            return null;
+        }
         return userService.findById(userId);
     }
 }

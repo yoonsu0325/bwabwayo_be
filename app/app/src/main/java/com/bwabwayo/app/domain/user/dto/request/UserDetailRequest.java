@@ -12,4 +12,7 @@ public class UserDetailRequest {
     String bankName;
     String accountHolder;
     String profileImage;
+    String email;
+    String bio;
+    String phoneNumber;
 }

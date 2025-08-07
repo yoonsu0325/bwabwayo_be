@@ -167,8 +167,26 @@ public class UserService {
         if (request.getNickname() != null) {
             user.setNickname(request.getNickname());
         }
-        String targetKey = storageUtil.copyToDirectory(request.getProfileImage(), tempPath, profilePath);
-        user.setProfileImage(targetKey);
+
+        if (request.getProfileImage() != null) {
+            String targetKey = storageUtil.copyToDirectory(
+                    request.getProfileImage(), tempPath, profilePath
+            );
+            user.setProfileImage(targetKey);
+        }
+
+        if (request.getBio() != null) {
+            user.setBio(request.getBio());
+        }
+
+        if (request.getEmail() != null) {
+            user.setEmail(request.getEmail());
+        }
+
+        if (request.getPhoneNumber() != null) {
+            user.setPhoneNumber(request.getPhoneNumber());
+        }
+
 
         boolean hasAllAccountFields = request.getAccountNumber() != null &&
                 request.getBankName() != null &&
