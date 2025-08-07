@@ -1,6 +1,7 @@
 package com.bwabwayo.app.domain.user.service;
 
 import com.bwabwayo.app.global.exception.NotFoundException;
+import com.bwabwayo.app.domain.auth.service.AuthService;
 import com.bwabwayo.app.domain.user.domain.*;
 import com.bwabwayo.app.domain.auth.dto.request.UserSignUpRequest;
 import com.bwabwayo.app.domain.user.dto.request.UserDetailRequest;
@@ -11,7 +12,9 @@ import com.bwabwayo.app.domain.user.repository.*;
 import com.bwabwayo.app.global.storage.service.StorageService;
 import com.bwabwayo.app.global.storage.util.StorageUtil;
 import com.bwabwayo.app.global.url.URLValidator;
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.dao.OptimisticLockingFailureException;
 import org.springframework.retry.annotation.Backoff;
@@ -26,10 +29,9 @@ import java.time.ZoneId;
 import java.util.List;
 import java.util.Optional;
 
-import static com.bwabwayo.app.domain.user.domain.QUser.user;
-
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class UserService {
     private final UserRepository userRepository;
     private final ReviewAggRepository reviewAggRepository;
@@ -83,6 +85,34 @@ public class UserService {
         return userRepository.save(user);
     }
 
+    public User updateUser(User user, UserSignUpRequest request) {
+        String profileImage = request.getProfileImage();
+        if(profileImage == null || profileImage.isEmpty()){
+            throw new IllegalArgumentException("프로필 이미지가 존재하지 않습니다.");
+        }
+
+        String targetKey;
+        if (URLValidator.isValidURL(request.getProfileImage())) { // 다운로드 후 S3 업로드
+            targetKey = storageService.upload(profileImage, profilePath);
+        } else { // S3의 profile로 이동
+            targetKey = storageUtil.copyToDirectory(profileImage, tempPath, profilePath);
+        }
+        user.setNickname(request.getNickname());
+        user.setEmail(request.getEmail());
+        user.setPhoneNumber(request.getPhoneNumber());
+        user.setProfileImage(targetKey);
+        user.setBio(request.getNickname() + "의 상점입니다.");
+        user.setScore(500);
+        user.setPoint(0);
+        user.setDealCount(0);
+        user.setPenaltyCount(0);
+        user.setCreatedAt(LocalDateTime.now(ZoneId.of("Asia/Seoul")));
+        user.setLastLoginAt(LocalDateTime.now(ZoneId.of("Asia/Seoul")));
+        user.setActive(true);
+        user.setRole(Role.USER);
+        return userRepository.save(user);
+    }
+
     public UserInfoResponse getUserInfo(User user) {
         // 기본 정보
         String nickname = user.getNickname();
@@ -93,7 +123,7 @@ public class UserService {
         String bio = user.getBio();
 
         // 평점 평균
-        float avgRating = getAvgRating(user.getId());
+        float avgRating = reviewAggService.getAvgRating(user.getId());
 
         //리뷰 개수
         int reviewCount = reviewAggService.getReviewCount(user.getId());
@@ -137,8 +167,26 @@ public class UserService {
         if (request.getNickname() != null) {
             user.setNickname(request.getNickname());
         }
-        String targetKey = storageUtil.copyToDirectory(request.getProfileImage(), tempPath, profilePath);
-        user.setProfileImage(targetKey);
+
+        if (request.getProfileImage() != null) {
+            String targetKey = storageUtil.copyToDirectory(
+                    request.getProfileImage(), tempPath, profilePath
+            );
+            user.setProfileImage(targetKey);
+        }
+
+        if (request.getBio() != null) {
+            user.setBio(request.getBio());
+        }
+
+        if (request.getEmail() != null) {
+            user.setEmail(request.getEmail());
+        }
+
+        if (request.getPhoneNumber() != null) {
+            user.setPhoneNumber(request.getPhoneNumber());
+        }
+
 
         boolean hasAllAccountFields = request.getAccountNumber() != null &&
                 request.getBankName() != null &&
@@ -164,6 +212,27 @@ public class UserService {
 
             accountService.saveAccount(account);
         }
+    }
+
+    public void deleteUser(User user, HttpServletRequest request) {
+        try {
+            // 1. 사용자 비활성화
+            user.setActive(false);
+            userRepository.save(user);
+        } catch (Exception e) {
+            log.error("사용자 비활성화 실패: {}", e.getMessage(), e);
+        }
+
+        try {
+            // 2. 프로필 이미지 삭제
+            storageUtil.deleteWithoutException(user.getProfileImage()); // 메서드 자체가 예외 없이 동작한다면 생략 가능
+        } catch (Exception e) {
+            log.warn("프로필 이미지 삭제 실패: {}", e.getMessage(), e);
+        }
+    }
+
+    public void saveUser(User user){
+        userRepository.save(user);
     }
 
     @Retryable(
@@ -200,16 +269,5 @@ public class UserService {
     public ReviewAgg findReviewAggByUser(String userId) {
         return reviewAggRepository.findByUserId(userId)
                 .orElse(ReviewAgg.builder().userId(userId).build());
-    }
-
-    public float getAvgRating(String userId){
-        return reviewAggRepository
-                .findByUserId(userId)
-                .map(ReviewAgg::getAvgRating)
-                .orElse(0f);
-    }
-
-    public int reviewCount(String userId){
-        return reviewAggService.getReviewCount(userId);
     }
 }

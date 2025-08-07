@@ -50,6 +50,11 @@ public class AuthRedisService {
         return encrypted != null ? encryptUtil.decrypt(encrypted.toString()) : null;
     }
 
+    public Object getRefreshToken(String tempId){
+        String key = "token:" + tempId;
+        return redisTemplate.opsForHash().get(key, "refreshToken");
+    }
+
     // ✅ 삭제
     public void deleteRefreshToken(String tempId) {
         String key = "token:" + tempId;

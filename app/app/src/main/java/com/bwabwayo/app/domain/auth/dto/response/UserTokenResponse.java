@@ -8,4 +8,6 @@ import lombok.Getter;
 public class UserTokenResponse {
     private String accessToken;
     private String refreshToken;
+    private int loginPoint;
+    private int signUpPoint;
 }

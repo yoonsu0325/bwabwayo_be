@@ -1,6 +1,5 @@
 package com.bwabwayo.app.domain.auth.utils;
 
-
 import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;

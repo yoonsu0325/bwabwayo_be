@@ -84,4 +84,13 @@ public class SaleService {
         }
         return purchaseConfirmStatus;
     }
+
+    public Sale getSaleById(Long saleId){
+        return saleRepository.findById(saleId).orElse(null);
+    }
+
+    public void saveSale(Sale sale){
+        saleRepository.save(sale);
+    }
+
 }

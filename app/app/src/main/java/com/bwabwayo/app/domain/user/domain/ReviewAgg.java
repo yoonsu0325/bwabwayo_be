@@ -23,6 +23,12 @@ public class ReviewAgg {
 
     @Column(name = "review_count", nullable = false)
     private int reviewCount;
+
+    public void addReview(float newRating) {
+        float total = this.avgRating * this.reviewCount;
+        this.reviewCount += 1;
+        this.avgRating = (total + newRating) / this.reviewCount;
+    }
 }
 
 

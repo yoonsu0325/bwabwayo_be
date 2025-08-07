@@ -21,8 +21,16 @@ public class AccountService {
         accountRepository.save(account);
     }
 
+    public void updateAccount(User user, UserSignUpRequest request) {
+        Account account = accountRepository.findByUser_Id(user.getId());
+        account.setAccountNumber(request.getAccountNumber());
+        account.setAccountHolder(request.getAccountHolder());
+        account.setBankName(request.getBankName());
+        accountRepository.save(account);
+    }
+
     public Account getAccount(String userId){
-        return accountRepository.findByUserId(userId);
+        return accountRepository.findByUser_Id(userId);
     }
 
     public void saveAccount(Account account){ accountRepository.save(account); }

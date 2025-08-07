@@ -7,6 +7,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 
 import java.util.List;
+import java.util.Optional;
 
 public interface ReviewEvaluationCountRepository extends JpaRepository<ReviewEvaluationCount, Long> {
     @Query("""
@@ -20,4 +21,8 @@ public interface ReviewEvaluationCountRepository extends JpaRepository<ReviewEva
     WHERE r.userId = :userId
     """)
     List<UserEvaluationStat> findEvaluationStatsByUserId(@Param("userId") String userId);
+
+    Optional<ReviewEvaluationCount> findByUserIdAndItem_Id(String userId, Long itemId);
+
+    List<ReviewEvaluationCount> findAllByUserId(String userId);
 }

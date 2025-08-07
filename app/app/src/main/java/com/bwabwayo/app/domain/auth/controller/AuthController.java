@@ -2,6 +2,7 @@ package com.bwabwayo.app.domain.auth.controller;
 
 
 import com.bwabwayo.app.domain.auth.annotation.LoginUser;
+import com.bwabwayo.app.domain.auth.utils.EncryptUtil;
 import com.bwabwayo.app.domain.user.service.UserService;
 import com.bwabwayo.app.domain.auth.utils.JwtProperties;
 import com.bwabwayo.app.domain.user.domain.User;
@@ -26,6 +27,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.util.Date;
 import java.util.Map;
@@ -40,6 +42,7 @@ public class AuthController {
     private final JWTUtils jwtUtils;
     private final JwtProperties  jwtProperties;
     private final AuthRedisService authRedisService;
+    private final EncryptUtil encryptUtil;
 
     @PostMapping("/signup")
     @Operation(summary = "회원가입", description = "OAuth2 로그인 후, 추가 회원 정보를 입력 받아 가입 처리 후 토큰을 발급합니다.")
@@ -52,11 +55,14 @@ public class AuthController {
 
             return ResponseEntity.ok()
                     .header(HttpHeaders.SET_COOKIE, refreshTokenCookie.toString())
-                    .body(Map.of("accessToken", tokens.getAccessToken())); //accessToken 바디 추가
+                    .body(Map.of(
+                            "accessToken", tokens.getAccessToken(),
+                            "loginPoint", tokens.getLoginPoint(),
+                            "signUpPoint", tokens.getSignUpPoint()
+                    ));
         } catch (DataIntegrityViolationException e) {
             // 중복 이메일, 닉네임, 전화번호 등 제약조건 위반
             String message = e.getMostSpecificCause().getMessage();
-            System.out.println("제약 조건 위반: " + message);
 
             if (message.contains("unique_user_nickname")) {
                 return ResponseEntity.badRequest().body(Map.of(
@@ -108,6 +114,10 @@ public class AuthController {
         if (user == null) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("인증된 사용자가 없습니다.");
         }
+        boolean isActive = user.isActive();
+        if (!isActive) {
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "비활성화된 사용자입니다.");
+        }
 
         // 기존 refreshToken이 있다면 삭제 처리 (logout과 같은 로직)
         authService.deleteRefreshTokenFromRequest(request);
@@ -147,7 +157,6 @@ public class AuthController {
     @PostMapping("/refresh")
     public ResponseEntity<?> refreshToken(HttpServletRequest request, HttpServletResponse response) throws Exception {
         String refreshToken = jwtUtils.extractRefreshTokenFromCookies(request);
-
         //refreshToken 유효성 검사
         if (refreshToken == null || !jwtUtils.validateToken(refreshToken)) {
             //401
@@ -169,14 +178,19 @@ public class AuthController {
         }
 
         //DB에서 조회
-        String savedRefreshToken = authRedisService.getDecryptedRefreshToken(tempId);
-        if (savedRefreshToken == null || !savedRefreshToken.equals(refreshToken)) {
+        Object savedRefreshToken = authRedisService.getRefreshToken(tempId); //암호화된 RefreshToekn
+        if (savedRefreshToken == null || !savedRefreshToken.equals(encryptUtil.encrypt(refreshToken))) {
             // 401 Unauthorized
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("허용하지 않는 리프레시 토큰입니다.");
         }
 
         String userId = authRedisService.getDecryptedUserId(tempId);
         User user = userService.findById(userId);
+
+        boolean isActive = user.isActive();
+        if (!isActive) {
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "비활성화된 사용자입니다.");
+        }
 
         String newAccessToken = jwtUtils.createToken(userId, jwtProperties.getAccessExpMinutes(), user.getRole(), jwtProperties.getTypeAccess());
 
