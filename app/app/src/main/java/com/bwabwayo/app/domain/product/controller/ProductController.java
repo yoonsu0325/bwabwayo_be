@@ -26,6 +26,9 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.client.RestOperations;
+import org.springframework.web.client.RestTemplate;
+import org.springframework.web.util.UriComponentsBuilder;
 
 
 @Slf4j
@@ -37,6 +40,7 @@ public class ProductController {
     private final ProductService productService;
     private final ViewCountService viewCountService;
     private final ProductSimilarityService productSimilarityService;
+    private final RestTemplate restTemplate;
 
 
     @Operation(summary = "내 상품 목록 조회")
@@ -177,5 +181,18 @@ public class ProductController {
 
         Long count = viewCountService.increaseViewCount(productId, identifier);
         return ResponseEntity.ok(new ViewCountResponseDTO(productId, count.intValue()));
+    }
+
+    @Deprecated
+    @GetMapping("/deliveryAPI")
+    public ResponseEntity<?> foo(@RequestParam String tInvoice, String tCode){
+        String url = UriComponentsBuilder.fromUriString("https://info.sweettracker.co.kr/api/v1/trackingInfo")
+                .queryParam("t_key", "FezwHddl3sDTP67yZHfbgQ")
+                .queryParam("t_code", tCode)
+                .queryParam("t_invoice", tInvoice)
+                .toUriString();
+
+        ResponseEntity<TrackingInfoResponse> response = restTemplate.getForEntity(url, TrackingInfoResponse.class);
+        return  ResponseEntity.ok(response.getBody());
     }
 }

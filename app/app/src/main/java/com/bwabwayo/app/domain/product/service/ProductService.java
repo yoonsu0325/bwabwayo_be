@@ -10,6 +10,7 @@ import com.bwabwayo.app.domain.product.domain.ProductImage;
 import com.bwabwayo.app.domain.product.dto.request.ProductCreateAndUpdateRequestDTO;
 import com.bwabwayo.app.domain.product.dto.request.ProductSearchRequestDTO;
 import com.bwabwayo.app.domain.product.dto.response.*;
+import com.bwabwayo.app.domain.product.enums.DeliveryStatus;
 import com.bwabwayo.app.domain.product.repository.CourierRepository;
 import com.bwabwayo.app.domain.product.repository.ProductImageRepository;
 import com.bwabwayo.app.domain.product.repository.ProductRepository;
@@ -274,6 +275,9 @@ public class ProductService {
         product.setInvoiceNumber(request.getTrackingNumber());
         Courier courier = courierRepository.findByCode(request.getCourierCode());
         product.setCourier(courier);
+        if(product.getDeliveryStatus() == null){
+            product.setDeliveryStatus(DeliveryStatus.PREPARING);
+        }
     }
 
     @Transactional
@@ -370,5 +374,13 @@ public class ProductService {
 
         // 썸네일 지정
         product.setThumbnail(product.getProductImages().get(0).getUrl());
+    }
+
+    public List<Product> getDeliveringProductsByDeliveryStatus(DeliveryStatus status){
+        return productRepository.findAllByDeliveryStatus(DeliveryStatus.PREPARING);
+    }
+
+    public List<Product> getWillDeliveryProducts(){
+        return productRepository.findAllByInvoiceNumberIsEmptyAndDeliveryStatus(DeliveryStatus.PREPARING);
     }
 }

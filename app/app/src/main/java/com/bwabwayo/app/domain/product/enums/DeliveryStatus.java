@@ -4,12 +4,13 @@ import lombok.Getter;
 
 @Getter
 public enum DeliveryStatus {
-    DIRECT( -1, "직거래"),
-    RECEIVED(0, "상품인수"),
-    IN_TRANSIT(1, "상품이동중"),
-    AT_HUB(2, "배송지도착"),
-    OUT_FOR_DELIVERY(3, "배송출발"),
-    DELIVERED(4, "배송완료");
+    DIRECT(0, "직거래"),
+    PREPARING(1, "배송준비중"),
+    COLLECTED(2, "집화완료"),
+    IN_TRANSIT(3, "배송중"),
+    ARRIVED_AT_BRANCH(4, "지점 도착"),
+    OUT_FOR_DELIVERY(5, "배송출발"),
+    DELIVERED(6, "배송 완료");
 
     private final int level;
     private final String description;
