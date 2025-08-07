@@ -119,7 +119,7 @@ public class OpenViduController {
 
             // 다시보기 녹화 url
             String url = String.format(
-                    "https://i13e202.p.ssafy.io:8443/openvidu/recordings/%s/%s.mp4",
+                    "https://i13e202.p.ssafy.io/recordings/%s/%s.mp4",
                     sessionId, sessionId);
             // 다시보기 녹화 url 있는지 확인후 있으면 객체에 저장
             if (waitForUrl(url, 10, 1000)) {
