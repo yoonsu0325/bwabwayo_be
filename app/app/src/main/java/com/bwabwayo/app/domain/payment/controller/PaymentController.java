@@ -1,7 +1,12 @@
 package com.bwabwayo.app.domain.payment.controller;
 
+import com.bwabwayo.app.domain.auth.annotation.LoginUser;
 import com.bwabwayo.app.domain.payment.dto.request.PaymentConfirmRequestDTO;
+import com.bwabwayo.app.domain.product.domain.Sale;
+import com.bwabwayo.app.domain.product.service.SaleService;
+import com.bwabwayo.app.domain.user.domain.User;
 import com.bwabwayo.app.global.exception.BadRequestException;
+import com.bwabwayo.app.global.exception.NotFoundException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -12,7 +17,6 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.http.*;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.client.RestTemplate;
 
 import java.io.*;
 import java.net.HttpURLConnection;
@@ -26,6 +30,7 @@ import java.util.Base64;
 @RequiredArgsConstructor
 @RequestMapping("/api/payments")
 public class PaymentController {
+    private final SaleService saleService;
     @Value("${toss.url.confirm}")
     private String TOSS_CONFIRM_URL;
     @Value("${toss.key.secret-key}")
@@ -70,15 +75,29 @@ public class PaymentController {
      * 토스에 결제 승인받기
      */
     @PostMapping("/confirm")
-    public ResponseEntity<?> confirmPayment(@RequestBody PaymentConfirmRequestDTO requestDTO) throws IOException {
+    public ResponseEntity<?> confirmPayment(@RequestBody PaymentConfirmRequestDTO requestDTO, @LoginUser User loginUser) throws IOException {
+        log.info("loginUser.ID={}", loginUser.getId());
+        String buyerId = loginUser.getId();
+        Long productId = requestDTO.getProductId();
+
+        Sale sale = null;
+        try {
+            sale = saleService.findByBuyerIdAndProductId(buyerId, productId);
+            if (sale.isPaid()) throw new BadRequestException("중복 결제 요청입니다.");
+        } catch (IllegalArgumentException e) {
+            throw new NotFoundException(e.getMessage());
+        }
+
         String jsonBody = serialize(requestDTO);
         JSONObject response = sendRequest(parseRequestData(jsonBody), TOSS_SECRET_KEY, TOSS_CONFIRM_URL);
         int statusCode = response.containsKey("error") ? 400 : 200;
-        if(statusCode == 200){
-            log.info("결제 성공: {}", requestDTO.toString());
-        } else{
-            log.info("결제 실패: {}", requestDTO.toString());
+        if (statusCode == 200) {
+            log.info("결제 성공: {}", requestDTO);
+        } else {
+            log.info("결제 실패: {}", requestDTO);
         }
+        saleService.setPaid(sale.getId(), true);
+
         return ResponseEntity.status(statusCode).body(response);
     }
 
