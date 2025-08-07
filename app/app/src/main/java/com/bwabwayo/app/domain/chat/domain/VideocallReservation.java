@@ -23,6 +23,7 @@ public class VideocallReservation {
     private Long roomId;
     private String startAt;
     private String sessionId;
+    private String videoCallUrl;
 
     public static VideocallReservation of(ReservationRequest reservation, String buyerId, String sellerId, Long roomId){
         return VideocallReservation.builder()

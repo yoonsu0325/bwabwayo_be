@@ -1,5 +1,6 @@
 package com.bwabwayo.app.domain.openvidu.controller;
 
+import com.bwabwayo.app.domain.chat.repository.ReservationRepository;
 import com.bwabwayo.app.domain.openvidu.dto.request.SessionRequest;
 import io.openvidu.java.client.*;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -8,6 +9,9 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.scheduling.TaskScheduler;
 import org.springframework.web.bind.annotation.*;
 
+import java.io.IOException;
+import java.net.HttpURLConnection;
+import java.net.URL;
 import java.util.Date;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
@@ -22,6 +26,8 @@ public class OpenViduController {
     // 스케줄러 , 화상채팅 자동 종료
     private final TaskScheduler taskScheduler;
 
+    private final ReservationRepository reservationRepository;
+
     // 녹화 속성 개체
     private final RecordingProperties recProps = new RecordingProperties.Builder()
             .outputMode(Recording.OutputMode.COMPOSED)      // 스트림 합성 모드
@@ -32,9 +38,10 @@ public class OpenViduController {
             .build();
 
     @Autowired
-    public OpenViduController(OpenVidu openVidu, TaskScheduler taskScheduler) {
+    public OpenViduController(OpenVidu openVidu, TaskScheduler taskScheduler, ReservationRepository reservationRepository) {
         this.openVidu = openVidu;
         this.taskScheduler = taskScheduler;
+        this.reservationRepository = reservationRepository;
     }
 
 
@@ -55,22 +62,8 @@ public class OpenViduController {
         String sessionId = session.getSessionId();
 
 
-        // 30분 뒤에 실행될 Date 객체 생성
-        Date runAt = new Date(System.currentTimeMillis()
-                + TimeUnit.MINUTES.toMillis(30));
-
-        // 30분 뒤에 세션 강제 종료 스케줄링
-        taskScheduler.schedule(() -> {
-            try {
-                Session active = openVidu.getActiveSession(sessionId);
-                if (active != null) {
-                    active.close();
-                    System.out.println("Session " + sessionId + " closed after 30 minutes");
-                }
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-        }, runAt);
+        taskScheduler.schedule(() -> handleRecordingComplete(sessionId),
+                new Date(System.currentTimeMillis() + TimeUnit.MINUTES.toMillis(1)));
 
         return new ResponseEntity<>(session.getSessionId(), HttpStatus.OK);
     }
@@ -86,5 +79,43 @@ public class OpenViduController {
         ConnectionProperties connProps = ConnectionProperties.fromJson(params).build();
         String token = session.createConnection(connProps).getToken();
         return new ResponseEntity<>(token, HttpStatus.OK);
+    }
+
+    private void handleRecordingComplete(String sessionId) {
+        try {
+            //스케줄러 세션, 녹화 정지
+            openVidu.stopRecording(sessionId);
+            Session active = openVidu.getActiveSession(sessionId);
+            if (active != null) {
+                active.close();
+            }
+            // 다시보기 녹화 url
+            String url = String.format(
+                    "https://i13e202.p.ssafy.io:8443/openvidu/recordings/%s/%s.mp4",
+                    sessionId, sessionId);
+            // 다시보기 녹화 url 있는지 확인후 있으면 객체에 저장
+            if (urlExists(url)) {
+                Long id = Long.valueOf(sessionId);
+                reservationRepository.findById(id).ifPresent(res -> {
+                    res.setVideoCallUrl(url);
+                    reservationRepository.save(res);
+                });
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    private boolean urlExists(String urlString) {
+        try {
+            HttpURLConnection con = (HttpURLConnection) new URL(urlString).openConnection();
+            con.setRequestMethod("HEAD");
+            con.setConnectTimeout(3000);
+            con.connect();
+            int code = con.getResponseCode();
+            return (code == HttpURLConnection.HTTP_OK);
+        } catch (IOException e) {
+            return false;
+        }
     }
 }
