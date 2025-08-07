@@ -38,6 +38,7 @@ public class ReservationService {
     private final CommonService commonService;
     private final Scheduler scheduler;
     private final StorageService storageService;
+    private final SystemChatService systemChatService;
 
     private final Integer RESERVATION_POINT = 1000;
 
@@ -57,6 +58,9 @@ public class ReservationService {
 
         //스케줄링하기
         scheduleOpenViduJob(reservation);
+
+        systemChatService.sendReservationMessage(chatRoom);
+
         return reservation;
     }
 
@@ -131,6 +135,8 @@ public class ReservationService {
             //구매자가 취소 -> 그냥 취소
         }
         reservationRepository.delete(reservation);
+
+        systemChatService.sendReservationCancelMessage(chatRoom);
     }
 
     public List<ReservationResponse> findAllReservations(User user){

@@ -25,6 +25,35 @@ public class SystemChatService {
     private final ChatRoomService chatRoomService;
     private final ProductService productService;
     private final SaleService saleService;
+
+    public void sendReservationMessage(ChatRoom chatRoom){
+        MessageDTO messageDTO = MessageDTO.builder()
+                .content("")
+                .senderId(chatRoom.getSellerId())
+                .receiverId(chatRoom.getBuyerId())
+                .roomId(chatRoom.getRoomId())
+                .read(false)
+                .createdAt(LocalDateTime.now().toString())
+                .type(MessageType.RESERVE_VIDEOCALL)
+                .build();
+
+        chatService.sendChatMessage(messageDTO);
+    }
+
+    public void sendReservationCancelMessage(ChatRoom chatRoom){
+        MessageDTO messageDTO = MessageDTO.builder()
+                .content("")
+                .senderId(chatRoom.getSellerId())
+                .receiverId(chatRoom.getBuyerId())
+                .roomId(chatRoom.getRoomId())
+                .read(false)
+                .createdAt(LocalDateTime.now().toString())
+                .type(MessageType.CANCEL_VIDEOCALL)
+                .build();
+
+        chatService.sendChatMessage(messageDTO);
+    }
+
     public void setInvoiceNumber(Long roomId, SetInvoiceNumberRequest request) {
 
         ChatRoom chatRoom = chatRoomService.findByRoomId(roomId).orElseThrow(() -> new IllegalArgumentException("해당 채팅방이 존재하지 않습니다."));
