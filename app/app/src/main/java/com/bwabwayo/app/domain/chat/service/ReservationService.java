@@ -158,7 +158,7 @@ public class ReservationService {
             }
             else{
                 //화상거래함
-                replayUrl = storageService.getKeyFromUrl(reservation.getVideoCallUrl());
+                replayUrl = storageService.getUrlFromKey(reservation.getVideoCallUrl());
                 isEnd = true;
             }
 
@@ -185,7 +185,7 @@ public class ReservationService {
             }
             else{
                 //화상거래함
-                replayUrl = storageService.getKeyFromUrl(reservation.getVideoCallUrl());
+                replayUrl = storageService.getUrlFromKey(reservation.getVideoCallUrl());
                 isEnd = true;
             }
 
