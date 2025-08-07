@@ -92,9 +92,30 @@ public class OpenViduController {
             Session active = openVidu.getActiveSession(sessionId);
 
             // 🔐 세션이 살아있고, 참여자가 1명 이상일 때만 종료
-            if (active != null && !active.getConnections().isEmpty()) {
-                active.close();
+            openVidu.fetch();
+
+            // ✅ 세션이 메모리에 존재할 때만 처리
+            if (active != null) {
+                try {
+                    // ✅ 녹화 중이면 녹화 종료
+                    if (!active.getConnections().isEmpty()) {
+                        openVidu.stopRecording(sessionId);
+                    }
+
+                    // ✅ 세션 강제 종료 시도
+                    active.close();
+
+                } catch (OpenViduHttpException e) {
+                    if (e.getStatus() == 404) {
+                        System.out.println("[INFO] 세션이 이미 종료되어 있음: " + sessionId);
+                    } else {
+                        e.printStackTrace();
+                    }
+                }
+            } else {
+                System.out.println("[INFO] 세션이 이미 사라짐: " + sessionId);
             }
+
 
             // 다시보기 녹화 url
             String url = String.format(
