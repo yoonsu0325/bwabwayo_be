@@ -13,6 +13,7 @@ import com.bwabwayo.app.domain.user.domain.PointEventType;
 import com.bwabwayo.app.domain.user.domain.User;
 import com.bwabwayo.app.domain.user.service.UserService;
 import com.bwabwayo.app.global.common.CommonService;
+import com.bwabwayo.app.global.storage.service.StorageService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.quartz.*;
@@ -36,7 +37,10 @@ public class ReservationService {
     private final ProductRepository productRepository;
     private final CommonService commonService;
     private final Scheduler scheduler;
+    private final StorageService storageService;
+
     private final Integer RESERVATION_POINT = 1000;
+
 
     public VideocallReservation makeReservation(
             User user, ReservationRequest reservationRequest, Long roomId) throws IllegalAccessException {
@@ -154,7 +158,8 @@ public class ReservationService {
             }
             else{
                 //화상거래함
-
+                replayUrl = storageService.getKeyFromUrl(reservation.getVideoCallUrl());
+                isEnd = true;
             }
 
             reservationResponseList.add(ReservationResponse.from(reservation, seller.getNickname(), product.getTitle(), Optional.ofNullable(replayUrl), isEnd));
@@ -180,7 +185,8 @@ public class ReservationService {
             }
             else{
                 //화상거래함
-
+                replayUrl = storageService.getKeyFromUrl(reservation.getVideoCallUrl());
+                isEnd = true;
             }
 
             reservationResponseList.add(ReservationResponse.from(reservation, seller.getNickname(), product.getTitle(), Optional.ofNullable(replayUrl), isEnd));

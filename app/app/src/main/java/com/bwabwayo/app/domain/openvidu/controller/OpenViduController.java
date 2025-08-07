@@ -121,17 +121,14 @@ public class OpenViduController {
             String url = String.format(
                     "https://i13e202.p.ssafy.io/recordings/%s/%s.mp4",
                     sessionId, sessionId);
+
             // 다시보기 녹화 url 있는지 확인후 있으면 객체에 저장
-            if (waitForUrl(url, 10, 1000)) {
-                Long id = Long.valueOf(sessionId);
-                reservationRepository.findById(id).ifPresent(res -> {
-                    res.setVideoCallUrl(url);
-                    reservationRepository.save(res);
-                });
-                s3Service.upload(url, "video");
-            } else {
-                System.err.println("녹화 파일이 끝까지 생성되지 않았습니다: " + url);
-            }
+
+            Long id = Long.valueOf(sessionId);
+            reservationRepository.findById(id).ifPresent(res -> {
+                res.setVideoCallUrl(s3Service.upload(url, "video"));
+                reservationRepository.save(res);
+            });
         } catch (Exception e) {
             e.printStackTrace();
         }

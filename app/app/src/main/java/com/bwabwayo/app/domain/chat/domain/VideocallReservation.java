@@ -1,10 +1,7 @@
 package com.bwabwayo.app.domain.chat.domain;
 
 import com.bwabwayo.app.domain.chat.dto.request.ReservationRequest;
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
+import jakarta.persistence.*;
 import lombok.*;
 
 @Getter
@@ -23,6 +20,7 @@ public class VideocallReservation {
     private Long roomId;
     private String startAt;
     private String sessionId;
+    @Column(length = 2083)
     private String videoCallUrl;
 
     public static VideocallReservation of(ReservationRequest reservation, String buyerId, String sellerId, Long roomId){
