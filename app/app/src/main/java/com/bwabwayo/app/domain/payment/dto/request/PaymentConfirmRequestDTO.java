@@ -11,4 +11,5 @@ public class PaymentConfirmRequestDTO {
     private String orderId;
     private String paymentKey;
     private Integer amount;
+    private Long productId;
 }

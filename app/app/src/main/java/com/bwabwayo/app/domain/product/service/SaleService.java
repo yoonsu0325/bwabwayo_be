@@ -13,6 +13,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -23,6 +24,7 @@ public class SaleService {
     private final StorageService storageService;
     private final SaleRepository saleRepository;
     private final ProductService productService;
+
     public Sale startNegotiation(User user, ChatRoom chatRoom) {
         Product product = productService.findById(chatRoom.getProductId());
         Sale sale = Sale.builder()
@@ -83,6 +85,18 @@ public class SaleService {
             }
         }
         return purchaseConfirmStatus;
+    }
+
+    public Sale findByBuyerIdAndProductId(String buyerId, Long productId){
+        List<Sale> sales = saleRepository.findByBuyerIdAndProductId(buyerId, productId);
+        if(sales == null || sales.isEmpty()) throw new IllegalArgumentException("판매 내역이 존재하지 않습니다.");
+        return sales.get(0);
+    }
+
+    @Transactional
+    public void setPaid(Long saleId, boolean value){
+        Sale sale = saleRepository.findById(saleId).orElseThrow(()->new IllegalArgumentException("판매 내역이 존재하지 않습니다."));
+        sale.setPaid(value);
     }
 
     public Sale getSaleById(Long saleId){

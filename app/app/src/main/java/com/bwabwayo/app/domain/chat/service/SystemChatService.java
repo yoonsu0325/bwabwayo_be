@@ -68,8 +68,6 @@ public class SystemChatService {
 
     @Transactional
     public void startNegotiation(Long roomId, User user) throws IllegalAccessException {
-
-
         ChatRoom chatRoom = chatRoomService.findByRoomId(roomId).orElseThrow(() -> new IllegalArgumentException("해당 채팅방이 존재하지 않습니다."));
         if(!user.getId().equals(chatRoom.getSellerId())){
             throw new IllegalAccessException("상품의 판매자만 거래 시작을 할 수 있습니다.");

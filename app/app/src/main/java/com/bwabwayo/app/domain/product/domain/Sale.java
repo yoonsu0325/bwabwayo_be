@@ -1,6 +1,5 @@
 package com.bwabwayo.app.domain.product.domain;
 
-import com.bwabwayo.app.domain.product.domain.Product;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -46,4 +45,9 @@ public class Sale {
     // ✅ 채팅방 id (예약 거래방 등과 연결)
     @Column(name = "room_id", nullable = true)
     private Long roomId;
+
+    @Column(nullable = false)
+    @Setter
+    @Builder.Default
+    private boolean isPaid = false;
 }

@@ -9,10 +9,14 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 
+import java.util.List;
+
 
 @Repository
 public interface SaleRepository extends JpaRepository<Sale, Long> {
 
     @EntityGraph(attributePaths = {"product", "product.courier"})
     Page<Sale> findWithProductAndCourierByBuyerId(String buyerId, Pageable pageable);
+
+    List<Sale> findByBuyerIdAndProductId(String buyerId, Long productId);
 }
