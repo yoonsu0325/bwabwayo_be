@@ -22,6 +22,6 @@ public class Courier {
     private String name; // 택배사명
 
     // IE 브라우저 기준 URL 최대길이 = 2083
-    @Column(name = "tracking_url", length = 2083, nullable = false)
+    @Column(name = "tracking_url", length = 2083)
     private String trackingUrl; // 택배사 URL
 }
