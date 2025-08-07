@@ -74,7 +74,7 @@ public class SuccessHandler extends SimpleUrlAuthenticationSuccessHandler {
                 loginPoint = PointEventType.ATTENDANCE.getPoint();
             }
             //마지막 로그인 갱신
-            defaultUser.setLastLoginAt(lastLoginAt);
+            defaultUser.setLastLoginAt(LocalDateTime.now(seoulZone));
             userService.saveUser(defaultUser);
             String redirectUrl = UriComponentsBuilder
                     .fromUriString("https://i13e202.p.ssafy.io/fe/logincallback")

@@ -178,7 +178,6 @@ public class AuthController {
         }
 
         //DB에서 조회
-
         Object savedRefreshToken = authRedisService.getRefreshToken(tempId); //암호화된 RefreshToekn
         if (savedRefreshToken == null || !savedRefreshToken.equals(encryptUtil.encrypt(refreshToken))) {
             // 401 Unauthorized
