@@ -32,7 +32,6 @@ public class PaymentController {
     private String TOSS_SECRET_KEY;
 
 
-    private final RestTemplate restTemplate;
     RedisTemplate<String, Integer> paymentRedisTemplate;
     private final ObjectMapper objectMapper;
 
@@ -75,6 +74,11 @@ public class PaymentController {
         String jsonBody = serialize(requestDTO);
         JSONObject response = sendRequest(parseRequestData(jsonBody), TOSS_SECRET_KEY, TOSS_CONFIRM_URL);
         int statusCode = response.containsKey("error") ? 400 : 200;
+        if(statusCode == 200){
+            log.info("결제 성공: {}", requestDTO.toString());
+        } else{
+            log.info("결제 실패: {}", requestDTO.toString());
+        }
         return ResponseEntity.status(statusCode).body(response);
     }
 
