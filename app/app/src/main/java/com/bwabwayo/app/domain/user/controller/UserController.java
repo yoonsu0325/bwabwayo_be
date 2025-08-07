@@ -2,6 +2,8 @@ package com.bwabwayo.app.domain.user.controller;
 
 import com.bwabwayo.app.domain.auth.annotation.LoginUser;
 import com.bwabwayo.app.domain.auth.service.AuthService;
+import com.bwabwayo.app.domain.chat.dto.response.ReservationResponse;
+import com.bwabwayo.app.domain.chat.service.ReservationService;
 import com.bwabwayo.app.domain.product.service.SaleService;
 import com.bwabwayo.app.domain.user.domain.User;
 import com.bwabwayo.app.domain.user.dto.request.UserDetailRequest;
@@ -18,6 +20,8 @@ import org.springframework.data.web.PageableDefault;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+
 @RestController
 @RequestMapping("/api/users")
 @RequiredArgsConstructor
@@ -26,6 +30,7 @@ public class UserController {
     private final UserService userService;
     private final SaleService saleService;
     private final AuthService authService;
+    private final ReservationService reservationService;
 
     @GetMapping
     public ResponseEntity<?> getMyInfo(@LoginUser User user) {
@@ -68,4 +73,13 @@ public class UserController {
         }
         return ResponseEntity.ok("회원 탈퇴 완료");
     }
+
+    @GetMapping("/video")
+    public ResponseEntity<?> getAllReservation(
+            @LoginUser User user
+    ){
+        List<ReservationResponse> list = reservationService.findAllReservations(user);
+        return ResponseEntity.ok(list);
+    }
+
 }
