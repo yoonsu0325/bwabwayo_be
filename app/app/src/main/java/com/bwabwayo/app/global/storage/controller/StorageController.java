@@ -103,6 +103,16 @@ public class StorageController {
         return uploadImages(files);
    }
 
+    @PostMapping("/upload/url")
+    public ResponseEntity<?> uploadURL(@RequestParam String url, @RequestParam String dir){
+        String key = storageService.upload(url, dir);
+        return ResponseEntity.ok(UploadFileDTO.builder()
+                .key(key)
+                .url(storageService.getUrlFromKey(key))
+                .build()
+        );
+    }
+
     @Deprecated
     @Operation(summary = "파일 삭제")
     @ApiResponse(responseCode = "200", description = "삭제 성공")
