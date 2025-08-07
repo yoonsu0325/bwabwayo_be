@@ -2,6 +2,7 @@ package com.bwabwayo.app.domain.openvidu.controller;
 
 import com.bwabwayo.app.domain.chat.repository.ReservationRepository;
 import com.bwabwayo.app.domain.openvidu.dto.request.SessionRequest;
+import com.bwabwayo.app.global.storage.service.S3Service;
 import io.openvidu.java.client.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -28,7 +29,10 @@ public class OpenViduController {
 
     private final ReservationRepository reservationRepository;
 
-    // 녹화 속성 개체
+    // S3
+    private final S3Service s3Service;
+
+     // 녹화 속성 개체
     private final RecordingProperties recProps = new RecordingProperties.Builder()
             .outputMode(Recording.OutputMode.COMPOSED)      // 스트림 합성 모드
             .recordingLayout(RecordingLayout.BEST_FIT)      // 화면 레이아웃
@@ -38,10 +42,13 @@ public class OpenViduController {
             .build();
 
     @Autowired
-    public OpenViduController(OpenVidu openVidu, TaskScheduler taskScheduler, ReservationRepository reservationRepository) {
+    public OpenViduController(OpenVidu openVidu, TaskScheduler taskScheduler,
+                              ReservationRepository reservationRepository,
+                              S3Service s3Service) {
         this.openVidu = openVidu;
         this.taskScheduler = taskScheduler;
         this.reservationRepository = reservationRepository;
+        this.s3Service = s3Service;
     }
 
 
@@ -60,7 +67,6 @@ public class OpenViduController {
 
         Session session = openVidu.createSession(props);
         String sessionId = session.getSessionId();
-
 
         taskScheduler.schedule(() -> handleRecordingComplete(sessionId),
                 new Date(System.currentTimeMillis() + TimeUnit.MINUTES.toMillis(1)));
@@ -83,10 +89,11 @@ public class OpenViduController {
 
     private void handleRecordingComplete(String sessionId) {
         try {
-            //스케줄러 세션, 녹화 정지
-            openVidu.stopRecording(sessionId);
             Session active = openVidu.getActiveSession(sessionId);
-            if (active != null) {
+
+            // 🔐 세션이 살아있고, 참여자가 1명 이상일 때만 종료
+            if (active != null && !active.getConnections().isEmpty()) {
+                openVidu.stopRecording(sessionId);
                 active.close();
             }
             // 다시보기 녹화 url
@@ -100,6 +107,7 @@ public class OpenViduController {
                     res.setVideoCallUrl(url);
                     reservationRepository.save(res);
                 });
+                s3Service.upload(url, "video");
             }
         } catch (Exception e) {
             e.printStackTrace();
