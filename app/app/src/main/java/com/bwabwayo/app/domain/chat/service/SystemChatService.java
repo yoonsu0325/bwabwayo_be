@@ -26,6 +26,20 @@ public class SystemChatService {
     private final ProductService productService;
     private final SaleService saleService;
 
+    public void sendVideoCallMessage(ChatRoom chatRoom, String sessionId){
+        MessageDTO messageDTO = MessageDTO.builder()
+                .content(sessionId)
+                .senderId(chatRoom.getSellerId())
+                .receiverId(chatRoom.getBuyerId())
+                .roomId(chatRoom.getRoomId())
+                .read(false)
+                .createdAt(LocalDateTime.now().toString())
+                .type(MessageType.START_VIDEOCALL)
+                .build();
+
+        chatService.sendChatMessage(messageDTO);
+    }
+
     public void sendReservationMessage(ChatRoom chatRoom){
         MessageDTO messageDTO = MessageDTO.builder()
                 .content("")
@@ -67,10 +81,23 @@ public class SystemChatService {
                 .roomId(roomId)
                 .read(false)
                 .createdAt(LocalDateTime.now().toString())
-                .type(MessageType.CONFIRM_PURCHASE)
+                .type(MessageType.START_DELIVERY)
                 .build();
 
         chatService.sendChatMessage(messageDTO);
+
+
+        MessageDTO messageDTO2 = MessageDTO.builder()
+                .content("")
+                .senderId(chatRoom.getSellerId())
+                .receiverId(chatRoom.getBuyerId())
+                .roomId(roomId)
+                .read(false)
+                .createdAt(LocalDateTime.now().toString())
+                .type(MessageType.CONFIRM_PURCHASE)
+                .build();
+
+        chatService.sendChatMessage(messageDTO2);
     }
 
     public void setFinalPrice(Long roomId, SetPriceRequest request) {

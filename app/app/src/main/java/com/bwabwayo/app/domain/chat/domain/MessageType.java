@@ -8,7 +8,6 @@ public enum MessageType {
     CANCEL_VIDEOCALL,         // 화상거래 예약 취소 후 전송
     START_VIDEOCALL,           // 화상거래 시작 후 전송
     START_TRADE,           // 거래 시작 - 거래 시작 버튼 클릭 시 전송
-    INPUT_PRICE,            // 가격 입력 - 거래 시작 버튼 클릭 시 전송
     REQUEST_DEPOSIT,        // 입금 요청 - 최종 가격 설정 후 전송
     INPUT_DELIVERY_ADDRESS,  // 배송지 입력 - 입금 완료 후 전송
     INPUT_TRACKING_NUMBER,    // 송장번호 입력 - 배송지 입력 완료 후 전송

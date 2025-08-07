@@ -69,6 +69,7 @@ public class ReservationService {
             // 1) JobDataMap에 reservationId 담기
             JobDataMap dataMap = new JobDataMap();
             dataMap.put("reservationId", reservation.getId());
+            dataMap.put("chatRoomId", reservation.getRoomId());
 
             // 2) JobDetail 생성
             JobDetail jobDetail = JobBuilder.newJob(OpenViduJob.class)
