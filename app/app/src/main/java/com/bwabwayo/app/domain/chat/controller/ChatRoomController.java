@@ -76,8 +76,6 @@ public class ChatRoomController {
         else{
             chatRoom = chatRoomService.createRoom(request, user);
 
-            // 메세지 내용 넣을 지 말 지?
-
             MessageDTO messageDTO = MessageDTO.builder()
                     .content("")
                     .senderId(user.getId())

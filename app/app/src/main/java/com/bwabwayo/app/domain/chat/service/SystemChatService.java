@@ -40,9 +40,9 @@ public class SystemChatService {
         chatService.sendChatMessage(messageDTO);
     }
 
-    public void sendReservationMessage(ChatRoom chatRoom){
+    public void sendReservationMessage(ChatRoom chatRoom, Long id){
         MessageDTO messageDTO = MessageDTO.builder()
-                .content("")
+                .content(id.toString())
                 .senderId(chatRoom.getSellerId())
                 .receiverId(chatRoom.getBuyerId())
                 .roomId(chatRoom.getRoomId())
