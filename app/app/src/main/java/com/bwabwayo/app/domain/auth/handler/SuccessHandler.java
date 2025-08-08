@@ -56,7 +56,7 @@ public class SuccessHandler extends SimpleUrlAuthenticationSuccessHandler {
                     .queryParam("isNewUser", user.getRole() == Role.PREUSER)
                     .queryParam("id", user.getId())
                     .queryParam("email", user.getEmail())
-                    .queryParam("profileImage", URLEncoder.encode(user.getProfileImage(), StandardCharsets.UTF_8))
+                    .queryParam("profileImage", user.getProfileImage())
                     .build()
                     .toUriString();
 
