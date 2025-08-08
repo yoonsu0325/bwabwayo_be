@@ -9,6 +9,7 @@ import com.bwabwayo.app.domain.wish.domain.Wish;
 import com.bwabwayo.app.domain.wish.dto.response.WishDTO;
 import com.bwabwayo.app.domain.wish.repository.WishRepository;
 import com.bwabwayo.app.global.page.PageResponseDTO;
+import com.bwabwayo.app.global.storage.service.StorageService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -25,6 +26,7 @@ public class WishService {
 
     private final WishRepository wishRepository;
     private final ProductRepository productRepository;
+    private final StorageService storageService;
 
     @Transactional(readOnly = true)
     public PageResponseDTO<WishDTO> getAllMyWishes(User user, int pageNo, int pageSize) {
@@ -44,7 +46,7 @@ public class WishService {
                     .id(wish.getId())
                     .categoryId(category.getId())
                     .categoryName(category.getName())
-                    .thumbnail(product.getThumbnail())
+                    .thumbnail(storageService.getUrlFromKey(product.getThumbnail()))
                     .title(product.getTitle())
                     .price(product.getPrice())
                     .viewCount(product.getViewCount())
