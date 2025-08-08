@@ -9,8 +9,8 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class PonintRequest {
-    private long id;
+public class PointRequest {
+    private Long id;
     private String title;
-    private String kategorie;
+    private String category;
 }

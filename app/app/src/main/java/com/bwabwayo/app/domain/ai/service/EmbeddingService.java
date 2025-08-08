@@ -37,13 +37,6 @@ public class EmbeddingService {
     private final ObjectMapper objectMapper;
 
 
-    private HttpHeaders getJsonHeader(){
-        HttpHeaders headers = new HttpHeaders();
-        headers.setContentType(MediaType.APPLICATION_JSON);
-        return headers;
-    }
-
-
     // Qdrant에 벡터 저장 (upsert 방식)
     public void saveToQdrant(QdrantPointDto dto) {
         final String url = qdrantUrl + "/collections/" + collectionName + "/points?wait=true";
@@ -177,6 +170,13 @@ public class EmbeddingService {
                 new HttpEntity<>(request, getJsonHeader());
 
         return restTemplate.postForEntity(url, entity, Map.class);
+    }
+
+    /** JSON 헤더 생성 */
+    private HttpHeaders getJsonHeader(){
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_JSON);
+        return headers;
     }
 }
 

@@ -1,7 +1,7 @@
 package com.bwabwayo.app.domain.ai.controller;
 
 import com.bwabwayo.app.domain.ai.domain.QdrantPointDto;
-import com.bwabwayo.app.domain.ai.dto.request.PonintRequest;
+import com.bwabwayo.app.domain.ai.dto.request.PointRequest;
 import com.bwabwayo.app.domain.ai.dto.response.SimilarResultResponse;
 import com.bwabwayo.app.domain.ai.service.EmbeddingService;
 import com.bwabwayo.app.global.client.OpenAiClient;
@@ -23,12 +23,12 @@ public class EmbeddingController {
 
     // 판매게시글 임베팅 벡터화 후 Qdrant에 벡터 저장
     @PostMapping("/save")
-    public ResponseEntity<String> savePoint(@RequestBody PonintRequest ponintRequest) {
+    public ResponseEntity<String> savePoint(@RequestBody PointRequest ponintRequest) {
 
         // 1. title 추출
         Long id = ponintRequest.getId();
         String title = ponintRequest.getTitle();
-        String category = ponintRequest.getKategorie();
+        String category = ponintRequest.getCategory();
 
         // 2. 임베딩 벡터 추출
         List<Double> titleVec = openAiClient.getEmbedding(title);
@@ -43,9 +43,9 @@ public class EmbeddingController {
 
     // 유사도 검색
     @PostMapping("/search")
-    public ResponseEntity<List<SimilarResultResponse>> searchSimilarTitles(@RequestBody PonintRequest request) {
+    public ResponseEntity<List<SimilarResultResponse>> searchSimilarTitles(@RequestBody PointRequest request) {
         String queryTitle = request.getTitle();
-        String queryCat   = request.getKategorie();
+        String queryCat   = request.getCategory();
 
         // 벡터화
         List<Double> qTitleVec = openAiClient.getEmbedding(queryTitle);
