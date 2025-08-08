@@ -12,4 +12,5 @@ import lombok.NoArgsConstructor;
 public class PonintRequest {
     private long id;
     private String title;
+    private String kategorie;
 }

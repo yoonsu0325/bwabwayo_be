@@ -13,13 +13,15 @@ import java.util.List;
 public class QdrantPointDto {
     private Long id;
     private String title;
-    private List<Double> vector;
+    private String category;
+    private List<Double> titleVector;
+    private List<Double> categoryVector;
 
-    public static QdrantPointDto from(Long id, String title, List<Double> vector) {
+    public static QdrantPointDto from(Long id, String title, String category,
+                                      List<Double> titleVec, List<Double> categoryVec) {
         return QdrantPointDto.builder()
-                .id(id)
-                .title(title)
-                .vector(vector)
+                .id(id).title(title).category(category)
+                .titleVector(titleVec).categoryVector(categoryVec)
                 .build();
     }
 }

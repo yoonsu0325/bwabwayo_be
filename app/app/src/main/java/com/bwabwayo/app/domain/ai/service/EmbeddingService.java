@@ -42,12 +42,17 @@ public class EmbeddingService {
             String url = qdrantUrl + "/collections/" + collectionName + "/points?wait=true";
 
             // Qdrant에 보낼 포맷 구성
-            Map<String, Object> point = new HashMap<>();
-            point.put("id", dto.getId());
-            point.put("vector", dto.getVector());
+            Map<String, Object> vectors = new HashMap<>();
+            vectors.put("title", dto.getTitleVector());
+            vectors.put("category", dto.getCategoryVector());
 
             Map<String, Object> payload = new HashMap<>();
             payload.put("title", dto.getTitle());
+            payload.put("category", dto.getCategory());
+
+            Map<String, Object> point = new HashMap<>();
+            point.put("id", dto.getId());
+            point.put("vector", vectors);
             point.put("payload", payload);
 
             // points 배열 하나만 포함
@@ -69,15 +74,31 @@ public class EmbeddingService {
 
 
     // 유사도 검증
-    public List<SimilarResultResponse> searchSimilarTitles(List<Double> queryVector, int topK) {
+    public List<SimilarResultResponse> searchSimilarTitles(
+            List<Double> queryTitleVec,
+            List<Double> queryCategoryVec,
+            int topK
+    ) {
         try {
             String url = qdrantUrl + "/collections/" + collectionName + "/points/search";
 
+            Map<String, Object> pre1 = Map.of(
+                    "using", "title",
+                    "query", queryTitleVec,
+                    "limit", topK * 5
+            );
+
+            Map<String, Object> pre2 = Map.of(
+                    "using", "category",
+                    "query", queryCategoryVec,
+                    "limit", topK * 5
+            );
+
             Map<String, Object> body = new HashMap<>();
-            body.put("vector", queryVector);
+            body.put("prefetch", List.of(pre1, pre2));
+            body.put("query", Map.of("fusion", "rrf"));
             body.put("limit", topK);
             body.put("with_payload", true);
-
 
             HttpHeaders headers = new HttpHeaders();
             headers.setContentType(MediaType.APPLICATION_JSON);
@@ -87,17 +108,14 @@ public class EmbeddingService {
 
             List<Map<String, Object>> results = (List<Map<String, Object>>) response.getBody().get("result");
 
-            return results.stream()
-                    .map(r -> {
-                        Object idObj = r.get("id");
-                        long id = (idObj instanceof Number) ? ((Number) idObj).longValue() : -1L;
-
-                        Map<String, Object> payload = (Map<String, Object>) r.get("payload");
-                        String title = payload != null ? (String) payload.get("title") : null;
-
-                        return new SimilarResultResponse(id, title);
-                    })
-                    .toList();
+            return results.stream().map(p -> {
+                long id = ((Number) p.get("id")).longValue();
+                double score = ((Number) p.get("score")).doubleValue();
+                Map<String, Object> payload = (Map<String, Object>) p.get("payload");
+                String title = payload != null ? String.valueOf(payload.get("title")) : null;
+                String category = payload != null ? String.valueOf(payload.get("category")) : null;
+                return new SimilarResultResponse(id, title, category, score);
+            }).toList();
 
         } catch (Exception e) {
             throw new RuntimeException("Qdrant 유사도 검색 실패", e);

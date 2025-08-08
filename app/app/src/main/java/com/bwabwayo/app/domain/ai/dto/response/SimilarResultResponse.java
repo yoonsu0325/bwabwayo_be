@@ -12,4 +12,6 @@ public class SimilarResultResponse {
 
     private long id;
     private String title;
+    private String category;
+    private double score;
 }
