@@ -1,5 +1,6 @@
 package com.bwabwayo.app.domain.product.controller;
 
+import com.bwabwayo.app.domain.product.repository.ProductRepository;
 import com.bwabwayo.app.domain.product.service.ProductSimilarityService;
 import com.bwabwayo.app.domain.product.domain.Product;
 import com.bwabwayo.app.domain.product.dto.request.ProductCreateAndUpdateRequestDTO;
@@ -30,6 +31,8 @@ import org.springframework.web.client.RestOperations;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.util.UriComponentsBuilder;
 
+import java.util.List;
+
 
 @Slf4j
 @RestController
@@ -41,6 +44,7 @@ public class ProductController {
     private final ViewCountService viewCountService;
     private final ProductSimilarityService productSimilarityService;
     private final RestTemplate restTemplate;
+    private final ProductRepository productRepository;
 
 
     @Operation(summary = "내 상품 목록 조회")
@@ -194,5 +198,23 @@ public class ProductController {
 
         ResponseEntity<TrackingInfoResponse> response = restTemplate.getForEntity(url, TrackingInfoResponse.class);
         return  ResponseEntity.ok(response.getBody());
+    }
+
+    @GetMapping("/embbeding")
+    public ResponseEntity<Void> embbeding(){
+        List<Product> all = productRepository.findAll();
+        for (Product product : all) {
+            productSimilarityService.savePoint(product);
+        }
+        return ResponseEntity.ok().build();
+    }
+
+    @GetMapping("/unembbeding")
+    public ResponseEntity<Void> unembbeding(){
+        List<Product> all = productRepository.findAll();
+        for (Product product : all) {
+            productSimilarityService.deletePoint(product.getId());
+        }
+        return ResponseEntity.ok().build();
     }
 }

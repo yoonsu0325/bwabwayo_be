@@ -200,7 +200,8 @@ public class ProductService {
                 .build();
 
         // 유사한 상품 목록
-        List<Long> similarities = productSimilarityService.searchSimilarTitles(product.getTitle(), similarityCount + 1);
+        List<Long> similarities = productSimilarityService
+                .searchSimilarTitles(product.getTitle(), product.getCategory().getName(), similarityCount + 1);
         List<ProductSimpleDTO> productSimpleDTOS = similarities
                 .stream()
                 .filter(id-> !id.equals(product.getId()))
