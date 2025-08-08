@@ -44,6 +44,7 @@ public class WishService {
 
             return WishDTO.builder()
                     .id(wish.getId())
+                    .productId(wish.getProduct().getId())
                     .categoryId(category.getId())
                     .categoryName(category.getName())
                     .thumbnail(storageService.getUrlFromKey(product.getThumbnail()))

@@ -14,6 +14,8 @@ import java.time.LocalDateTime;
 public class WishDTO {
     private Long id;
 
+    private Long productId;
+
     private Long categoryId;
     private String categoryName;
 
