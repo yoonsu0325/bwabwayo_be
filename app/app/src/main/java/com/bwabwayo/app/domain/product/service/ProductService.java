@@ -200,28 +200,31 @@ public class ProductService {
                 .build();
 
         // 유사한 상품 목록
-        List<Long> similarities = productSimilarityService.searchSimilarTitles(product.getTitle(), similarityCount + 1);
-        List<ProductSimpleDTO> productSimpleDTOS = similarities
-                .stream()
-                .filter(id-> !id.equals(product.getId()))
-                .map(productRepository::getProductById)
-                .filter(Objects::nonNull)
-                .map(p-> ProductSimpleDTO.builder()
-                        .id(p.getId())
-                        .categoryId(p.getCategory().getId())
-                        .thumbnail(storageService.getUrlFromKey(p.getThumbnail()))
-                        .title(p.getTitle())
-                        .price(p.getPrice())
-                        .viewCount(viewCountService.getViewCount(p.getId()).intValue())
-                        .wishCount(p.getWishCount())
-                        .chatCount(p.getChatCount())
-                        .isLike(loginUser != null && wishService.existsWish(p.getId(), loginUser.getId()))
-                        .canVideoCall(p.isCanVideoCall())
-                        .saleStatusCode(p.getSaleStatus().getLevel())
-                        .saleStatus(p.getSaleStatus().getDescription())
-                        .createdAt(p.getCreatedAt())
-                        .build()
-                ).toList();
+        List<ProductSimpleDTO> productSimpleDTOS = new ArrayList<>();
+        if(false) {
+            List<Long> similarities = productSimilarityService.searchSimilarTitles(product.getTitle(), similarityCount + 1);
+            productSimpleDTOS = similarities
+                    .stream()
+                    .filter(id -> !id.equals(product.getId()))
+                    .map(productRepository::getProductById)
+                    .filter(Objects::nonNull)
+                    .map(p -> ProductSimpleDTO.builder()
+                            .id(p.getId())
+                            .categoryId(p.getCategory().getId())
+                            .thumbnail(storageService.getUrlFromKey(p.getThumbnail()))
+                            .title(p.getTitle())
+                            .price(p.getPrice())
+                            .viewCount(viewCountService.getViewCount(p.getId()).intValue())
+                            .wishCount(p.getWishCount())
+                            .chatCount(p.getChatCount())
+                            .isLike(loginUser != null && wishService.existsWish(p.getId(), loginUser.getId()))
+                            .canVideoCall(p.isCanVideoCall())
+                            .saleStatusCode(p.getSaleStatus().getLevel())
+                            .saleStatus(p.getSaleStatus().getDescription())
+                            .createdAt(p.getCreatedAt())
+                            .build()
+                    ).toList();
+        }
 
         return ProductDetailResponseDTO.builder()
                 .title(product.getTitle())
