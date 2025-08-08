@@ -24,6 +24,7 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
     @Override
     public OAuth2User loadUser(org.springframework.security.oauth2.client.userinfo.OAuth2UserRequest userRequest) throws OAuth2AuthenticationException {
         //카카오 서버에 요청한 유저 정보 받아오기
+        log.info("유저 정보 받아오기 성공");
         OAuth2User oAuth2User = super.loadUser(userRequest);
         return processOAuth2User(userRequest, oAuth2User);
     }
@@ -40,12 +41,14 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
         OAuth2UserRequest user;
         //null이면 새가입자, isActive가 false면 재가입자
         if (userEntity == null || !userEntity.isActive()) {
+            log.info("새가입자 혹은 재가입자");
             user = new OAuth2UserRequest();
             user.setId(oAuth2UserInfo.getProviderId());
             user.setEmail(oAuth2UserInfo.getEmail());
             user.setProfileImage(oAuth2UserInfo.getProfileImage());
             user.setRole(Role.PREUSER);
         } else { //탈퇴하지 않은 기본유저
+            log.info("기본유저");
             user = new OAuth2UserRequest(userEntity);
             user.setRole(Role.USER);
         }
