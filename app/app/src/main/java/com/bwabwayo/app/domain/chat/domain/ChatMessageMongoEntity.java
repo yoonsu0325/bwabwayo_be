@@ -31,7 +31,7 @@ public class ChatMessageMongoEntity {
                 .receiverId(dto.getReceiverId())
                 .roomId(dto.getRoomId())
                 .content(dto.getContent())
-                .createdAt(OffsetDateTime.parse(dto.getCreatedAt()).toLocalDateTime())
+                .createdAt(LocalDateTime.parse(dto.getCreatedAt()))
                 .type(dto.getType())
                 .isRead(dto.isRead())
                 .build();
