@@ -1,13 +1,11 @@
 package com.bwabwayo.app.domain.product.dto.request;
 
 import com.bwabwayo.app.domain.product.annotation.AtLeastOneTrue;
-import com.bwabwayo.app.domain.product.domain.Product;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import lombok.*;
-import org.springdoc.core.annotations.ParameterObject;
 
 import java.util.List;
 
@@ -17,7 +15,7 @@ import java.util.List;
 @AllArgsConstructor
 @Builder
 @AtLeastOneTrue(fields = {"canDirect", "canDelivery"}, message = "canDirect 또는 canDelivery 중 하나는 true여야 합니다.")
-public class ProductCreateAndUpdateRequestDTO {
+public class ProductUpsertRequest {
     @NotBlank
     private String title; // 상품 제목
     @NotBlank

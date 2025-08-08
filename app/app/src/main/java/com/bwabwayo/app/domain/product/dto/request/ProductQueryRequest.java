@@ -15,10 +15,7 @@ import org.springdoc.core.annotations.ParameterObject;
 @Builder
 @ToString
 @ParameterObject
-public class ProductSearchRequestDTO {
-    private String keyword; // 검색 키워드
-    private Long categoryId; // 카테고리 ID
-
+public class ProductQueryRequest {
     @Parameter(example = "1")
     @Min(1)
     @Builder.Default
@@ -28,6 +25,9 @@ public class ProductSearchRequestDTO {
     @Min(0)
     @Builder.Default
     private Integer size = 100; // 상품 수
+
+    private String keyword; // 검색 키워드
+    private Long categoryId; // 카테고리 ID
 
     @Parameter(example = "latest")
     @Builder.Default

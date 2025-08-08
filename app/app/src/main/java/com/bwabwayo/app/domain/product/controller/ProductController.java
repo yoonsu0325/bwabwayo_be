@@ -3,8 +3,8 @@ package com.bwabwayo.app.domain.product.controller;
 import com.bwabwayo.app.domain.product.repository.ProductRepository;
 import com.bwabwayo.app.domain.product.service.ProductSimilarityService;
 import com.bwabwayo.app.domain.product.domain.Product;
-import com.bwabwayo.app.domain.product.dto.request.ProductCreateAndUpdateRequestDTO;
-import com.bwabwayo.app.domain.product.dto.request.ProductSearchRequestDTO;
+import com.bwabwayo.app.domain.product.dto.request.ProductUpsertRequest;
+import com.bwabwayo.app.domain.product.dto.request.ProductQueryRequest;
 import com.bwabwayo.app.domain.product.dto.response.*;
 import com.bwabwayo.app.domain.product.dto.response.ProductCreateResponseDTO;
 import com.bwabwayo.app.domain.product.dto.response.ProductDetailResponseDTO;
@@ -27,7 +27,6 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.client.RestOperations;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.util.UriComponentsBuilder;
 
@@ -53,7 +52,7 @@ public class ProductController {
     )
     @GetMapping("/my")
     public ResponseEntity<?> getMyProductList(@LoginUser User loginUser){
-        return getProducts(ProductSearchRequestDTO.builder().sellerId(loginUser.getId()).build(), loginUser);
+        return getProducts(ProductQueryRequest.builder().sellerId(loginUser.getId()).build(), loginUser);
     }
 
     @Operation(summary = "상품 등록")
@@ -63,7 +62,7 @@ public class ProductController {
     )
     @PostMapping
     public ResponseEntity<?> createProduct(
-            @Valid @RequestBody ProductCreateAndUpdateRequestDTO requestDTO,
+            @Valid @RequestBody ProductUpsertRequest requestDTO,
             @LoginUser User user
     ) {
         try{
@@ -85,7 +84,7 @@ public class ProductController {
     )
     @GetMapping
     public ResponseEntity<?> getProducts(
-            @Valid @ModelAttribute ProductSearchRequestDTO requestDTO,
+            @Valid @ModelAttribute ProductQueryRequest requestDTO,
             @LoginUser(required = false) User user
     ) {
         return ResponseEntity.ok(productService.searchProducts(requestDTO, user));
@@ -112,7 +111,7 @@ public class ProductController {
     @PutMapping("/{productId}")
     public ResponseEntity<Void> updateProduct(
             @PathVariable Long productId,
-            @RequestBody ProductCreateAndUpdateRequestDTO requestDTO,
+            @RequestBody ProductUpsertRequest requestDTO,
             @LoginUser User loginUser
     ) {
         Product product = validateProduct(productId, loginUser);

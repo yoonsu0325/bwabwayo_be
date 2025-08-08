@@ -7,8 +7,8 @@ import com.bwabwayo.app.domain.product.domain.Category;
 import com.bwabwayo.app.domain.product.domain.Courier;
 import com.bwabwayo.app.domain.product.domain.Product;
 import com.bwabwayo.app.domain.product.domain.ProductImage;
-import com.bwabwayo.app.domain.product.dto.request.ProductCreateAndUpdateRequestDTO;
-import com.bwabwayo.app.domain.product.dto.request.ProductSearchRequestDTO;
+import com.bwabwayo.app.domain.product.dto.request.ProductUpsertRequest;
+import com.bwabwayo.app.domain.product.dto.request.ProductQueryRequest;
 import com.bwabwayo.app.domain.product.dto.response.*;
 import com.bwabwayo.app.domain.product.enums.DeliveryStatus;
 import com.bwabwayo.app.domain.product.repository.CourierRepository;
@@ -65,7 +65,7 @@ public class ProductService {
      * 상품 등록
      */
     @Transactional
-    public Product createProduct(ProductCreateAndUpdateRequestDTO requestDTO, User user) {
+    public Product createProduct(ProductUpsertRequest requestDTO, User user) {
         return saveDTO(requestDTO, new Product(), user);
     }
 
@@ -73,7 +73,7 @@ public class ProductService {
      * 상품 검색
      */
     @Transactional(readOnly = true)
-    public PageResponseDTO<ProductSearchResultDTO> searchProducts(ProductSearchRequestDTO requestDTO, User loginUser) {
+    public PageResponseDTO<ProductSearchResultDTO> searchProducts(ProductQueryRequest requestDTO, User loginUser) {
         String keyword = requestDTO.getKeyword();
         Long categoryId = requestDTO.getCategoryId();
         String sellerId = requestDTO.getSellerId();
@@ -181,7 +181,7 @@ public class ProductService {
 
         // 판매자 정보
         User seller = product.getSeller();
-        List<ProductSimpleDTO> others = searchProducts(ProductSearchRequestDTO.builder().sellerId(seller.getId()).size(otherCount + 1).build(), loginUser)
+        List<ProductSimpleDTO> others = searchProducts(ProductQueryRequest.builder().sellerId(seller.getId()).size(otherCount + 1).build(), loginUser)
                 .getResult().stream()
                 .map(ProductSearchResultDTO::getProduct)
                 .filter(p ->!p.getId().equals(product.getId()))
@@ -252,7 +252,7 @@ public class ProductService {
      * 상품 정보 갱신
      */
     @Transactional
-    public void update(Product product, ProductCreateAndUpdateRequestDTO requestDTO) {
+    public void update(Product product, ProductUpsertRequest requestDTO) {
         saveDTO(requestDTO, product, null);
     }
 
@@ -299,7 +299,7 @@ public class ProductService {
     /**
      * RequestDTO를 Entity로 변환 후 repository에 저장
      */
-    private Product saveDTO(ProductCreateAndUpdateRequestDTO dto, Product product, User seller){
+    private Product saveDTO(ProductUpsertRequest dto, Product product, User seller){
         Category category = categoryService.getCategoryById(dto.getCategoryId());
         if(category == null){
             throw new IllegalArgumentException("등록하려는 상품이 속한 카테고리가 존재하지 않습니다.");
