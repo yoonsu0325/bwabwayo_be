@@ -52,7 +52,7 @@ public class ProductSimilarityService {
     /**
      * 벡터 삭제
      */
-    public void deletePoint(Long productId) {
+    public void deleteById(Long productId) {
         embeddingService.deleteById(productId);
     }
 }

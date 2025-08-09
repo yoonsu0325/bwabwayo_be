@@ -11,6 +11,7 @@ import com.bwabwayo.app.domain.product.dto.request.ProductUpsertRequest;
 import com.bwabwayo.app.domain.product.dto.request.ProductQueryRequest;
 import com.bwabwayo.app.domain.product.dto.response.*;
 import com.bwabwayo.app.domain.product.enums.DeliveryStatus;
+import com.bwabwayo.app.domain.product.exception.ProductNotFoundException;
 import com.bwabwayo.app.domain.product.repository.CourierRepository;
 import com.bwabwayo.app.domain.product.repository.ProductImageRepository;
 import com.bwabwayo.app.domain.product.repository.ProductRepository;
@@ -202,7 +203,7 @@ public class ProductService {
         // 유사한 상품 목록
         List<ProductSimpleDTO> productSimpleDTOS = new ArrayList<>();
         if(false) {
-            List<Long> similarities = productSimilarityService.searchSimilarTitles(product.getTitle(), similarityCount + 1);
+            List<Long> similarities = productSimilarityService.searchSimilarTitles(product.getTitle(), product.getCategory().getName(), similarityCount + 1);
             productSimpleDTOS = similarities
                     .stream()
                     .filter(id -> !id.equals(product.getId()))
@@ -293,7 +294,7 @@ public class ProductService {
     }
 
     public Product findById(Long productId) {
-        return productRepository.findById(productId).orElseThrow(() -> new IllegalArgumentException("해당 상품이 존재하지 않습니다."));
+        return productRepository.findById(productId).orElseThrow(() -> new ProductNotFoundException(productId));
     }
 
     /**
