@@ -1,7 +1,5 @@
 package com.bwabwayo.app.domain.ai.domain;
 
-
-
 import lombok.*;
 
 import java.util.List;
@@ -14,6 +12,7 @@ public class QdrantPointDto {
     private Long id;
     private String title;
     private String category;
+
     private List<Double> titleVector;
     private List<Double> categoryVector;
 

@@ -34,10 +34,11 @@ public class EmbeddingController {
         List<Double> titleVec = openAiClient.getEmbedding(title);
         List<Double> categoryVec = openAiClient.getEmbedding(category);
 
+
         // 3. QdrantPointDto 생성
         QdrantPointDto qdrantPointDto = QdrantPointDto.from(id, title, category, titleVec, categoryVec);
 
-        embeddingService.saveToQdrant(qdrantPointDto);
+        embeddingService.upsertPoint(qdrantPointDto);
         return ResponseEntity.ok("Qdrant에 벡터 저장 완료");
     }
 
@@ -54,7 +55,7 @@ public class EmbeddingController {
                 : qTitleVec; // 카테고리 없으면 타이틀 벡터 재사용
 
         // 유사도 검색 (Top 3)
-        List<SimilarResultResponse> similarTitles = embeddingService.searchSimilarTitles(qTitleVec, qCatVec, 3);
+        List<SimilarResultResponse> similarTitles = embeddingService.query(qTitleVec, qCatVec, 3);
 
         return ResponseEntity.ok(similarTitles);
     }
@@ -64,7 +65,7 @@ public class EmbeddingController {
     @PostMapping("/delete")
     public ResponseEntity<?> deletePoint(@RequestBody Map<String, List<Long>> requestBody) {
         Long id = requestBody.get("points").get(0);
-        embeddingService.deleteFromQdrantById(id);
+        embeddingService.deleteById(id);
         return ResponseEntity.ok().build();
     }
 

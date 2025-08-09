@@ -14,6 +14,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.client.RestTemplate;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -37,51 +38,89 @@ public class EmbeddingService {
     private final ObjectMapper objectMapper;
 
 
-    // Qdrant에 벡터 저장 (upsert 방식)
-    public void saveToQdrant(QdrantPointDto dto) {
+    /* ===================== Upsert ===================== */
+
+    /** Qdrant에 Vector를 Upsert */
+    public void upsertPoint(QdrantPointDto dto) {
+        upsertPoints(List.of(dto));
+    }
+
+    public void upsertPoints(List<QdrantPointDto> dtos) {
         final String url = qdrantUrl + "/collections/" + collectionName + "/points?wait=true";
 
-        // Qdrant에 보낼 포맷 구성
-        Map<String, Object> vectors = new HashMap<>();
-        vectors.put("title", dto.getTitleVector());
-        vectors.put("category", dto.getCategoryVector());
+        List<Map<String, Object>> points = new ArrayList<>();
+        for (QdrantPointDto dto : dtos) {
+            // 1. vectors 구성
+            ensureSize("title", dto.getTitleVector());
+            ensureSize("category", dto.getCategoryVector());
 
-        Map<String, Object> payload = new HashMap<>();
-        payload.put("title", dto.getTitle());
-        payload.put("category", dto.getCategory());
+            Map<String, Object> vectors = new HashMap<>();
+            vectors.put("title", dto.getTitleVector());
+            vectors.put("category", dto.getCategoryVector());
 
-        Map<String, Object> point = new HashMap<>();
-        point.put("id", dto.getId());
-        point.put("vectors", vectors);
-        point.put("payload", payload);
+            // 2. payload 구성
+            Map<String, Object> payload = new HashMap<>();
+            payload.put("title", dto.getTitle());
+            payload.put("category", dto.getCategory());
 
-        // points 배열 하나만 포함
-        Map<String, Object> body = Map.of("points", List.of(point));
+            // 3. point 구성
+            Map<String, Object> point = new HashMap<>();
+            point.put("id", dto.getId());
+            point.put("vector", vectors);
+            point.put("payload", payload);
+
+            points.add(point);
+        }
+
+        // request body 생성
+        Map<String, Object> body = Map.of("points", points);
 
         try {
-            log.info("Qdrant 저장 요청 JSON:\n{}", objectMapper.writeValueAsString(body));
+            log.debug("Qdrant Upsert 요청 JSON:\n{}", objectMapper.writeValueAsString(body));
 
             HttpEntity<Map<String, Object>> request = new HttpEntity<>(body, getJsonHeader());
-
             restTemplate.put(url, request);
         } catch (Exception e) {
+            log.error("Qdrant 벡터 저장 실패", e);
             throw new RuntimeException("Qdrant 벡터 저장 실패", e);
         }
     }
 
-    // 유사도 검증
-    public List<SimilarResultResponse> searchSimilarTitles(
+    /* ===================== Delete ===================== */
+
+    /** Qdrant에 저장되어 있는 벡터 데이터 삭제 */
+    public void deleteById(Long id) {
+        deleteByIds(List.of(id));
+    }
+
+    public void deleteByIds(List<Long> ids) {
+        final String url = qdrantUrl + "/collections/" + collectionName + "/points/delete?wait=true";
+
+        Map<String, Object> body = Map.of("points", ids);
+
+        try {
+            HttpEntity<Map<String, Object>> request = new HttpEntity<>(body, getJsonHeader());
+            restTemplate.postForEntity(url, request, Map.class);
+        } catch (Exception e) {
+            log.error("Qdrant 벡터 삭제 실패", e);
+            throw new RuntimeException("Qdrant 벡터 삭제 실패", e);
+        }
+    }
+
+
+    /** 검색 */
+    public List<SimilarResultResponse> query(
             List<Double> queryTitleVec,
             List<Double> queryCategoryVec,
             int topK
     ) {
         // 1) 각각 검색 (여유 있게 topK*5)
-        List<Map<String, Object>> titleHits = searchOnce("title", queryTitleVec, topK * 5);
-        List<Map<String, Object>> categoryHits = searchOnce("category", queryCategoryVec, topK * 5);
+        List<Map<String, Object>> titleHits = queryOnce("title", queryTitleVec, topK * 5, true);
+        List<Map<String, Object>> categoryHits = queryOnce("category", queryCategoryVec, topK * 5, true);
 
         // 2) 가중치 합성(예: title 0.8, category 0.2)
-        double wTitle = 0.8;
-        double wCategory = 0.2;
+        final double wTitle = 0.8;
+        final double wCategory = 0.2;
 
         Map<Long, Double> fusedScore = new HashMap<>();
         Map<Long, Map<String, Object>> payloadById = new HashMap<>();
@@ -89,16 +128,15 @@ public class EmbeddingService {
         for (Map<String, Object> h : titleHits) {
             Long id = ((Number) h.get("id")).longValue();
             double score = ((Number) h.get("score")).doubleValue();
+
             fusedScore.merge(id, score * wTitle, Double::sum);
-            if (!payloadById.containsKey(id)) {
-                payloadById.put(id, (Map<String, Object>) h.get("payload"));
-            }
+            payloadById.putIfAbsent(id, (Map<String, Object>) h.get("payload"));
         }
         for (Map<String, Object> h : categoryHits) {
             Long id = ((Number) h.get("id")).longValue();
             double score = ((Number) h.get("score")).doubleValue();
+
             fusedScore.merge(id, score * wCategory, Double::sum);
-            // payload가 비어있으면 채워둠
             payloadById.putIfAbsent(id, (Map<String, Object>) h.get("payload"));
         }
 
@@ -109,74 +147,78 @@ public class EmbeddingService {
                 .map(e -> {
                     Long id = e.getKey();
                     double score = e.getValue();
+
                     Map<String, Object> payload = payloadById.get(id);
                     String title = payload != null ? String.valueOf(payload.get("title")) : null;
                     String category = payload != null ? String.valueOf(payload.get("category")) : null;
+
                     return new SimilarResultResponse(id, title, category, score);
                 })
                 .toList();
     }
 
-    // Qdrant에 저장되어 있는 벡터 데이터 삭제
-    public void deleteFromQdrantById(Long id) {
-        final String url = qdrantUrl + "/collections/" + collectionName + "/points/delete?wait=true";
-        // 올바른 JSON 구조: points: [id]
-        Map<String, Object> body = Map.of("points", List.of(id));
+    private List<Map<String, Object>> queryOnce(String using, List<Double> vector, int limit, boolean withPayload) {
+        final String url = qdrantUrl + "/collections/" + collectionName + "/points/query";
 
-        try {
-            HttpEntity<Map<String, Object>> request = new HttpEntity<>(body, getJsonHeader());
-            restTemplate.postForEntity(url, request, Map.class);
-        } catch (Exception e) {
-            throw new RuntimeException("Qdrant 벡터 삭제 실패", e);
-        }
-    }
-
-
-    @SuppressWarnings("unchecked")
-    private List<Map<String, Object>> searchOnce(String using, List<Double> vector, int limit) {
-        final String url = qdrantUrl + "/collections/" + collectionName + "/points/search";
-
-        Map<String, Object> vectorObj = new HashMap<>();
-        vectorObj.put("name", using);
-        vectorObj.put("vector", toFloatList(vector));
+        ensureSize(using, vector);
 
         Map<String, Object> body = new HashMap<>();
-        body.put("vector", vectorObj);
+        body.put("using", using);
+        body.put("vector", vector);
         body.put("limit", limit);
-        body.put("with_payload", true);
+        if(withPayload) body.put("with_payload", true);
 
         try {
-            log.info("Qdrant 검색 요청 JSON (using={}):\n{}", using, objectMapper.writeValueAsString(body));
+            log.debug("Qdrant 검색 요청 JSON (using={}):\n{}", using, objectMapper.writeValueAsString(body));
+
+            // 요청
             HttpEntity<Map<String, Object>> request = new HttpEntity<>(body, getJsonHeader());
             ResponseEntity<Map> response = restTemplate.postForEntity(url, request, Map.class);
+
+            // 반환값 확인
             Object result = response.getBody() != null ? response.getBody().get("result") : null;
-            return result instanceof List ? (List<Map<String, Object>>) result : List.of();
+            if (!(result instanceof Map)) return List.of();
+
+            Object points = ((Map<?, ?>) result).get("points");
+            if (points instanceof List) return (List<Map<String, Object>>) points;
+            return List.of();
         } catch (Exception e) {
             throw new RuntimeException("Qdrant 유사도 검색 실패", e);
         }
     }
 
-    private List<Float> toFloatList(List<Double> src) {
-        return src == null ? List.of() : src.stream().map(Double::floatValue).toList();
-    }
+    /* ===================== Scroll ===================== */
 
+    /** Point를 가져옴 */
     public ResponseEntity<Map> getPoints(int limit) {
-        String url = qdrantUrl + "/collections/" + collectionName + "/points/scroll";
+        final String url = qdrantUrl + "/collections/" + collectionName + "/points/scroll";
 
         Map<String, Object> request = new HashMap<>();
         request.put("limit", limit);
-
-        HttpEntity<Map<String, Object>> entity =
-                new HttpEntity<>(request, getJsonHeader());
+        HttpEntity<Map<String, Object>> entity = new HttpEntity<>(request, getJsonHeader());
 
         return restTemplate.postForEntity(url, entity, Map.class);
     }
+
+    /* ===================== Util ===================== */
 
     /** JSON 헤더 생성 */
     private HttpHeaders getJsonHeader(){
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
         return headers;
+    }
+
+    /** 벡터의 차원 크기 검증 */
+    private void ensureSize(String name, List<Double> vector) {
+        if (vector == null) {
+            throw new IllegalArgumentException("벡터가 null입니다: " + name);
+        }
+        if (vector.size() != vectorSize) {
+            throw new IllegalArgumentException(
+                    String.format("쿼리 벡터 '%s' 차원 불일치: expected=%d, actual=%d", name, vectorSize, vector.size())
+            );
+        }
     }
 }
 

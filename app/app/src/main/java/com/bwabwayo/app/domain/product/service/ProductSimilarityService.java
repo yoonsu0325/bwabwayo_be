@@ -33,7 +33,7 @@ public class ProductSimilarityService {
         // 3. QdrantPointDto 생성
         QdrantPointDto qdrantPointDto = QdrantPointDto.from(id, title, category, titleVector, categoryVector);
 
-        embeddingService.saveToQdrant(qdrantPointDto);
+        embeddingService.upsertPoint(qdrantPointDto);
     }
 
     /**
@@ -45,7 +45,7 @@ public class ProductSimilarityService {
         List<Double> categoryQueryVector = openAiClient.getEmbedding(category);
 
         // 유사도 검색 (Top N)
-        return embeddingService.searchSimilarTitles(titleQueryVector, categoryQueryVector,  n)
+        return embeddingService.query(titleQueryVector, categoryQueryVector,  n)
                 .stream().map(SimilarResultResponse::getId).toList();
     }
 
@@ -53,6 +53,6 @@ public class ProductSimilarityService {
      * 벡터 삭제
      */
     public void deletePoint(Long productId) {
-        embeddingService.deleteFromQdrantById(productId);
+        embeddingService.deleteById(productId);
     }
 }
