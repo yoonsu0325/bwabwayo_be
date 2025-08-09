@@ -18,6 +18,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 @Slf4j
 @RestController
@@ -34,12 +35,12 @@ public class StorageController {
     @Operation(summary = "파일 업로드")
     @ApiResponse(responseCode = "200", description = "업로드 성공")
     @PostMapping(value = "/upload", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public ResponseEntity<UploadResponse> uploadFiles(@RequestParam("files") List<MultipartFile> files, @RequestParam("dir") String dirName) {
+    public ResponseEntity<UploadResponse> uploadFiles(@RequestParam List<MultipartFile> files, @RequestParam String dir) {
         List<UploadFileResponse> result = new ArrayList<>();
 
         try{
             for (MultipartFile file : files) {
-                String key = storageService.upload(file, dirName);
+                String key = storageService.upload(file, dir);
                 String url = storageService.getUrlFromKey(key);
 
                 UploadFileResponse dto = UploadFileResponse.builder().key(key).url(url).build();
@@ -68,35 +69,14 @@ public class StorageController {
     @Operation(summary = "이미지 업로드")
     @ApiResponse(responseCode = "200")
     @PostMapping(value = "/upload/image", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public ResponseEntity<UploadResponse> uploadImages(@RequestParam("files") List<MultipartFile> files) {
+    public ResponseEntity<UploadResponse> uploadImages(@RequestParam List<MultipartFile> files) {
         ensureImages(files);
         return uploadFiles(files, tempPath);
     }
 
-    @Operation(summary = "상품의 이미지 업로드")
-    @ApiResponse(responseCode = "200")
-    @PostMapping(value = "/upload/product", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public ResponseEntity<UploadResponse> uploadProductImages(@RequestParam("files") List<MultipartFile> files) {
-        ensureImages(files);
-        return uploadImages(files);
-    }
 
-    @Operation(summary = "프로필 이미지 업로드")
+    @Operation(summary = "URL 기반 파일 업로드")
     @ApiResponse(responseCode = "200")
-    @PostMapping(value = "/upload/profile", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public ResponseEntity<UploadResponse> uploadProfileImages(@RequestParam("files") List<MultipartFile> files) {
-        ensureImages(files);
-        return uploadImages(files);
-    }
-
-    @Operation(summary = "문의 이미지 업로드")
-    @ApiResponse(responseCode = "200")
-    @PostMapping(value = "/upload/inquiry", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public ResponseEntity<UploadResponse> uploadInquiryImages(@RequestParam("files") List<MultipartFile> files) {
-        ensureImages(files);
-        return uploadImages(files);
-   }
-
     @PostMapping("/upload/url")
     public ResponseEntity<?> uploadURL(@RequestParam String url, @RequestParam String dir){
         String key = storageService.upload(url, dir);
@@ -107,7 +87,6 @@ public class StorageController {
         );
     }
 
-    @Deprecated
     @Operation(summary = "파일 삭제")
     @ApiResponse(responseCode = "200", description = "삭제 성공")
     @DeleteMapping("/delete")
@@ -116,6 +95,31 @@ public class StorageController {
         return ResponseEntity.ok().build();
     }
 
+    /* ============= 더미 API ================*/
+
+    @Operation(summary = "상품의 이미지 업로드")
+    @ApiResponse(responseCode = "200")
+    @PostMapping(value = "/upload/product", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<UploadResponse> uploadProductImages(@RequestParam List<MultipartFile> files) {
+        ensureImages(files);
+        return uploadImages(files);
+    }
+
+    @Operation(summary = "프로필 이미지 업로드")
+    @ApiResponse(responseCode = "200")
+    @PostMapping(value = "/upload/profile", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<UploadResponse> uploadProfileImages(@RequestParam List<MultipartFile> files) {
+        ensureImages(files);
+        return uploadImages(files);
+    }
+
+    @Operation(summary = "문의 이미지 업로드")
+    @ApiResponse(responseCode = "200")
+    @PostMapping(value = "/upload/inquiry", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<UploadResponse> uploadInquiryImages(@RequestParam List<MultipartFile> files) {
+        ensureImages(files);
+        return uploadImages(files);
+   }
 
     /* =========== 유틸리티 ======================== */
 
@@ -124,11 +128,15 @@ public class StorageController {
      */
     private void ensureImages(List<MultipartFile> files){
         for (MultipartFile file : files) {
-            String contentType = file.getContentType();
+            ensureImage(file);
+        }
+    }
 
-            if (contentType == null || !contentType.startsWith("image/")) {
-                throw new NotAllowedFileFormatException("이미지 파일만 업로드할 수 있습니다: file=" + file.getOriginalFilename() + " contentType=" + contentType);
-            }
+    private void ensureImage(MultipartFile file){
+        String contentType = Optional.ofNullable(file.getContentType()).map(String::toLowerCase).orElse("");
+
+        if (!contentType.startsWith("image/")) {
+            throw new NotAllowedFileFormatException("이미지 파일만 업로드할 수 있습니다: file=" + file.getOriginalFilename() + " contentType=" + contentType);
         }
     }
 
