@@ -3,6 +3,7 @@ package com.bwabwayo.app.domain.product.service;
 import com.bwabwayo.app.domain.product.domain.Category;
 import com.bwabwayo.app.domain.product.dto.response.CategoryAllResponseDTO;
 import com.bwabwayo.app.domain.product.dto.response.CategoryTreeDTO;
+import com.bwabwayo.app.domain.product.exception.CategoryNotFoundException;
 import com.bwabwayo.app.domain.product.repository.CategoryRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -38,16 +39,17 @@ public class CategoryService {
      * 카테고리 가져오기
      */
     @Transactional(readOnly = true)
-    public Category getCategoryById(Long categoryId){
-        return  categoryRepository.getCategoryById(categoryId);
+    public Category findById(Long categoryId){
+        return  categoryRepository.findById(categoryId)
+                .orElseThrow(()->new CategoryNotFoundException(categoryId));
 
     }
 
     /**
      * 카테고리 존재 여부 확인
      */
-    public boolean existsCategoryById(Long categoryId){
-        return categoryRepository.existsCategoryById(categoryId);
+    public boolean existsById(Long categoryId){
+        return categoryRepository.existsById(categoryId);
     }
 
 

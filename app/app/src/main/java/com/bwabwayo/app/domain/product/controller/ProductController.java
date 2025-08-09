@@ -1,6 +1,5 @@
 package com.bwabwayo.app.domain.product.controller;
 
-import com.bwabwayo.app.domain.product.exception.ProductNotFoundException;
 import com.bwabwayo.app.domain.product.exception.ProductUpdateNotAllowedException;
 import com.bwabwayo.app.domain.product.repository.ProductRepository;
 import com.bwabwayo.app.domain.product.service.ProductSimilarityService;
@@ -17,7 +16,6 @@ import com.bwabwayo.app.domain.product.service.ProductService;
 import com.bwabwayo.app.domain.auth.annotation.LoginUser;
 import com.bwabwayo.app.domain.product.service.ViewCountService;
 import com.bwabwayo.app.domain.user.domain.User;
-import com.bwabwayo.app.global.exception.dto.ErrorResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -27,7 +25,6 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.PageRequest;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.client.RestTemplate;
@@ -48,59 +45,46 @@ public class ProductController {
     private final RestTemplate restTemplate;
     private final ProductRepository productRepository;
 
-
-    @Operation(summary = "내 상품 목록 조회")
-    @ApiResponse(responseCode = "200",
-            content = @Content(mediaType = "application/json", schema = @Schema(implementation = ProductSearchResponseDTO.class))
-    )
-    @GetMapping("/my")
-    public ResponseEntity<?> getMyProductList(@LoginUser User loginUser){
-        return getProducts(PageRequest.of(1, 1), ProductQueryRequest.builder().sellerId(loginUser.getId()).build(), loginUser);
-    }
+    // ========== 생성/수정/삭제 =================
 
     @Operation(summary = "상품 등록")
-    @ApiResponse(responseCode = "200",
-            description = "상품 등록 성공",
-            content = @Content(mediaType = "application/json", schema = @Schema(implementation = ProductCreateResponseDTO.class))
-    )
+    @ApiResponse(responseCode = "200", description = "상품 등록 완료")
     @PostMapping
-    public ResponseEntity<?> createProduct(
-            @Valid @RequestBody ProductUpsertRequest requestDTO,
-            @LoginUser User user
+    public ResponseEntity<ProductCreateResponseDTO> createProduct(
+            @Valid @RequestBody ProductUpsertRequest request,
+            @LoginUser User loginUser
     ) {
         try{
             // 상품 저장
-            Product product = productService.createProduct(requestDTO, user);
+            Product product = productService.createProduct(request, loginUser);
             // 벡터 추가
-            productSimilarityService.savePoint(product);
+            productSimilarityService.upsert(product);
             // Response 생성
-            return ResponseEntity.ok(ProductCreateResponseDTO.fromEntity(product));
+            return ResponseEntity.ok(ProductCreateResponseDTO.from(product));
         } catch(IllegalArgumentException e){
             throw new BadRequestException(e.getMessage());
         }
     }
 
     @Operation(summary = "상품 정보 갱신")
-    @ApiResponse(responseCode = "200")
+    @ApiResponse(responseCode = "200", description = "상품 정보 갱신 완료")
     @PutMapping("/{productId}")
     public ResponseEntity<Void> updateProduct(
             @PathVariable Long productId,
-            @RequestBody ProductUpsertRequest requestDTO,
+            @Valid @RequestBody ProductUpsertRequest request,
             @LoginUser User loginUser
     ) {
         Product product = productService.findById(productId);
-        if(product.getSeller().equals(loginUser)) {
-            throw new ProductUpdateNotAllowedException(product.getId(), loginUser.getId());
-        }
+        ensureOwner(loginUser, product);
 
         try{
-            productService.update(product, requestDTO);
+            productService.update(product, request);
         } catch(IllegalArgumentException e){
             throw new BadRequestException(e.getMessage());
         }
-        // 벡터 갱신
-        productSimilarityService.deleteById(productId);
-        productSimilarityService.savePoint(product);
+        
+        // 검색 엔진 내 상품 정보 갱신
+        productSimilarityService.upsert(product);
 
         return ResponseEntity.ok().build();
     }
@@ -110,9 +94,7 @@ public class ProductController {
     @DeleteMapping("/{productId}")
     public ResponseEntity<Void> deleteById(@PathVariable Long productId, @LoginUser User loginUser){
         Product product = productService.findById(productId);
-        if(product.getSeller().equals(loginUser)) {
-            throw new ProductUpdateNotAllowedException(product.getId(), loginUser.getId());
-        }
+        ensureOwner(loginUser, product);
 
         // 상품 삭제
         productService.delete(product);
@@ -123,6 +105,15 @@ public class ProductController {
         return ResponseEntity.ok().build();
     }
 
+    @Operation(summary = "내 상품 목록 조회")
+    @ApiResponse(responseCode = "200",
+            content = @Content(mediaType = "application/json", schema = @Schema(implementation = ProductSearchResponseDTO.class))
+    )
+    @GetMapping("/my")
+    public ResponseEntity<?> getMyProductList(@LoginUser User loginUser){
+        return getProducts(ProductQueryRequest.builder().sellerId(loginUser.getId()).build(), loginUser);
+    }
+
     @Operation(summary = "상품 목록 조회")
     @ApiResponse(
             responseCode = "200",
@@ -130,7 +121,6 @@ public class ProductController {
     )
     @GetMapping
     public ResponseEntity<?> getProducts(
-            PageRequest pageRequest,
             @Valid @ModelAttribute ProductQueryRequest requestDTO,
             @LoginUser(required = false) User user
     ) {
@@ -191,7 +181,7 @@ public class ProductController {
     public ResponseEntity<Void> embbeding(){
         List<Product> all = productRepository.findAll();
         for (Product product : all) {
-            productSimilarityService.savePoint(product);
+            productSimilarityService.upsert(product);
         }
         return ResponseEntity.ok().build();
     }
@@ -205,17 +195,11 @@ public class ProductController {
         return ResponseEntity.ok().build();
     }
 
-    /* ================= 예외 처리 ===================== */
+    // ============ 유틸리티 ===================
 
-    @ExceptionHandler(ProductNotFoundException.class)
-    public ResponseEntity<ErrorResponse> handleException(ProductNotFoundException e) {
-        log.info(e.getMessage());
-        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(ErrorResponse.of("404", e.getMessage()));
-    }
-
-    @ExceptionHandler(ProductUpdateNotAllowedException.class)
-    public ResponseEntity<ErrorResponse> handleException(ProductUpdateNotAllowedException e) {
-        log.info(e.getMessage());
-        return ResponseEntity.status(HttpStatus.FORBIDDEN).body(ErrorResponse.of("403", e.getMessage()));
+    private static void ensureOwner(User loginUser, Product product) {
+        if(product.getSeller().equals(loginUser)) {
+            throw new ProductUpdateNotAllowedException(product.getId(), loginUser.getId());
+        }
     }
 }

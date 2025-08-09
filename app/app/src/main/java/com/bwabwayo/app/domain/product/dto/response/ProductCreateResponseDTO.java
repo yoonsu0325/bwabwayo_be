@@ -13,7 +13,7 @@ import lombok.NoArgsConstructor;
 public class ProductCreateResponseDTO {
     private Long id;
 
-    public static ProductCreateResponseDTO fromEntity(Product product){
+    public static ProductCreateResponseDTO from(Product product){
         return ProductCreateResponseDTO.builder().id(product.getId()).build();
     }
 }

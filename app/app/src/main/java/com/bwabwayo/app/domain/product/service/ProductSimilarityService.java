@@ -20,7 +20,7 @@ public class ProductSimilarityService {
     /**
      * 판매글 벡터 저장
      */
-    public void savePoint(Product product) {
+    public void upsert(Product product) {
         // 1. title 추출
         Long id = product.getId();
         String title = product.getTitle();

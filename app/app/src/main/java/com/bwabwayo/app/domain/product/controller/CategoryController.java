@@ -47,7 +47,7 @@ public class CategoryController {
     )
     @GetMapping("/{categoryId}")
     public ResponseEntity<?> getTopCategories(@PathVariable Long categoryId) {
-        Category category = categoryService.getCategoryById(categoryId);
+        Category category = categoryService.findById(categoryId);
         
         // 카테고리가 존재하지 않음
         if(category == null){
