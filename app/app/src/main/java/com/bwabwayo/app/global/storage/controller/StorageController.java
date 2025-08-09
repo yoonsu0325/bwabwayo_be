@@ -5,8 +5,11 @@ import com.bwabwayo.app.global.storage.dto.response.UploadResponse;
 import com.bwabwayo.app.global.storage.dto.response.UploadListResponse;
 import com.bwabwayo.app.global.storage.exception.NotAllowedFileFormatException;
 import com.bwabwayo.app.global.storage.service.StorageService;
+import com.bwabwayo.app.global.storage.util.StorageUtil;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.Size;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -27,6 +30,7 @@ import java.util.Optional;
 public class StorageController {
 
     private final StorageService storageService;
+    private final StorageUtil storageUtil;
 
     @Value("${storage.path.temp}")
     private String tempPath;
@@ -35,7 +39,10 @@ public class StorageController {
     @Operation(summary = "파일 업로드")
     @ApiResponse(responseCode = "200", description = "업로드 성공")
     @PostMapping(value = "/upload", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public ResponseEntity<UploadListResponse> uploadFiles(@RequestParam List<MultipartFile> files, @RequestParam String dir) {
+    public ResponseEntity<UploadListResponse> uploadFiles(
+            @Valid @Size(min=1) @RequestParam  List<MultipartFile> files,
+            @RequestParam String dir
+    ) {
         List<UploadResponse> result = new ArrayList<>();
 
         try{
@@ -43,25 +50,18 @@ public class StorageController {
                 String key = storageService.upload(file, dir);
                 String url = storageService.getUrlFromKey(key);
 
-                UploadResponse dto = UploadResponse.builder().key(key).url(url).build();
+                UploadResponse upload = UploadResponse.from(key, url);
 
-                result.add(dto);
+                result.add(upload);
             }
         } catch(Exception e){
-            for (UploadResponse uploadFileDTO : result) {
-                try{
-                    storageService.delete(uploadFileDTO.getKey());
-                } catch(Exception ex){
-                    log.warn("이미지 삭제 실패 key={}", uploadFileDTO.getKey());
-                }
+            for (UploadResponse upload : result) {
+                storageUtil.deleteWithoutException(upload.getKey());
             }
             throw e;
         }
 
-        UploadListResponse response = UploadListResponse.builder()
-                .size(result.size())
-                .results(result)
-                .build();
+        UploadListResponse response = UploadListResponse.from(result);
 
         return ResponseEntity.ok(response);
     }
@@ -78,13 +78,27 @@ public class StorageController {
     @Operation(summary = "URL 기반 파일 업로드")
     @ApiResponse(responseCode = "200")
     @PostMapping("/upload/url")
-    public ResponseEntity<?> uploadURL(@RequestParam String url, @RequestParam String dir){
-        String key = storageService.upload(url, dir);
-        return ResponseEntity.ok(UploadResponse.builder()
-                .key(key)
-                .url(storageService.getUrlFromKey(key))
-                .build()
-        );
+    public ResponseEntity<UploadListResponse> uploadURL(
+            @Valid @Size(min=1) @RequestParam List<String> urls,
+            @RequestParam String dir){
+        List<UploadResponse> result = new ArrayList<>();
+
+        try{
+            for (String url : urls) {
+                String k = storageService.upload(url, dir);
+                String u = storageService.getUrlFromKey(k);
+
+                UploadResponse upload = UploadResponse.from(k, u);
+
+                result.add(upload);
+            }
+        } catch(Exception e){
+            for (UploadResponse upload : result) {
+                storageUtil.deleteWithoutException(upload.getKey());
+            }
+            throw e;
+        }
+        return ResponseEntity.ok(UploadListResponse.from(result));
     }
 
     @Operation(summary = "파일 삭제")

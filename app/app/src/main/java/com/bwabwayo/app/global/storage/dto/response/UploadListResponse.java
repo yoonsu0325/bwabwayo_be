@@ -16,4 +16,11 @@ public class UploadListResponse {
     private int size; // 업로드한 파일의 수
     @Builder.Default
     private List<UploadResponse> results = new ArrayList<>(); // 업로드된 파일의 정보
+
+    public static UploadListResponse from(List<UploadResponse> results) {
+        return UploadListResponse.builder()
+                .size(results.size())
+                .results(results)
+                .build();
+    }
 }
