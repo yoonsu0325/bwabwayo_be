@@ -67,4 +67,9 @@ public class EmbeddingController {
         embeddingService.deleteFromQdrantById(id);
         return ResponseEntity.ok().build();
     }
+
+    @GetMapping("/scroll")
+    public ResponseEntity<?> scroll(){
+        return embeddingService.getPoints(100);
+    }
 }
