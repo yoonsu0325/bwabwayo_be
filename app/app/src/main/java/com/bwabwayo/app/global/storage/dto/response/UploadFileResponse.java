@@ -1,4 +1,4 @@
-package com.bwabwayo.app.global.storage.response;
+package com.bwabwayo.app.global.storage.dto.response;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -9,7 +9,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class UploadFileDTO {
+public class UploadFileResponse {
     private String key;
     private String url;
 }

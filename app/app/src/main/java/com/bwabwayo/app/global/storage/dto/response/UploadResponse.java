@@ -1,4 +1,4 @@
-package com.bwabwayo.app.global.storage.response;
+package com.bwabwayo.app.global.storage.dto.response;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -12,8 +12,8 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class UploadResponseDTO {
+public class UploadResponse {
     private int size; // 업로드한 파일의 수
     @Builder.Default
-    private List<UploadFileDTO> results = new ArrayList<>(); // 업로드된 파일의 정보
+    private List<UploadFileResponse> results = new ArrayList<>(); // 업로드된 파일의 정보
 }

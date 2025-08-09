@@ -1,8 +1,8 @@
 package com.bwabwayo.app.global.storage.controller;
 
 import com.bwabwayo.app.global.exception.BadRequestException;
-import com.bwabwayo.app.global.storage.response.UploadFileDTO;
-import com.bwabwayo.app.global.storage.response.UploadResponseDTO;
+import com.bwabwayo.app.global.storage.dto.response.UploadFileResponse;
+import com.bwabwayo.app.global.storage.dto.response.UploadResponse;
 import com.bwabwayo.app.global.storage.service.S3Service;
 import com.bwabwayo.app.global.storage.service.StorageService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -36,11 +36,11 @@ public class StorageController {
     @Operation(summary = "파일 업로드")
     @ApiResponse(responseCode = "200",
             description = "업로드 성공",
-            content = @Content(mediaType = "application/json", schema = @Schema(implementation = UploadResponseDTO.class))
+            content = @Content(mediaType = "application/json", schema = @Schema(implementation = UploadResponse.class))
     )
     @PostMapping(value = "/upload", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public ResponseEntity<UploadResponseDTO> uploadFiles(@RequestParam("files") List<MultipartFile> files, @RequestParam("dir") String dirName) {
-        List<UploadFileDTO> result = new ArrayList<>();
+    public ResponseEntity<UploadResponse> uploadFiles(@RequestParam("files") List<MultipartFile> files, @RequestParam("dir") String dirName) {
+        List<UploadFileResponse> result = new ArrayList<>();
 
         validateImages(files);
 
@@ -49,12 +49,12 @@ public class StorageController {
                 String key = storageService.upload(file, dirName);
                 String url = storageService.getUrlFromKey(key);
 
-                UploadFileDTO dto = UploadFileDTO.builder().key(key).url(url).build();
+                UploadFileResponse dto = UploadFileResponse.builder().key(key).url(url).build();
 
                 result.add(dto);
             }
         } catch(Exception e){
-            for (UploadFileDTO uploadFileDTO : result) {
+            for (UploadFileResponse uploadFileDTO : result) {
                 try{
                     s3Service.delete(uploadFileDTO.getKey());
                 } catch(Exception ex){
@@ -64,7 +64,7 @@ public class StorageController {
             throw e;
         }
 
-        UploadResponseDTO response = UploadResponseDTO.builder()
+        UploadResponse response = UploadResponse.builder()
                 .size(result.size())
                 .results(result)
                 .build();
@@ -75,7 +75,7 @@ public class StorageController {
     @Operation(summary = "이미지 업로드")
     @ApiResponse(responseCode = "200")
     @PostMapping(value = "/upload/image", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public ResponseEntity<UploadResponseDTO> uploadImages(@RequestParam("files") List<MultipartFile> files) {
+    public ResponseEntity<UploadResponse> uploadImages(@RequestParam("files") List<MultipartFile> files) {
         // 이미지 파일만 업로드 가능
         validateImages(files);
 
@@ -85,28 +85,28 @@ public class StorageController {
     @Operation(summary = "상품의 이미지 업로드")
     @ApiResponse(responseCode = "200")
     @PostMapping(value = "/upload/product", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public ResponseEntity<UploadResponseDTO> uploadProductImages(@RequestParam("files") List<MultipartFile> files) {
+    public ResponseEntity<UploadResponse> uploadProductImages(@RequestParam("files") List<MultipartFile> files) {
         return uploadImages(files);
     }
 
     @Operation(summary = "프로필 이미지 업로드")
     @ApiResponse(responseCode = "200")
     @PostMapping(value = "/upload/profile", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public ResponseEntity<UploadResponseDTO> uploadProfileImages(@RequestParam("files") List<MultipartFile> files) {
+    public ResponseEntity<UploadResponse> uploadProfileImages(@RequestParam("files") List<MultipartFile> files) {
         return uploadImages(files);
     }
 
     @Operation(summary = "문의 이미지 업로드")
     @ApiResponse(responseCode = "200")
     @PostMapping(value = "/upload/inquiry", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public ResponseEntity<UploadResponseDTO> uploadInquiryImages(@RequestParam("files") List<MultipartFile> files) {
+    public ResponseEntity<UploadResponse> uploadInquiryImages(@RequestParam("files") List<MultipartFile> files) {
         return uploadImages(files);
    }
 
     @PostMapping("/upload/url")
     public ResponseEntity<?> uploadURL(@RequestParam String url, @RequestParam String dir){
         String key = storageService.upload(url, dir);
-        return ResponseEntity.ok(UploadFileDTO.builder()
+        return ResponseEntity.ok(UploadFileResponse.builder()
                 .key(key)
                 .url(storageService.getUrlFromKey(key))
                 .build()
