@@ -36,6 +36,7 @@ public class S3Service implements StorageService {
     @Value("${cloud.aws.s3.bucket}")
     private String bucketName;
 
+
     @Override
     public String upload(MultipartFile file, String dir) {
         if (file == null || file.isEmpty()) {
@@ -64,26 +65,7 @@ public class S3Service implements StorageService {
         log.info("S3 업로드 시작: file={}, size={} bytes, key={}", originalFilename, file.getSize(), key);
 
         try (InputStream in = file.getInputStream()){
-            PutObjectRequest putRequest = new PutObjectRequest(bucketName, key, in, metadata);
-
-            Upload upload = transferManager.upload(putRequest);
-
-            upload.addProgressListener((com.amazonaws.event.ProgressListener) e -> {
-                switch (e.getEventType()) {
-                    case TRANSFER_STARTED_EVENT:
-                        log.info("업로드 시작됨: key={}", key); break;
-                    case REQUEST_BYTE_TRANSFER_EVENT:
-                        double pct = upload.getProgress().getPercentTransferred();
-                        log.debug("업로드 진행률: {}%", String.format("%.2f", pct));
-                        break;
-                    case TRANSFER_COMPLETED_EVENT:
-                        log.info("업로드 완료: key={}", key); break;
-                    case TRANSFER_FAILED_EVENT:
-                        log.error("업로드 실패: key={}", key); break;
-                }
-            });
-
-            upload.waitForCompletion(); // 완료 대기
+            uploadCore(key, new PutObjectRequest(bucketName, key, in, metadata));
         } catch (Exception e) {
             log.error("S3 업로드 실패: file={}, key={}, cause={}", originalFilename, key, e.getMessage(), e);
             throw new RuntimeException("파일 업로드 실패: file=" + originalFilename + ", key=" + key, e);
@@ -95,6 +77,7 @@ public class S3Service implements StorageService {
     public String upload(String srcURL, String dir) {
         HttpURLConnection connection = null;
         String key = null;
+
         try {
             URL url = new URL(srcURL);
             connection = (HttpURLConnection)url.openConnection();
@@ -120,9 +103,7 @@ public class S3Service implements StorageService {
             if(contentLength > 0) metadata.setContentLength(contentLength);
 
             try (InputStream inputStream = connection.getInputStream()) {
-                PutObjectRequest putRequest = new PutObjectRequest(bucketName, key, inputStream, metadata);
-                Upload upload = transferManager.upload(putRequest);
-                upload.waitForCompletion();
+                uploadCore(key, new PutObjectRequest(bucketName, key, inputStream, metadata));
             }
         } catch (Exception e) {
             log.error("S3 업로드 실패: url={}, key={}", srcURL, key, e);
@@ -133,6 +114,31 @@ public class S3Service implements StorageService {
             }
         }
         return key;
+    }
+
+    private void uploadCore(String key, PutObjectRequest putRequest) throws InterruptedException {
+        Upload upload = transferManager.upload(putRequest);
+
+        upload.addProgressListener((com.amazonaws.event.ProgressListener) e -> {
+            switch (e.getEventType()) {
+                case TRANSFER_STARTED_EVENT:
+                    log.info("업로드 시작: key={}", key); break;
+                case REQUEST_BYTE_TRANSFER_EVENT:
+                    double pct = upload.getProgress().getPercentTransferred();
+                    log.debug("업로드 진행률: {}%", String.format("%.2f", pct));
+                    break;
+                case TRANSFER_COMPLETED_EVENT:
+                    log.info("업로드 완료: key={}", key); break;
+                case TRANSFER_FAILED_EVENT:
+                    log.error("업로드 실패: key={}", key); break;
+                case TRANSFER_PART_STARTED_EVENT:
+                    log.debug("멀티파트 업로드 시작: key={}", key); break;
+                case TRANSFER_PART_COMPLETED_EVENT:
+                    log.debug("멀티파트 업로드 완료: key={}", key); break;
+            }
+        });
+
+        upload.waitForCompletion();
     }
 
     @Override
@@ -170,6 +176,8 @@ public class S3Service implements StorageService {
         URL url = amazonS3.generatePresignedUrl(generatePresignedUrlRequest);
         return url.toString();
     }
+
+    /* ================= 유틸리티 ======================*/
 
     private static String getPrefix(){
         String uuid = UUID.randomUUID().toString();

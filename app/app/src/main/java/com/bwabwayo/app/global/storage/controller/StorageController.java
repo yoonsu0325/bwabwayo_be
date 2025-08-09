@@ -66,19 +66,10 @@ public class StorageController {
         return ResponseEntity.ok(response);
     }
 
-    @Operation(summary = "이미지 업로드")
-    @ApiResponse(responseCode = "200")
-    @PostMapping(value = "/upload/image", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public ResponseEntity<UploadListResponse> uploadImages(@RequestParam List<MultipartFile> files) {
-        ensureImages(files);
-        return uploadFiles(files, tempPath);
-    }
-
-
     @Operation(summary = "URL 기반 파일 업로드")
     @ApiResponse(responseCode = "200")
     @PostMapping("/upload/url")
-    public ResponseEntity<UploadListResponse> uploadURL(
+    public ResponseEntity<UploadListResponse> uploadURLs(
             @Valid @Size(min=1) @RequestParam List<String> urls,
             @RequestParam String dir){
         List<UploadResponse> result = new ArrayList<>();
@@ -99,6 +90,14 @@ public class StorageController {
             throw e;
         }
         return ResponseEntity.ok(UploadListResponse.from(result));
+    }
+
+    @Operation(summary = "이미지 업로드")
+    @ApiResponse(responseCode = "200")
+    @PostMapping(value = "/upload/image", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<UploadListResponse> uploadImages(@RequestParam List<MultipartFile> files) {
+        ensureImages(files);
+        return uploadFiles(files, tempPath);
     }
 
     @Operation(summary = "파일 삭제")
