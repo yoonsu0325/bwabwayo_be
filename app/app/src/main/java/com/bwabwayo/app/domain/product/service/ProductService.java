@@ -1,5 +1,6 @@
 package com.bwabwayo.app.domain.product.service;
 
+import com.bwabwayo.app.domain.ai.service.ProductEmbeddingService;
 import com.bwabwayo.app.domain.chat.dto.request.SetInvoiceNumberRequest;
 import com.bwabwayo.app.domain.chat.dto.request.SetPriceRequest;
 import com.bwabwayo.app.domain.chat.dto.request.SetProductStatusRequest;
@@ -49,7 +50,7 @@ public class ProductService {
     private final WishService wishService;
     private final CourierRepository courierRepository;
     private final ViewCountService viewCountService;
-    private final ProductSimilaritySearchService productSimilarityService;
+    private final ProductEmbeddingService productEmbeddingService;
     private final ReviewAggService reviewAggService;
 
     @Value("${storage.path.temp}")
@@ -231,30 +232,30 @@ public class ProductService {
 
         // 유사한 상품 목록
         List<ProductDTO> productSimpleDTOS = new ArrayList<>();
-        if(false) {
-            List<Long> similarities = productSimilarityService.query(product.getTitle(), product.getCategory().getName(), similarityCount + 1);
-            productSimpleDTOS = similarities
-                    .stream()
-                    .filter(id -> !id.equals(product.getId()))
-                    .map(productRepository::getProductById)
-                    .filter(Objects::nonNull)
-                    .map(p -> ProductDTO.builder()
-                            .id(p.getId())
-                            .categoryId(p.getCategory().getId())
-                            .thumbnail(storageService.getUrlFromKey(p.getThumbnail()))
-                            .title(p.getTitle())
-                            .price(p.getPrice())
-                            .viewCount(viewCountService.getViewCount(p.getId()).intValue())
-                            .wishCount(p.getWishCount())
-                            .chatCount(p.getChatCount())
-                            .isLike(loginUser != null && wishService.existsWish(p, loginUser))
-                            .canVideoCall(p.isCanVideoCall())
-                            .saleStatusCode(p.getSaleStatus().getLevel())
-                            .saleStatus(p.getSaleStatus().getDescription())
-                            .createdAt(p.getCreatedAt())
-                            .build()
-                    ).toList();
-        }
+//        if(false) {
+//            List<Long> similarities = productSimilarityService.query(product.getTitle(), product.getCategory().getName(), similarityCount + 1);
+//            productSimpleDTOS = similarities
+//                    .stream()
+//                    .filter(id -> !id.equals(product.getId()))
+//                    .map(productRepository::getProductById)
+//                    .filter(Objects::nonNull)
+//                    .map(p -> ProductDTO.builder()
+//                            .id(p.getId())
+//                            .categoryId(p.getCategory().getId())
+//                            .thumbnail(storageService.getUrlFromKey(p.getThumbnail()))
+//                            .title(p.getTitle())
+//                            .price(p.getPrice())
+//                            .viewCount(viewCountService.getViewCount(p.getId()).intValue())
+//                            .wishCount(p.getWishCount())
+//                            .chatCount(p.getChatCount())
+//                            .isLike(loginUser != null && wishService.existsWish(p, loginUser))
+//                            .canVideoCall(p.isCanVideoCall())
+//                            .saleStatusCode(p.getSaleStatus().getLevel())
+//                            .saleStatus(p.getSaleStatus().getDescription())
+//                            .createdAt(p.getCreatedAt())
+//                            .build()
+//                    ).toList();
+//        }
 
         return ProductDetailResponse.builder()
                 .title(product.getTitle())

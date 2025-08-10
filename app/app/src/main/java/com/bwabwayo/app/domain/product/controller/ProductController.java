@@ -1,8 +1,8 @@
 package com.bwabwayo.app.domain.product.controller;
 
+import com.bwabwayo.app.domain.ai.service.ProductEmbeddingService;
 import com.bwabwayo.app.domain.product.exception.ProductUpdateNotAllowedException;
 import com.bwabwayo.app.domain.product.repository.ProductRepository;
-import com.bwabwayo.app.domain.product.service.ProductSimilaritySearchService;
 import com.bwabwayo.app.domain.product.domain.Product;
 import com.bwabwayo.app.domain.product.dto.request.ProductUpsertRequest;
 import com.bwabwayo.app.domain.product.dto.request.ProductQueryRequest;
@@ -40,7 +40,7 @@ public class ProductController {
 
     private final ProductService productService;
     private final ViewCountService viewCountService;
-    private final ProductSimilaritySearchService productSimilarityService;
+    private final ProductEmbeddingService productEmbeddingService;
     private final RestTemplate restTemplate;
     private final ProductRepository productRepository;
 
@@ -57,7 +57,7 @@ public class ProductController {
             // 상품 저장
             Product product = productService.createProduct(request, loginUser);
             // 벡터 추가
-            productSimilarityService.upsert(product);
+            productEmbeddingService.upsert(product);
             // Response 생성
             return ResponseEntity.ok(ProductCreateResponse.from(product));
         } catch(IllegalArgumentException e){
@@ -83,7 +83,7 @@ public class ProductController {
         }
         
         // 검색 엔진 내 상품 정보 갱신
-        productSimilarityService.upsert(product);
+        productEmbeddingService.upsert(product);
 
         return ResponseEntity.ok().build();
     }
@@ -99,7 +99,7 @@ public class ProductController {
         productService.delete(product);
 
         // 검색 엔진에서도 함께 삭제
-        productSimilarityService.deleteById(productId);
+        productEmbeddingService.deleteById(productId);
 
         return ResponseEntity.ok().build();
     }
@@ -180,7 +180,7 @@ public class ProductController {
     public ResponseEntity<Void> embbeding(){
         List<Product> all = productRepository.findAll();
         for (Product product : all) {
-            productSimilarityService.upsert(product);
+            productEmbeddingService.upsert(product);
         }
         return ResponseEntity.ok().build();
     }
@@ -189,7 +189,7 @@ public class ProductController {
     public ResponseEntity<Void> unembbeding(){
         List<Product> all = productRepository.findAll();
         for (Product product : all) {
-            productSimilarityService.deleteById(product.getId());
+            productEmbeddingService.deleteById(product.getId());
         }
         return ResponseEntity.ok().build();
     }

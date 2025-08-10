@@ -3,9 +3,11 @@ package com.bwabwayo.app.domain.ai.controller;
 import com.bwabwayo.app.domain.ai.dto.response.QueryItemDto;
 import com.bwabwayo.app.domain.ai.service.ProductEmbeddingService;
 import com.bwabwayo.app.domain.product.domain.Product;
+import com.bwabwayo.app.domain.product.dto.ProductQueryCondition;
 import com.bwabwayo.app.domain.product.service.ProductService;
 import io.swagger.v3.oas.annotations.Operation;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -34,7 +36,10 @@ public class EmbeddingController {
             @RequestParam(required = false) String keyword,
             @RequestParam(required = false, defaultValue = "3") Integer limit
     ) {
-        List<QueryItemDto> queryResult = productEmbeddingService.query(keyword, keyword, limit);
+        List<QueryItemDto> queryResult = productEmbeddingService.query(
+                ProductQueryCondition.builder().keyword(keyword).categoryId(1L).build(),
+                PageRequest.of(0, limit)
+        );
         return ResponseEntity.ok(Map.of("results", queryResult));
     }
 

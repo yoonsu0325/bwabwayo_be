@@ -2,10 +2,14 @@ package com.bwabwayo.app.domain.ai.service;
 
 import com.bwabwayo.app.domain.ai.domain.QdrantPointDto;
 import com.bwabwayo.app.domain.ai.dto.response.QueryItemDto;
+import com.bwabwayo.app.domain.product.domain.Category;
 import com.bwabwayo.app.domain.product.domain.Product;
+import com.bwabwayo.app.domain.product.dto.ProductQueryCondition;
 import com.bwabwayo.app.domain.product.enums.SaleStatus;
+import com.bwabwayo.app.domain.product.service.CategoryService;
 import com.bwabwayo.app.global.client.OpenAiClient;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -16,6 +20,7 @@ public class ProductEmbeddingService {
 
     private final OpenAiClient openAiClient;
     private final EmbeddingService embeddingService;
+    private final CategoryService categoryService;
 
     /**
      * 상품 벡터 저장
@@ -55,12 +60,16 @@ public class ProductEmbeddingService {
         embeddingService.deleteById(productId);
     }
 
-    public List<QueryItemDto> query(String title, String category, int n) {
+    public List<QueryItemDto> query(ProductQueryCondition queryCondition, Pageable pageable) {
+        String title = queryCondition.getKeyword();
+        Category category = categoryService.findById(queryCondition.getCategoryId());
+        String categoryName = category.getName();
+
         // 벡터화
         List<Double> titleQueryVector = openAiClient.getEmbedding(title);
-        List<Double> categoryQueryVector = openAiClient.getEmbedding(category);
+        List<Double> categoryQueryVector = openAiClient.getEmbedding(categoryName);
 
         // 유사도 검색 (Top N)
-        return embeddingService.query(titleQueryVector, categoryQueryVector,  n);
+        return embeddingService.query(titleQueryVector, categoryQueryVector,  pageable.getPageSize());
     }
 }
