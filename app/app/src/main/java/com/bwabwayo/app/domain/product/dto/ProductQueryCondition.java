@@ -11,7 +11,8 @@ public class ProductQueryCondition {
     private String viewerId;
 
     private String keyword;
-    private List<Long> categoryIds;
+    private Long categoryId;
+    private List<Long> categoryIn;
 
     private String sellerId;
 

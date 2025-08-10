@@ -12,16 +12,15 @@ import java.util.List;
 
 @Service
 @RequiredArgsConstructor
-public class ProductSimilarityService {
+public class ProductSimilaritySearchService {
 
     private final EmbeddingService embeddingService;
     private final OpenAiClient openAiClient;
 
     /**
-     * 판매글 벡터 저장
+     * 상품 벡터 저장
      */
     public void upsert(Product product) {
-        // 1. title 추출
         Long id = product.getId();
         String title = product.getTitle();
         String category = product.getCategory().getName();
@@ -39,7 +38,7 @@ public class ProductSimilarityService {
     /**
      * 유사도 검색
      */
-    public List<Long> searchSimilarTitles(String title, String category, int n) {
+    public List<Long> query(String title, String category, int n) {
         // 벡터화
         List<Double> titleQueryVector = openAiClient.getEmbedding(title);
         List<Double> categoryQueryVector = openAiClient.getEmbedding(category);
@@ -50,7 +49,7 @@ public class ProductSimilarityService {
     }
 
     /**
-     * 벡터 삭제
+     * 상품 벡터 삭제
      */
     public void deleteById(Long productId) {
         embeddingService.deleteById(productId);

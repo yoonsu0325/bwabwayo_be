@@ -2,7 +2,7 @@ package com.bwabwayo.app.domain.product.controller;
 
 import com.bwabwayo.app.domain.product.exception.ProductUpdateNotAllowedException;
 import com.bwabwayo.app.domain.product.repository.ProductRepository;
-import com.bwabwayo.app.domain.product.service.ProductSimilarityService;
+import com.bwabwayo.app.domain.product.service.ProductSimilaritySearchService;
 import com.bwabwayo.app.domain.product.domain.Product;
 import com.bwabwayo.app.domain.product.dto.request.ProductUpsertRequest;
 import com.bwabwayo.app.domain.product.dto.request.ProductQueryRequest;
@@ -40,7 +40,7 @@ public class ProductController {
 
     private final ProductService productService;
     private final ViewCountService viewCountService;
-    private final ProductSimilarityService productSimilarityService;
+    private final ProductSimilaritySearchService productSimilarityService;
     private final RestTemplate restTemplate;
     private final ProductRepository productRepository;
 

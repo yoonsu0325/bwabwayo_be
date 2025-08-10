@@ -49,7 +49,7 @@ public class ProductService {
     private final WishService wishService;
     private final CourierRepository courierRepository;
     private final ViewCountService viewCountService;
-    private final ProductSimilarityService productSimilarityService;
+    private final ProductSimilaritySearchService productSimilarityService;
     private final ReviewAggService reviewAggService;
 
     @Value("${storage.path.temp}")
@@ -142,7 +142,7 @@ public class ProductService {
         ProductQueryCondition queryCondition = ProductQueryCondition.builder()
                 .viewerId(loginUser != null ? loginUser.getId() : null)
                 .keyword(keyword)
-                .categoryIds(categoryIds)
+                .categoryIn(categoryIds)
                 .sellerId(sellerId)
                 .canVideoCall(canVideoCall)
                 .canNegotiate(canNegotiate)
@@ -152,7 +152,12 @@ public class ProductService {
                 .maxPrice(maxPrice)
                 .build();
 
-        Page<ProductWithIsLikeDTO> pageData = productRepository.searchByCondition(queryCondition, pageable);
+        Page<ProductWithIsLikeDTO> pageData = null;
+        if(sortType == ProductSortType.RELATED) {
+
+        } else{
+            pageData = productRepository.searchByCondition(queryCondition, pageable);
+        }
 
         return PageResponse.from(pageData, dto -> {
             Product product = dto.getProduct();
@@ -227,7 +232,7 @@ public class ProductService {
         // 유사한 상품 목록
         List<ProductDTO> productSimpleDTOS = new ArrayList<>();
         if(false) {
-            List<Long> similarities = productSimilarityService.searchSimilarTitles(product.getTitle(), product.getCategory().getName(), similarityCount + 1);
+            List<Long> similarities = productSimilarityService.query(product.getTitle(), product.getCategory().getName(), similarityCount + 1);
             productSimpleDTOS = similarities
                     .stream()
                     .filter(id -> !id.equals(product.getId()))

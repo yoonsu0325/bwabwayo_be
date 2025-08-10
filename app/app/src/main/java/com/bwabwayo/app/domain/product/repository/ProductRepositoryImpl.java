@@ -36,9 +36,9 @@ public class ProductRepositoryImpl implements ProductRepositoryCustom {
         }
         
         // 카테고리 필터링
-        List<Long> categoryIds = queryCondition.getCategoryIds();
-        if (categoryIds != null && !categoryIds.isEmpty()) {
-            whereCondition.and(product.category.id.in(categoryIds));
+        List<Long> categoryIn = queryCondition.getCategoryIn();
+        if (categoryIn != null && !categoryIn.isEmpty()) {
+            whereCondition.and(product.category.id.in(categoryIn));
         }
 
         // 판매자 필터링
