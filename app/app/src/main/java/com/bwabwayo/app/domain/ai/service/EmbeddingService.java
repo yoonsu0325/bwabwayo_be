@@ -114,15 +114,17 @@ public class EmbeddingService {
 
     /** 검색 */
     public List<QueryItemDto> query(
-            List<Double> queryTitleVec,
-            List<Double> queryCategoryVec,
-            int topK
+            List<Double> queryTitleVector,
+            List<Double> queryCategoryVector,
+            int topK,
+            Map<String, Object> filter
     ) {
         // 1) 각각 검색 (여유 있게 topK*5)
-        List<Map<String, Object>> titleHits = queryOnce("title", queryTitleVec, topK * 5, true);
-        List<Map<String, Object>> categoryHits = queryOnce("category", queryCategoryVec, topK * 5, true);
+        final int buffer = 5;
+        List<Map<String, Object>> titleHits = queryOnce("title", queryTitleVector, topK * buffer, true, filter);
+        List<Map<String, Object>> categoryHits = queryOnce("category", queryCategoryVector, topK * buffer, true, filter);
 
-        // 2) 가중치 합성(예: title 0.8, category 0.2)
+        // 2) 가중치 합성 (예: title 0.8, category 0.2)
         final double wTitle = 0.8;
         final double wCategory = 0.2;
 
@@ -161,16 +163,17 @@ public class EmbeddingService {
                 .toList();
     }
 
-    private List<Map<String, Object>> queryOnce(String using, List<Double> vector, int limit, boolean withPayload) {
+    private List<Map<String, Object>> queryOnce(String using, List<Double> vector, int limit, boolean withPayload, Map<String, Object> filter) {
         final String url = qdrantUrl + "/collections/" + collectionName + "/points/query";
 
         ensureSize(using, vector);
 
         Map<String, Object> body = new HashMap<>();
         body.put("using", using);
-        body.put("vector", vector);
+        body.put("query", vector);
         body.put("limit", limit);
         if(withPayload) body.put("with_payload", true);
+        if(filter != null) body.put("filter", filter);
 
         try {
             log.debug("Qdrant 검색 요청 JSON (using={}):\n{}", using, objectMapper.writeValueAsString(body));
@@ -183,8 +186,10 @@ public class EmbeddingService {
             Object result = response.getBody() != null ? response.getBody().get("result") : null;
             if (!(result instanceof Map)) return List.of();
 
-            Object points = ((Map<?, ?>) result).get("points");
-            if (points instanceof List) return (List<Map<String, Object>>) points;
+            Object points = ((Map)result).get("points");
+            if (points instanceof List) {
+                return (List<Map<String, Object>>) points;
+            }
             return List.of();
         } catch (Exception e) {
             throw new RuntimeException("Qdrant 유사도 검색 실패", e);

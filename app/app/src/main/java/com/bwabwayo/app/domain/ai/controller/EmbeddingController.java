@@ -37,7 +37,7 @@ public class EmbeddingController {
             @RequestParam(required = false, defaultValue = "3") Integer limit
     ) {
         List<QueryItemDto> queryResult = productEmbeddingService.query(
-                ProductQueryCondition.builder().keyword(keyword).categoryId(1L).build(),
+                ProductQueryCondition.builder().keyword(keyword).build(),
                 PageRequest.of(0, limit)
         );
         return ResponseEntity.ok(Map.of("results", queryResult));

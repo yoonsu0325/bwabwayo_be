@@ -22,14 +22,14 @@ public class CategoryService {
      */
     @Transactional(readOnly = true)
     public Category findById(Long categoryId){
-        return  categoryRepository.findById(categoryId)
+        return categoryRepository.findById(categoryId)
                 .orElseThrow(()->new CategoryNotFoundException(categoryId));
 
     }
 
     @Transactional(readOnly = true)
     public Optional<Category> findByIdOptional(Long categoryId){
-        return  categoryRepository.findById(categoryId);
+        return categoryRepository.findById(categoryId);
     }
 
     /**

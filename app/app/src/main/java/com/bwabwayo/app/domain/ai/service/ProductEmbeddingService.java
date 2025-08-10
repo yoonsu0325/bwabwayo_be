@@ -2,6 +2,7 @@ package com.bwabwayo.app.domain.ai.service;
 
 import com.bwabwayo.app.domain.ai.domain.QdrantPointDto;
 import com.bwabwayo.app.domain.ai.dto.response.QueryItemDto;
+import com.bwabwayo.app.domain.ai.util.QdrantFilterBuilder;
 import com.bwabwayo.app.domain.product.domain.Category;
 import com.bwabwayo.app.domain.product.domain.Product;
 import com.bwabwayo.app.domain.product.dto.ProductQueryCondition;
@@ -13,6 +14,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Map;
 
 @Service
 @RequiredArgsConstructor
@@ -54,16 +56,30 @@ public class ProductEmbeddingService {
         embeddingService.deleteById(productId);
     }
 
+    /**
+     * 상품 검색
+     */
     public List<QueryItemDto> query(ProductQueryCondition queryCondition, Pageable pageable) {
-        String title = queryCondition.getKeyword();
-        Category category = categoryService.findById(queryCondition.getCategoryId());
-        String categoryName = category.getName();
+        // 벡터 대상 추출
+        String title = queryCondition.getKeyword(); // 상품명
+        Long categoryId =  queryCondition.getCategoryId(); // 카테고리
+        Category category = categoryId != null ? categoryService.findById(categoryId) : null;
 
         // 벡터화
         List<Double> titleQueryVector = openAiClient.getEmbedding(title);
-        List<Double> categoryQueryVector = openAiClient.getEmbedding(categoryName);
+        List<Double> categoryQueryVector = category != null ? openAiClient.getEmbedding(category.getName()) : titleQueryVector;
+        
+        // 필터 생성
+        List<Long> categoryIn = queryCondition.getCategoryIn();
+        Integer minPrice = queryCondition.getMinPrice();
+        Integer maxPrice = queryCondition.getMaxPrice();
 
-        // 유사도 검색 (Top N)
-        return embeddingService.query(titleQueryVector, categoryQueryVector,  pageable.getPageSize());
+        QdrantFilterBuilder builder = new QdrantFilterBuilder();
+        if(categoryIn != null && !categoryIn.isEmpty()) builder.in("categoryId", categoryIn);
+        builder.range("price", minPrice, maxPrice);
+        Map<String, Object> filter = builder.build();
+
+        // 유사도 검색
+        return embeddingService.query(titleQueryVector, categoryQueryVector,  pageable.getPageSize(), filter);
     }
 }
