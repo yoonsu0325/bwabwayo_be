@@ -66,6 +66,7 @@ public class EmbeddingService {
             payload.put("categoryId", pointDto.getCategoryId());
             payload.put("price", pointDto.getPrice());
             payload.put("isSale", pointDto.getIsSale());
+            payload.put("tokens", pointDto.getPreprocessTitle());
 
             // 3. point 구성
             Map<String, Object> point = new HashMap<>();

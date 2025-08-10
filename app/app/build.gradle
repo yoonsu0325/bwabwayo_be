@@ -79,6 +79,12 @@ dependencies {
 
 	// [JSON]
 	implementation 'com.googlecode.json-simple:json-simple:1.1.1'
+
+	// [텍스트 전처리]
+	implementation 'org.apache.lucene:lucene-core:9.9.2'
+	implementation 'org.apache.lucene:lucene-analysis-nori:9.9.2'
+	implementation 'org.apache.lucene:lucene-analysis-common:9.9.2'
+	implementation 'org.openkoreantext:open-korean-text:2.3.1'
 }
 
 tasks.named('test') {

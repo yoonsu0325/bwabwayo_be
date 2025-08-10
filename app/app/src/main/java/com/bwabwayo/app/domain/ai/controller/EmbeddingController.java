@@ -1,6 +1,7 @@
 package com.bwabwayo.app.domain.ai.controller;
 
 import com.bwabwayo.app.domain.ai.dto.response.QueryItemDto;
+import com.bwabwayo.app.domain.ai.service.EmbeddingService;
 import com.bwabwayo.app.domain.ai.service.ProductEmbeddingService;
 import com.bwabwayo.app.domain.product.domain.Product;
 import com.bwabwayo.app.domain.product.dto.ProductQueryCondition;
@@ -18,6 +19,7 @@ import java.util.Map;
 @RequiredArgsConstructor
 @RequestMapping("/api/embedding")
 public class EmbeddingController {
+    private final EmbeddingService embeddingService;
     private final ProductService productService;
     private final ProductEmbeddingService productEmbeddingService;
 
@@ -48,5 +50,10 @@ public class EmbeddingController {
     public ResponseEntity<Void> deletePoint(@RequestBody Long productId) {
         productEmbeddingService.deleteById(productId);
         return ResponseEntity.ok().build();
+    }
+
+    @GetMapping("/scroll")
+    public ResponseEntity<?> scroll(@RequestParam Integer limit){
+        return ResponseEntity.ok(embeddingService.getPoints(limit));
     }
 }
