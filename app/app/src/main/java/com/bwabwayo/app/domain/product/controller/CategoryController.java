@@ -27,26 +27,19 @@ public class CategoryController {
     private final CategoryService categoryService;
 
     @Operation(summary = "카테고리 목록 조회")
-    @ApiResponse(responseCode = "200",
-            description = "카테고리 목록 조회 성공",
-            content = @Content(mediaType = "application/json", schema = @Schema(implementation = CategoryAllResponseDTO.class))
-    )
+    @ApiResponse(responseCode = "200", description = "카테고리 목록 조회 성공")
     @GetMapping
-    public ResponseEntity<?> getTopCategories() {
+    public ResponseEntity<CategoryAllResponseDTO> getTopCategories() {
         // 최상위 카테고리 조회
         CategoryAllResponseDTO response = categoryService.getTopCategories();
-
         // Response 생성
         return ResponseEntity.ok(response);
     }
 
     @Operation(summary = "카테고리 조회")
-    @ApiResponse(responseCode = "200",
-            description = "카테고리 조회 성공",
-            content = @Content(mediaType = "application/json", schema = @Schema(implementation = CategoryResponseDTO.class))
-    )
+    @ApiResponse(responseCode = "200", description = "카테고리 조회 성공")
     @GetMapping("/{categoryId}")
-    public ResponseEntity<?> getTopCategories(@PathVariable Long categoryId) {
+    public ResponseEntity<CategoryResponseDTO> getTopCategories(@PathVariable Long categoryId) {
         Category category = categoryService.findById(categoryId);
         
         // 카테고리가 존재하지 않음
