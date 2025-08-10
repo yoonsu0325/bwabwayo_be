@@ -130,15 +130,21 @@ public class EmbeddingService {
         int prefetchLimit = offset + limit + Math.min(limit, 50);
 
         Map<String, Object> body = new HashMap<>();
-        body.put("prefetch", List.of(
-                Map.of("using", "title", "query", queryTitleVector, "limit", prefetchLimit, "filter", filter),
-                Map.of("using", "category", "query", queryCategoryVector, "limit", prefetchLimit, "filter", filter)
-        ));
-        body.put("query", Map.of("fusion", "rrf"));
-        body.put("offset", offset);
+        body.put("query", queryTitleVector);
+        body.put("using", "title");
         body.put("limit", limit);
         body.put("with_payload", true);
         body.put("filter", filter);
+
+//        body.put("prefetch", List.of(
+//                Map.of("using", "title", "query", queryTitleVector, "limit", prefetchLimit, "filter", filter),
+//                Map.of("using", "category", "query", queryCategoryVector, "limit", prefetchLimit, "filter", filter)
+//        ));
+//        body.put("query", Map.of("fusion", "rrf"));
+//        body.put("offset", offset);
+//        body.put("limit", limit);
+//        body.put("with_payload", true);
+//        body.put("filter", filter);
 
         try {
             log.debug("Qdrant 검색 요청 JSON:\n{}", objectMapper.writeValueAsString(body));
