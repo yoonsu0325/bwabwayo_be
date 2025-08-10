@@ -39,17 +39,11 @@ public class ProductEmbeddingService {
         List<Double> categoryVector = openAiClient.getEmbedding(categoryName);
 
         // Point DTO 생성
-        QdrantPointDto qdrantPointDto = QdrantPointDto.builder()
-                .id(id)
-                .title(title)
-                .categoryName(categoryName)
-                .titleVector(titleVector)
-                .categoryVector(categoryVector)
-                .categoryId(categoryId)
-                .price(price)
-                .isSale(isSale)
-                .build();
-
+        QdrantPointDto qdrantPointDto = QdrantPointDto.of(
+                id, title, titleVector,
+                categoryName, categoryVector, categoryId,
+                price, isSale
+        );
         embeddingService.upsertPoint(qdrantPointDto);
     }
 
