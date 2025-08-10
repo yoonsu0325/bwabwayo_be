@@ -1,22 +1,18 @@
 package com.bwabwayo.app.domain.product.dto.response;
 
-import lombok.*;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
 
-import java.util.ArrayList;
-import java.util.List;
-
+/**
+ * 판매자 요약 정보 DTO
+ */
 @Getter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
 public class SellerDTO {
-    String id;
-    String nickname;
-    String bio;
-    String profileImage;
-    Integer score;
-    Float rating;
-    Long reviewCount;
-    @Builder.Default
-    List<ProductSimpleDTO> otherProducts = new ArrayList<>();
+    private String id; // 판매자 ID
+    private String nickname; // 판매자 닉네임
 }

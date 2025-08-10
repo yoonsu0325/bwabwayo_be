@@ -14,7 +14,7 @@ import java.util.function.Function;
 @Builder
 @AllArgsConstructor
 @NoArgsConstructor
-public class PageResponseDTO<T> {
+public class PageResponse<T> {
     private Integer size;
     @Builder.Default
     private List<T> result = new ArrayList<>();
@@ -26,7 +26,7 @@ public class PageResponseDTO<T> {
 
     private Boolean hasPrev, hasNext;
 
-    public static <T, R> PageResponseDTO<R> from(Page<T> page, Function<T, R> mapper) {
+    public static <T, R> PageResponse<R> from(Page<T> page, Function<T, R> mapper) {
         int current = page.getNumber() + 1;
         int end = (int) Math.ceil(current / 10.0) * 10;
         int start = Math.max(1, end - 9);
@@ -36,7 +36,7 @@ public class PageResponseDTO<T> {
                 .map(mapper)
                 .toList();
 
-        return PageResponseDTO.<R>builder()
+        return PageResponse.<R>builder()
                 .size((int)page.getTotalElements())
                 .result(mapped)
                 .currentPage(current)

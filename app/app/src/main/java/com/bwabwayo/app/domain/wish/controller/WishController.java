@@ -9,7 +9,7 @@ import com.bwabwayo.app.domain.wish.dto.response.WishExistsResponse;
 import com.bwabwayo.app.domain.wish.dto.WishDTO;
 import com.bwabwayo.app.domain.wish.dto.response.WishPageResponse;
 import com.bwabwayo.app.domain.wish.service.WishService;
-import com.bwabwayo.app.global.page.PageResponseDTO;
+import com.bwabwayo.app.global.page.PageResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -44,7 +44,7 @@ public class WishController {
         int pageNo = request.getPageNo();
         int pageSize = request.getPageSize();
 
-        PageResponseDTO<WishDTO> responseDTO = wishService.getAllMyWishes(loginUser, pageNo, pageSize);
+        PageResponse<WishDTO> responseDTO = wishService.getAllMyWishes(loginUser, pageNo, pageSize);
 
         return ResponseEntity.ok(responseDTO);
     }

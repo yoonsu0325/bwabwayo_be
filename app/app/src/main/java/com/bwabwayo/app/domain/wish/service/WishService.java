@@ -8,7 +8,7 @@ import com.bwabwayo.app.domain.user.domain.User;
 import com.bwabwayo.app.domain.wish.domain.Wish;
 import com.bwabwayo.app.domain.wish.dto.WishDTO;
 import com.bwabwayo.app.domain.wish.repository.WishRepository;
-import com.bwabwayo.app.global.page.PageResponseDTO;
+import com.bwabwayo.app.global.page.PageResponse;
 import com.bwabwayo.app.global.storage.service.StorageService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -29,7 +29,7 @@ public class WishService {
     private final StorageService storageService;
 
     @Transactional(readOnly = true)
-    public PageResponseDTO<WishDTO> getAllMyWishes(User user, int pageNo, int pageSize) {
+    public PageResponse<WishDTO> getAllMyWishes(User user, int pageNo, int pageSize) {
         // 최신순으로 정렬
         Pageable pageable = PageRequest.of(pageNo - 1, pageSize,
                 Sort.by(Sort.Order.desc("createdAt"), Sort.Order.desc("id"))
@@ -37,7 +37,7 @@ public class WishService {
 
         Page<Wish> page = wishRepository.findAllByUserId(user.getId(), pageable);
 
-        return PageResponseDTO.from(page, wish -> {
+        return PageResponse.from(page, wish -> {
             Product product = wish.getProduct();
             Category category = product.getCategory();
             SaleStatus saleStatus = product.getSaleStatus();

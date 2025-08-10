@@ -6,7 +6,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-public class CategoryUtil {
+public class CategoryUtils {
     /**
      * 현재 카테고리와 그 하위의 카테고리의 리스트 생성
      */

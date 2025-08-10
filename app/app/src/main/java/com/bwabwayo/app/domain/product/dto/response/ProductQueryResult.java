@@ -10,6 +10,6 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @Builder
 public class ProductQueryResult {
-    private ProductSimpleDTO product; // 판매 상품
-    private UserSimpleDTO seller; // 판매자
+    private ProductDTO product; // 판매 상품
+    private SellerDTO seller; // 판매자
 }

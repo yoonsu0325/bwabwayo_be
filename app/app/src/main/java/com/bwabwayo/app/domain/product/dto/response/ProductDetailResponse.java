@@ -44,8 +44,8 @@ public class ProductDetailResponse {
     @Builder.Default
     private List<String> imageKeys = new ArrayList<>();
 
-    private SellerDTO seller;
+    private SellerDetailDTO seller;
 
     @Builder.Default
-    private List<ProductSimpleDTO> similarities = new ArrayList<>();
+    private List<ProductDTO> similarities = new ArrayList<>();
 }

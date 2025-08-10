@@ -17,11 +17,11 @@ import com.bwabwayo.app.domain.product.exception.ProductNotFoundException;
 import com.bwabwayo.app.domain.product.repository.CourierRepository;
 import com.bwabwayo.app.domain.product.repository.ProductImageRepository;
 import com.bwabwayo.app.domain.product.repository.ProductRepository;
-import com.bwabwayo.app.domain.product.util.CategoryUtil;
+import com.bwabwayo.app.domain.product.util.CategoryUtils;
 import com.bwabwayo.app.domain.user.domain.User;
 import com.bwabwayo.app.domain.user.service.ReviewAggService;
 import com.bwabwayo.app.domain.wish.service.WishService;
-import com.bwabwayo.app.global.page.PageResponseDTO;
+import com.bwabwayo.app.global.page.PageResponse;
 import com.bwabwayo.app.global.storage.util.StorageUtil;
 import com.bwabwayo.app.global.storage.service.StorageService;
 import lombok.RequiredArgsConstructor;
@@ -97,7 +97,7 @@ public class ProductService {
      * 상품 검색
      */
     @Transactional(readOnly = true)
-    public PageResponseDTO<ProductQueryResult> query(ProductQueryRequest requestDTO, User loginUser) {
+    public PageResponse<ProductQueryResult> query(ProductQueryRequest requestDTO, User loginUser) {
         // 검색 조건
         String keyword = requestDTO.getKeyword();
         Long categoryId = requestDTO.getCategoryId();
@@ -115,7 +115,7 @@ public class ProductService {
         List<Long> categoryIds = null;
         if(categoryId != null){
             Category topCategory = categoryService.findByIdOptional(categoryId).orElse(null);
-            categoryIds = CategoryUtil.getSubCategories(topCategory).stream().map(Category::getId).toList();
+            categoryIds = CategoryUtils.getSubCategories(topCategory).stream().map(Category::getId).toList();
 
             // fallback
             if(categoryIds.isEmpty()) {
@@ -154,10 +154,10 @@ public class ProductService {
 
         Page<ProductWithIsLikeDTO> pageData = productRepository.searchByCondition(queryCondition, pageable);
 
-        return PageResponseDTO.from(pageData, dto -> {
+        return PageResponse.from(pageData, dto -> {
             Product product = dto.getProduct();
 
-            ProductSimpleDTO productDTO = ProductSimpleDTO.builder()
+            ProductDTO productDTO = ProductDTO.builder()
                     .id(product.getId())
                     .categoryId(product.getCategory().getId())
                     .thumbnail(storageService.getUrlFromKey(product.getThumbnail()))
@@ -174,7 +174,7 @@ public class ProductService {
                     .build();
 
             User seller = product.getSeller();
-            UserSimpleDTO sellerDTO = new UserSimpleDTO(seller.getId(), seller.getNickname());
+            SellerDTO sellerDTO = new SellerDTO(seller.getId(), seller.getNickname());
 
             return ProductQueryResult.builder()
                     .product(productDTO)
@@ -189,7 +189,7 @@ public class ProductService {
     @Transactional(readOnly = true)
     public ProductDetailResponse getProductDetail(Product product, User loginUser) {
         // 상품이 속한 카테고리부터 조상 카테고리까지의 모음
-        List<CategoryDTO> superCategories = CategoryUtil.getSupperCategories(product.getCategory())
+        List<CategoryDTO> superCategories = CategoryUtils.getSupperCategories(product.getCategory())
                 .stream().map(CategoryDTO::from).toList();
 
         // 상품에 포함된 이미지 URL 모음
@@ -206,14 +206,14 @@ public class ProductService {
 
         // 판매자 정보
         User seller = product.getSeller();
-        List<ProductSimpleDTO> others = query(ProductQueryRequest.builder().sellerId(seller.getId()).size(otherCount + 1).build(), loginUser)
+        List<ProductDTO> others = query(ProductQueryRequest.builder().sellerId(seller.getId()).size(otherCount + 1).build(), loginUser)
                 .getResult().stream()
                 .map(ProductQueryResult::getProduct)
                 .filter(p ->!p.getId().equals(product.getId()))
                 .limit(otherCount)
                 .toList();
 
-        SellerDTO sellerDTO = SellerDTO.builder()
+        SellerDetailDTO sellerDTO = SellerDetailDTO.builder()
                 .id(seller.getId())
                 .nickname(seller.getNickname())
                 .bio(seller.getBio())
@@ -225,7 +225,7 @@ public class ProductService {
                 .build();
 
         // 유사한 상품 목록
-        List<ProductSimpleDTO> productSimpleDTOS = new ArrayList<>();
+        List<ProductDTO> productSimpleDTOS = new ArrayList<>();
         if(false) {
             List<Long> similarities = productSimilarityService.searchSimilarTitles(product.getTitle(), product.getCategory().getName(), similarityCount + 1);
             productSimpleDTOS = similarities
@@ -233,7 +233,7 @@ public class ProductService {
                     .filter(id -> !id.equals(product.getId()))
                     .map(productRepository::getProductById)
                     .filter(Objects::nonNull)
-                    .map(p -> ProductSimpleDTO.builder()
+                    .map(p -> ProductDTO.builder()
                             .id(p.getId())
                             .categoryId(p.getCategory().getId())
                             .thumbnail(storageService.getUrlFromKey(p.getThumbnail()))
