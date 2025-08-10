@@ -197,7 +197,7 @@ public class ProductService {
         List<Long> ids = query.stream().map(QueryItemDto::getId).toList();
         if (ids.isEmpty()) return Page.empty(pageable);
 
-        List<ProductWithIsLikeDTO> products = productRepository.findByIdsInOrder(ids, viewer.getId());
+        List<ProductWithIsLikeDTO> products = productRepository.findByIdsInOrder(ids, viewer != null ? viewer.getId() : null);
 
         return new PageImpl<>(products, pageable, productRepository.getCount(queryCondition));
     }

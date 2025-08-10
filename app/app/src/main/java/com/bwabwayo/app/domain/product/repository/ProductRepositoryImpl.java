@@ -7,7 +7,6 @@ import com.bwabwayo.app.domain.wish.domain.QWish;
 import com.querydsl.core.BooleanBuilder;
 import com.querydsl.core.types.Projections;
 import com.querydsl.core.types.dsl.Expressions;
-import com.querydsl.core.types.dsl.NumberExpression;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -15,7 +14,12 @@ import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Repository;
 
+import java.util.Comparator;
 import java.util.List;
+import java.util.Map;
+import java.util.function.Function;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 @Repository
 @RequiredArgsConstructor
@@ -70,18 +74,29 @@ public class ProductRepositoryImpl implements ProductRepositoryCustom {
         QProduct p = QProduct.product;
         QWish w = QWish.wish;
 
-        // MySQL FIELD(id, ...)로 순서 보존
-        NumberExpression<Integer> orderExpr =
-                Expressions.numberTemplate(Integer.class, "FIELD({0}, {1})", p.id, Expressions.constant(ids));
+        List<ProductWithIsLikeDTO> list;
+        if(viewerId == null){
+            list = queryFactory
+                    .select(Projections.constructor(ProductWithIsLikeDTO.class, p, Expressions.constant(false)))
+                    .from(p)
+                    .where(p.id.in(ids))
+                    .fetch();
+        } else {
+            list = queryFactory
+                    .select(Projections.constructor(ProductWithIsLikeDTO.class, p, w.id.isNotNull()))
+                    .from(p)
+                    .leftJoin(w)
+                    .on(w.user.id.eq(viewerId).and(w.product.id.eq(p.id)))
+                    .where(p.id.in(ids))
+                    .fetch();
+        }
 
-        return queryFactory
-                .select(Projections.constructor(ProductWithIsLikeDTO.class, p, w.id.isNotNull()))
-                .from(p)
-                .leftJoin(w)
-                .on(w.user.id.eq(viewerId).and(w.product.id.eq(p.id)))
-                .where(p.id.in(ids))
-                .orderBy(orderExpr.asc())
-                .fetch();
+        Map<Long, Integer> orderMap = IntStream.range(0, ids.size())
+                .boxed()
+                .collect(Collectors.toMap(ids::get, Function.identity()));
+        return list.stream()
+                .sorted(Comparator.comparing(dto -> orderMap.getOrDefault(dto.getProduct().getId(), Integer.MAX_VALUE)))
+                .collect(Collectors.toList());
     }
 
     private BooleanBuilder buildWhereCondition(ProductQueryCondition queryCondition) {
