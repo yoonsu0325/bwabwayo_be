@@ -7,6 +7,7 @@ import com.bwabwayo.app.domain.product.domain.Category;
 import com.bwabwayo.app.domain.product.domain.Product;
 import com.bwabwayo.app.domain.product.dto.ProductQueryCondition;
 import com.bwabwayo.app.domain.product.enums.SaleStatus;
+import com.bwabwayo.app.domain.product.repository.ProductRepository;
 import com.bwabwayo.app.domain.product.service.CategoryService;
 import com.bwabwayo.app.global.client.OpenAiClient;
 import lombok.RequiredArgsConstructor;

@@ -1,5 +1,6 @@
 package com.bwabwayo.app.domain.product.service;
 
+import com.bwabwayo.app.domain.ai.dto.response.QueryItemDto;
 import com.bwabwayo.app.domain.ai.service.ProductEmbeddingService;
 import com.bwabwayo.app.domain.chat.dto.request.SetInvoiceNumberRequest;
 import com.bwabwayo.app.domain.chat.dto.request.SetPriceRequest;
@@ -29,6 +30,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -153,9 +155,9 @@ public class ProductService {
                 .maxPrice(maxPrice)
                 .build();
 
-        Page<ProductWithIsLikeDTO> pageData = null;
+        Page<ProductWithIsLikeDTO> pageData;
         if(sortType == ProductSortType.RELATED) {
-
+            pageData = queryWithRelated(queryCondition, pageable, loginUser);
         } else{
             pageData = productRepository.searchByCondition(queryCondition, pageable);
         }
@@ -187,6 +189,17 @@ public class ProductService {
                     .seller(sellerDTO)
                     .build();
         });
+    }
+
+    private Page<ProductWithIsLikeDTO> queryWithRelated(ProductQueryCondition queryCondition, Pageable pageable, User viewer){
+        List<QueryItemDto> query = productEmbeddingService.query(queryCondition, pageable);
+
+        List<Long> ids = query.stream().map(QueryItemDto::getId).toList();
+        if (ids.isEmpty()) return Page.empty(pageable);
+
+        List<ProductWithIsLikeDTO> products = productRepository.findByIdsInOrder(ids, viewer.getId());
+
+        return new PageImpl<>(products, pageable, productRepository.getCount(queryCondition));
     }
 
     /**

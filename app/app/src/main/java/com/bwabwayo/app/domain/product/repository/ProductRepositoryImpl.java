@@ -7,6 +7,7 @@ import com.bwabwayo.app.domain.wish.domain.QWish;
 import com.querydsl.core.BooleanBuilder;
 import com.querydsl.core.types.Projections;
 import com.querydsl.core.types.dsl.Expressions;
+import com.querydsl.core.types.dsl.NumberExpression;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -27,6 +28,65 @@ public class ProductRepositoryImpl implements ProductRepositoryCustom {
         QProduct product = QProduct.product;
         QWish wish = QWish.wish;
 
+        BooleanBuilder whereCondition = buildWhereCondition(queryCondition);
+
+        String viewerId = queryCondition.getViewerId();
+
+        List<ProductWithIsLikeDTO> content;
+        if(viewerId != null) {
+            content = queryFactory
+                    .select(Projections.constructor(ProductWithIsLikeDTO.class, product, wish.id.isNotNull()))
+                    .from(product)
+                    .leftJoin(wish)
+                    .on(wish.user.id.eq(viewerId).and(wish.product.id.eq(product.id)))
+                    .where(whereCondition)
+                    .offset(pageable.getOffset())
+                    .limit(pageable.getPageSize())
+                    .orderBy(QuerydslUtil.convertSort(pageable.getSort(), product))
+                    .fetch();
+        } else {
+            content = queryFactory
+                    .select(Projections.constructor(ProductWithIsLikeDTO.class, product, Expressions.constant(false)))
+                    .from(product)
+                    .where(whereCondition)
+                    .offset(pageable.getOffset())
+                    .limit(pageable.getPageSize())
+                    .orderBy(QuerydslUtil.convertSort(pageable.getSort(), product))
+                    .fetch();
+        }
+
+        Long countResult = queryFactory
+                .select(product.count())
+                .from(product)
+                .where(whereCondition)
+                .fetchOne();
+
+        long total = countResult != null ? countResult : 0L;
+
+        return new PageImpl<>(content, pageable, total);
+    }
+
+    public List<ProductWithIsLikeDTO> findByIdsInOrder(List<Long> ids, String viewerId) {
+        QProduct p = QProduct.product;
+        QWish w = QWish.wish;
+
+        // MySQL FIELD(id, ...)로 순서 보존
+        NumberExpression<Integer> orderExpr =
+                Expressions.numberTemplate(Integer.class, "FIELD({0}, {1})", p.id, Expressions.constant(ids));
+
+        return queryFactory
+                .select(Projections.constructor(ProductWithIsLikeDTO.class, p, w.id.isNotNull()))
+                .from(p)
+                .leftJoin(w)
+                .on(w.user.id.eq(viewerId).and(w.product.id.eq(p.id)))
+                .where(p.id.in(ids))
+                .orderBy(orderExpr.asc())
+                .fetch();
+    }
+
+    private BooleanBuilder buildWhereCondition(ProductQueryCondition queryCondition) {
+        QProduct product = QProduct.product;
+
         BooleanBuilder whereCondition = new BooleanBuilder();
 
         // 키워드 검색
@@ -34,7 +94,7 @@ public class ProductRepositoryImpl implements ProductRepositoryCustom {
         if (keyword != null && !keyword.isEmpty()) {
             whereCondition.and(product.title.containsIgnoreCase(keyword));
         }
-        
+
         // 카테고리 필터링
         List<Long> categoryIn = queryCondition.getCategoryIn();
         if (categoryIn != null && !categoryIn.isEmpty()) {
@@ -81,30 +141,13 @@ public class ProductRepositoryImpl implements ProductRepositoryCustom {
             whereCondition.and(product.price.loe(maxPrice));
         }
 
-        String viewerId = queryCondition.getViewerId();
+        return whereCondition;
+    }
 
-        List<ProductWithIsLikeDTO> content;
-        if(viewerId != null) {
-            content = queryFactory
-                    .select(Projections.constructor(ProductWithIsLikeDTO.class, product, wish.id.isNotNull()))
-                    .from(product)
-                    .leftJoin(wish)
-                    .on(wish.user.id.eq(viewerId).and(wish.product.id.eq(product.id)))
-                    .where(whereCondition)
-                    .offset(pageable.getOffset())
-                    .limit(pageable.getPageSize())
-                    .orderBy(QuerydslUtil.convertSort(pageable.getSort(), product))
-                    .fetch();
-        } else {
-            content = queryFactory
-                    .select(Projections.constructor(ProductWithIsLikeDTO.class, product, Expressions.constant(false)))
-                    .from(product)
-                    .where(whereCondition)
-                    .offset(pageable.getOffset())
-                    .limit(pageable.getPageSize())
-                    .orderBy(QuerydslUtil.convertSort(pageable.getSort(), product))
-                    .fetch();
-        }
+    public long getCount(ProductQueryCondition condition){
+        QProduct product = QProduct.product;
+
+        BooleanBuilder whereCondition = buildWhereCondition(condition);
 
         Long countResult = queryFactory
                 .select(product.count())
@@ -112,8 +155,6 @@ public class ProductRepositoryImpl implements ProductRepositoryCustom {
                 .where(whereCondition)
                 .fetchOne();
 
-        long total = countResult != null ? countResult : 0L;
-
-        return new PageImpl<>(content, pageable, total);
+        return countResult != null ? countResult : 0L;
     }
 }
