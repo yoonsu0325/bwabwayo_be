@@ -1,12 +1,12 @@
-package com.bwabwayo.app.domain.product.domain;
+package com.bwabwayo.app.domain.support.domain;
 
 import jakarta.persistence.*;
 import jakarta.validation.constraints.Min;
 import lombok.*;
 
 @Entity
-@Table(name = "product_image", uniqueConstraints = {
-        @UniqueConstraint(columnNames = {"product_id", "no"})
+@Table(name = "inquiry_image", uniqueConstraints = {
+        @UniqueConstraint(columnNames = {"inquiry_id", "no"})
 })
 @Getter
 @Setter
@@ -14,16 +14,16 @@ import lombok.*;
 @AllArgsConstructor
 @EqualsAndHashCode(of = {"id"})
 @Builder
-public class ProductImage {
+public class InquiryImage {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id; // 상품 이미지 ID
+    private Long id;
 
     @ToString.Exclude
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "product_id", nullable = false)
-    private Product product; // 상품
+    @JoinColumn(name = "inquiry_id", nullable = false)
+    private Inquiry inquiry;
 
     @Column(nullable = false)
     @Min(1)

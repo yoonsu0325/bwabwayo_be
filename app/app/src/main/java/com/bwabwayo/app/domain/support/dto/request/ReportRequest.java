@@ -1,6 +1,5 @@
 package com.bwabwayo.app.domain.support.dto.request;
 
-import com.bwabwayo.app.domain.support.domain.Inquery;
 import com.bwabwayo.app.domain.support.domain.Report;
 import com.bwabwayo.app.domain.user.domain.User;
 import lombok.AllArgsConstructor;

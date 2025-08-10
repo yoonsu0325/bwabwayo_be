@@ -1,6 +1,5 @@
 package com.bwabwayo.app.domain.support.dto.response;
 
-import com.bwabwayo.app.domain.support.domain.Inquery;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -13,7 +12,7 @@ import java.util.List;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class InqueryResponse {
+public class InquiryResponse {
     private Long id;
     private String title;
     private List<String> imageUrlList;
