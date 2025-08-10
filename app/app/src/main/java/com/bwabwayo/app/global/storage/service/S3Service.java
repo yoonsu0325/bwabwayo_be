@@ -22,6 +22,7 @@ import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.Date;
 import java.util.UUID;
+import java.util.concurrent.atomic.AtomicInteger;
 
 @Slf4j
 @Service
@@ -42,7 +43,16 @@ public class S3Service implements StorageService {
         if (file == null || file.isEmpty()) {
             throw new IllegalArgumentException("빈 파일은 업로드할 수 없습니다.");
         }
-        
+
+        // contentType
+        String contentType = file.getContentType();
+        if (contentType == null || contentType.isBlank()) {
+            contentType = "application/octet-stream";
+        }
+
+        // content-length
+        long contentLength = file.getSize();
+
         // 확장자 추출
         String originalFilename = file.getOriginalFilename();
         String extension = StringUtils.getFilenameExtension(originalFilename);
@@ -51,16 +61,10 @@ public class S3Service implements StorageService {
         // 키명 생성
         String key = dir + "/" + getPrefix() + "." + extension;
 
-        // contentType
-        String contentType = file.getContentType();
-        if (contentType == null || contentType.isBlank()) {
-            contentType = "application/octet-stream";
-        }
-
         // 메타데이터
         ObjectMetadata metadata = new ObjectMetadata();
-        metadata.setContentLength(file.getSize());
         metadata.setContentType(contentType);
+        if(contentLength > 0) metadata.setContentLength(contentLength);
 
         log.info("S3 업로드 시작: file={}, size={} bytes, key={}", originalFilename, file.getSize(), key);
 
@@ -84,18 +88,20 @@ public class S3Service implements StorageService {
             connection.setConnectTimeout(CONNECT_TIMEOUT_MS);
             connection.setReadTimeout(READ_TIMEOUT_MS);
 
-            // content-type
+            // contentType
             String contentType = connection.getContentType();
-            if(contentType == null || contentType.isBlank()) contentType = "application/octet-stream";
+            if(contentType == null || contentType.isBlank()) {
+                contentType = "application/octet-stream";
+            }
 
             // content-length
             long contentLength = connection.getContentLengthLong();
 
             // 확장자
             String extension = StringUtils.getFilenameExtension(url.getPath());
-            if(extension == null || extension.isBlank()) extension = contentType.substring(contentType.lastIndexOf("/") + 1);
-            if(extension.isBlank()) extension = "bin";
-
+            if(extension == null || extension.isBlank()) extension = "bin";
+            
+            // 키명 생성
             key = dir + "/" + getPrefix() + "." + extension;
 
             ObjectMetadata metadata = new ObjectMetadata();
@@ -106,7 +112,7 @@ public class S3Service implements StorageService {
                 uploadCore(key, new PutObjectRequest(bucketName, key, inputStream, metadata));
             }
         } catch (Exception e) {
-            log.error("S3 업로드 실패: url={}, key={}", srcURL, key, e);
+            log.error("S3 업로드 실패: url={}, key={}, error={}", srcURL, key, e.getMessage(), e);
             throw new RuntimeException("S3 업로드 실패: url=" + srcURL + ", key=" + key, e);
         } finally {
             if(connection != null) {
@@ -119,22 +125,27 @@ public class S3Service implements StorageService {
     private void uploadCore(String key, PutObjectRequest putRequest) throws InterruptedException {
         Upload upload = transferManager.upload(putRequest);
 
+        // 업로드 상황 로깅
+        AtomicInteger lastLoggedPercent = new AtomicInteger(0);
+        final int PCT_STEP = 25; // 25% 단위로 출력
+
         upload.addProgressListener((com.amazonaws.event.ProgressListener) e -> {
             switch (e.getEventType()) {
                 case TRANSFER_STARTED_EVENT:
                     log.info("업로드 시작: key={}", key); break;
                 case REQUEST_BYTE_TRANSFER_EVENT:
                     double pct = upload.getProgress().getPercentTransferred();
-                    log.debug("업로드 진행률: {}%", String.format("%.2f", pct));
+                    int pctInt = (int) pct;
+                    
+                    if (pctInt / PCT_STEP > lastLoggedPercent.get() / PCT_STEP) {
+                        lastLoggedPercent.set(pctInt);
+                        log.debug("업로드 진행률: {}%", pctInt);
+                    }
                     break;
                 case TRANSFER_COMPLETED_EVENT:
                     log.info("업로드 완료: key={}", key); break;
                 case TRANSFER_FAILED_EVENT:
                     log.error("업로드 실패: key={}", key); break;
-                case TRANSFER_PART_STARTED_EVENT:
-                    log.debug("멀티파트 업로드 시작: key={}", key); break;
-                case TRANSFER_PART_COMPLETED_EVENT:
-                    log.debug("멀티파트 업로드 완료: key={}", key); break;
             }
         });
 
@@ -183,6 +194,6 @@ public class S3Service implements StorageService {
         String uuid = UUID.randomUUID().toString();
         String timestamp = LocalDateTime.now(ZoneId.of("Asia/Seoul"))
                 .format(DateTimeFormatter.ofPattern("yyyyMMddHHmmss"));
-        return uuid + "_" + timestamp;
+        return timestamp + "_" + uuid;
     }
 }
