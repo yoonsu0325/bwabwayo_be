@@ -6,6 +6,7 @@ import lombok.*;
 
 import java.time.LocalDateTime;
 import java.time.ZoneId;
+import java.util.ArrayList;
 import java.util.List;
 
 @Entity
@@ -14,7 +15,7 @@ import java.util.List;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
-public class Inquery{
+public class Inquiry {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -23,14 +24,10 @@ public class Inquery{
     @Column(nullable = false)
     public String title;
 
-    // ① List<String> 필드 선언
-    @ElementCollection
-    @CollectionTable(
-            name = "inquery_images",
-            joinColumns = @JoinColumn(name = "inquery_id")
-    )
-    @Column(name = "image_url")
-    private List<String> imageUrlList;
+    @Setter(AccessLevel.NONE)
+    @Builder.Default
+    @OneToMany(mappedBy = "inquiry", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<InquiryImage> inquiryImages = new ArrayList<>();
 
     @Column(nullable = false)
     public String description;
@@ -39,10 +36,10 @@ public class Inquery{
     private String reply; // 답변
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "user_id", nullable = false)
+    @JoinColumn(name = "user_id", nullable = false, updatable = false)
     public User user; // 문의자
 
-    @Column(name = "created_at", nullable = false, updatable = false)
+    @Column(nullable = false, updatable = false)
     private LocalDateTime createdAt; // 문의 시각
 
     @PrePersist

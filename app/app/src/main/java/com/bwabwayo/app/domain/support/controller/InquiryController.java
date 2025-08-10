@@ -1,8 +1,8 @@
 package com.bwabwayo.app.domain.support.controller;
 
-import com.bwabwayo.app.domain.support.dto.request.InqueryRequest;
-import com.bwabwayo.app.domain.support.dto.response.InqueryResponse;
-import com.bwabwayo.app.domain.support.service.InqueryService;
+import com.bwabwayo.app.domain.support.dto.request.InquiryRequest;
+import com.bwabwayo.app.domain.support.dto.response.InquiryResponse;
+import com.bwabwayo.app.domain.support.service.InquiryService;
 import com.bwabwayo.app.domain.auth.annotation.LoginUser;
 import com.bwabwayo.app.domain.user.domain.User;
 import lombok.AccessLevel;
@@ -17,23 +17,24 @@ import org.springframework.web.bind.annotation.*;
 @RestController
 @RequestMapping("api/support/inquery")
 @RequiredArgsConstructor(access = AccessLevel.PRIVATE)
-public class InqueryController {
+public class InquiryController {
 
-    private final InqueryService inqueryService;
+    private final InquiryService inquiryService;
 
     // 문의 게시물 페이지 페이징
     @GetMapping
-    public ResponseEntity<Page<InqueryResponse>> getInqueryAll(
+    public ResponseEntity<Page<InquiryResponse>> getInquiryAll(
             @PageableDefault(sort = "id", direction = Sort.Direction.DESC)
-            Pageable pageable) {
-        return ResponseEntity.ok(inqueryService.findAll(pageable));
+            Pageable pageable
+    ) {
+        return ResponseEntity.ok(inquiryService.findAll(pageable));
     }
 
     // 문의 게시물 작성
     @PostMapping("/save")
-    public ResponseEntity<?> saveInquery(@RequestBody InqueryRequest inqueryRequest, @LoginUser User user) {
-        String result =  inqueryService.save(inqueryRequest, user);
-        return ResponseEntity.ok().body(result);
+    public ResponseEntity<?> saveInquiry(@RequestBody InquiryRequest inqueryRequest, @LoginUser User user) {
+        inquiryService.save(inqueryRequest, user);
+        return ResponseEntity.ok().build();
     }
 
 
