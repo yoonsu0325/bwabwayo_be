@@ -12,7 +12,7 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class CategoryAllResponseDTO {
+public class CategoryListResponse {
     private int totalCategories;
     private int totalTopCategories;
     @Builder.Default

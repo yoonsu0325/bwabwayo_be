@@ -10,7 +10,7 @@ import org.springdoc.core.annotations.ParameterObject;
 @AllArgsConstructor
 @Builder
 @ParameterObject
-public class WishlistRequestDTO {
+public class WishlistRequest {
     @Builder.Default
     @Min(1)
     private Integer pageNo = 1;

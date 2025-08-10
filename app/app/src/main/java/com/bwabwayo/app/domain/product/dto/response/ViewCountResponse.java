@@ -1,15 +1,13 @@
 package com.bwabwayo.app.domain.product.dto.response;
 
 import lombok.AllArgsConstructor;
-import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 @Getter
 @NoArgsConstructor
 @AllArgsConstructor
-@Builder
-public class ProductSearchResultDTO {
-    private ProductSimpleDTO product; // 판매 상품
-    private UserSimpleDTO seller; // 판매자
+public class ViewCountResponse {
+    private Long productId;
+    private int viewCount;
 }

@@ -1,7 +1,7 @@
 package com.bwabwayo.app.domain.product.service;
 
 import com.bwabwayo.app.domain.product.domain.Category;
-import com.bwabwayo.app.domain.product.dto.response.CategoryAllResponseDTO;
+import com.bwabwayo.app.domain.product.dto.response.CategoryListResponse;
 import com.bwabwayo.app.domain.product.dto.response.CategoryTreeDTO;
 import com.bwabwayo.app.domain.product.exception.CategoryNotFoundException;
 import com.bwabwayo.app.domain.product.repository.CategoryRepository;
@@ -24,11 +24,11 @@ public class CategoryService {
      * 최상위 카테고리 조회
      */
     @Transactional(readOnly = true)
-    public CategoryAllResponseDTO getTopCategories() {
+    public CategoryListResponse getTopCategories() {
         List<Category> categories = categoryRepository.findAll();
         List<CategoryTreeDTO> categoryTreeDTOs = buildCategoryTree(categories);
 
-        return CategoryAllResponseDTO.builder()
+        return CategoryListResponse.builder()
                 .totalCategories(categories.size())
                 .totalTopCategories(categoryTreeDTOs.size())
                 .categories(categoryTreeDTOs)

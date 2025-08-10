@@ -1,19 +1,23 @@
 package com.bwabwayo.app.domain.product.dto.response;
 
-import com.bwabwayo.app.domain.product.domain.Product;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
+import java.util.ArrayList;
+import java.util.List;
+
 @Getter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class ProductCreateResponseDTO {
+public class CategoryResponse {
     private Long id;
+    private String name;
 
-    public static ProductCreateResponseDTO from(Product product){
-        return ProductCreateResponseDTO.builder().id(product.getId()).build();
-    }
+    private Integer size;
+    @Builder.Default
+    private List<CategoryDTO> subCategories = new ArrayList<>();
 }
+

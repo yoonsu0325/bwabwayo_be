@@ -7,10 +7,10 @@ import com.bwabwayo.app.domain.product.domain.Product;
 import com.bwabwayo.app.domain.product.dto.request.ProductUpsertRequest;
 import com.bwabwayo.app.domain.product.dto.request.ProductQueryRequest;
 import com.bwabwayo.app.domain.product.dto.response.*;
-import com.bwabwayo.app.domain.product.dto.response.ProductCreateResponseDTO;
-import com.bwabwayo.app.domain.product.dto.response.ProductDetailResponseDTO;
-import com.bwabwayo.app.domain.product.dto.response.ProductSearchResponseDTO;
-import com.bwabwayo.app.domain.product.dto.response.ViewCountResponseDTO;
+import com.bwabwayo.app.domain.product.dto.response.ProductCreateResponse;
+import com.bwabwayo.app.domain.product.dto.response.ProductDetailResponse;
+import com.bwabwayo.app.domain.product.dto.response.ProductQueryResponse;
+import com.bwabwayo.app.domain.product.dto.response.ViewCountResponse;
 import com.bwabwayo.app.global.exception.BadRequestException;
 import com.bwabwayo.app.domain.product.service.ProductService;
 import com.bwabwayo.app.domain.auth.annotation.LoginUser;
@@ -49,7 +49,7 @@ public class ProductController {
     @Operation(summary = "상품 등록")
     @ApiResponse(responseCode = "200", description = "상품 등록 완료")
     @PostMapping
-    public ResponseEntity<ProductCreateResponseDTO> createProduct(
+    public ResponseEntity<ProductCreateResponse> createProduct(
             @Valid @RequestBody ProductUpsertRequest request,
             @LoginUser User loginUser
     ) {
@@ -59,7 +59,7 @@ public class ProductController {
             // 벡터 추가
             productSimilarityService.upsert(product);
             // Response 생성
-            return ResponseEntity.ok(ProductCreateResponseDTO.from(product));
+            return ResponseEntity.ok(ProductCreateResponse.from(product));
         } catch(IllegalArgumentException e){
             throw new BadRequestException(e.getMessage());
         }
@@ -106,7 +106,7 @@ public class ProductController {
 
     @Operation(summary = "내 상품 목록 조회")
     @ApiResponse(responseCode = "200",
-            content = @Content(mediaType = "application/json", schema = @Schema(implementation = ProductSearchResponseDTO.class))
+            content = @Content(mediaType = "application/json", schema = @Schema(implementation = ProductQueryResponse.class))
     )
     @GetMapping("/my")
     public ResponseEntity<?> getMyProductList(@LoginUser User loginUser){
@@ -116,7 +116,7 @@ public class ProductController {
     @Operation(summary = "상품 목록 조회")
     @ApiResponse(
             responseCode = "200",
-            content = @Content(mediaType = "application/json", schema = @Schema(implementation = ProductPageResponseDTO.class))
+            content = @Content(mediaType = "application/json", schema = @Schema(implementation = ProductPageResponse.class))
     )
     @GetMapping
     public ResponseEntity<?> getProducts(
@@ -128,7 +128,7 @@ public class ProductController {
 
     @Operation(summary = "상품 상세 조회")
     @ApiResponse(responseCode = "200",
-            content = @Content(mediaType = "application/json", schema = @Schema(implementation = ProductDetailResponseDTO.class))
+            content = @Content(mediaType = "application/json", schema = @Schema(implementation = ProductDetailResponse.class))
     )
     @GetMapping("/{productId}")
     public ResponseEntity<?> getProductById(
@@ -137,7 +137,7 @@ public class ProductController {
     ) {
         Product product = productService.findById(productId);
 
-        ProductDetailResponseDTO productDetail = productService.getProductDetail(product, user);
+        ProductDetailResponse productDetail = productService.getProductDetail(product, user);
 
         return ResponseEntity.ok(productDetail);
     }
@@ -145,7 +145,7 @@ public class ProductController {
     /* ================ 조회수 ====================*/
     @Operation(summary = "조회수 증가")
     @ApiResponse(responseCode = "200",
-            content = @Content(mediaType = "application/json", schema = @Schema(implementation = ViewCountResponseDTO.class))
+            content = @Content(mediaType = "application/json", schema = @Schema(implementation = ViewCountResponse.class))
     )
     @GetMapping("{productId}/view")
     public ResponseEntity<?> increaseViewCount(
@@ -157,7 +157,7 @@ public class ProductController {
         String identifier = loginUser != null ? loginUser.getId() : request.getRemoteAddr();
 
         Long count = viewCountService.increaseViewCount(productId, identifier);
-        return ResponseEntity.ok(new ViewCountResponseDTO(productId, count.intValue()));
+        return ResponseEntity.ok(new ViewCountResponse(productId, count.intValue()));
     }
 
     /* ================ 배송 조회 ====================*/

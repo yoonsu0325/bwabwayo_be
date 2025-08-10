@@ -6,7 +6,7 @@ import com.bwabwayo.app.domain.product.enums.SaleStatus;
 import com.bwabwayo.app.domain.product.repository.ProductRepository;
 import com.bwabwayo.app.domain.user.domain.User;
 import com.bwabwayo.app.domain.wish.domain.Wish;
-import com.bwabwayo.app.domain.wish.dto.response.WishDTO;
+import com.bwabwayo.app.domain.wish.dto.WishDTO;
 import com.bwabwayo.app.domain.wish.repository.WishRepository;
 import com.bwabwayo.app.global.page.PageResponseDTO;
 import com.bwabwayo.app.global.storage.service.StorageService;
@@ -30,12 +30,12 @@ public class WishService {
 
     @Transactional(readOnly = true)
     public PageResponseDTO<WishDTO> getAllMyWishes(User user, int pageNo, int pageSize) {
-        if(user == null || user.getId() == null) throw new IllegalArgumentException("유저가 존재하지 않습니다.");
-        
         // 최신순으로 정렬
-        Pageable pageable = PageRequest.of(pageNo - 1, pageSize, Sort.by(Sort.Direction.DESC, "createdAt"));
+        Pageable pageable = PageRequest.of(pageNo - 1, pageSize,
+                Sort.by(Sort.Order.desc("createdAt"), Sort.Order.desc("id"))
+        );
 
-        Page<Wish> page = wishRepository.getWishesByUserId(user.getId(), pageable);
+        Page<Wish> page = wishRepository.findAllByUserId(user.getId(), pageable);
 
         return PageResponseDTO.fromEntity(page, wish -> {
             Product product = wish.getProduct();
@@ -65,12 +65,9 @@ public class WishService {
      * 위시리스트에 상품 추가
      */
     @Transactional
-    public Wish addWish(Product product, User user){
-        if(product == null || product.getId() == null) throw new IllegalArgumentException("상품이 존재하지 않습니다.");
-        if(user == null || user.getId() == null) throw new IllegalArgumentException("유저가 존재하지 않습니다.");
-        
+    public Wish add(Product product, User user){
         // 이미 등록되어 있다면 무시
-        if (existsWish(product.getId(), user.getId())){
+        if (existsWish(product, user)){
             log.info("이미 등록된 상품입니다. productId={}, userId={}", product.getId(), user.getId());
             return null;
         }
@@ -92,18 +89,22 @@ public class WishService {
      * 위시리스트에서 상품 제거
      */
     @Transactional
-    public boolean removeWish(Long productId, String userId){
+    public boolean delete(Product product, User user){
         // 위시 리스트에서 제거
-        long result = wishRepository.deleteByProductIdAndUserId(productId, userId);
+        long result = wishRepository.deleteByProductIdAndUserId(product.getId(), user.getId());
+
+        // 찜한 사용자의 수 갱신
         if(result > 0){
-            // 찜한 사용자의 수 갱신
-            productRepository.decreaseWishCount(productId);
+            productRepository.decreaseWishCount(product.getId());
         }
         return result > 0;
     }
 
+    /**
+     * 사용자(userId)가 상품(productId)을 위시리스트에 등록하였는지 여부
+     */
     @Transactional(readOnly = true)
-    public boolean existsWish(Long productId, String userId){
-        return wishRepository.existsByProductIdAndUserId(productId, userId);
+    public boolean existsWish(Product productId, User userId){
+        return wishRepository.existsByProductIdAndUserId(productId.getId(), userId.getId());
     }
 }

@@ -1,13 +1,11 @@
 package com.bwabwayo.app.domain.product.controller;
 
 import com.bwabwayo.app.domain.product.domain.Category;
-import com.bwabwayo.app.domain.product.dto.response.CategoryAllResponseDTO;
+import com.bwabwayo.app.domain.product.dto.response.CategoryListResponse;
 import com.bwabwayo.app.domain.product.dto.response.CategoryDTO;
-import com.bwabwayo.app.domain.product.dto.response.CategoryResponseDTO;
+import com.bwabwayo.app.domain.product.dto.response.CategoryResponse;
 import com.bwabwayo.app.domain.product.service.CategoryService;
 import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.media.Content;
-import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -29,9 +27,9 @@ public class CategoryController {
     @Operation(summary = "카테고리 목록 조회")
     @ApiResponse(responseCode = "200", description = "카테고리 목록 조회 성공")
     @GetMapping
-    public ResponseEntity<CategoryAllResponseDTO> getTopCategories() {
+    public ResponseEntity<CategoryListResponse> getTopCategories() {
         // 최상위 카테고리 조회
-        CategoryAllResponseDTO response = categoryService.getTopCategories();
+        CategoryListResponse response = categoryService.getTopCategories();
         // Response 생성
         return ResponseEntity.ok(response);
     }
@@ -39,7 +37,7 @@ public class CategoryController {
     @Operation(summary = "카테고리 조회")
     @ApiResponse(responseCode = "200", description = "카테고리 조회 성공")
     @GetMapping("/{categoryId}")
-    public ResponseEntity<CategoryResponseDTO> getTopCategories(@PathVariable Long categoryId) {
+    public ResponseEntity<CategoryResponse> getTopCategories(@PathVariable Long categoryId) {
         Category category = categoryService.findById(categoryId);
         
         // 카테고리가 존재하지 않음
@@ -52,7 +50,7 @@ public class CategoryController {
         List<CategoryDTO> subCategories = new ArrayList<>();
         category.getChildren().forEach(c-> subCategories.add(new CategoryDTO(c.getId(), c.getName())));
 
-        CategoryResponseDTO response = CategoryResponseDTO
+        CategoryResponse response = CategoryResponse
                 .builder()
                 .id(category.getId())
                 .name(category.getName())

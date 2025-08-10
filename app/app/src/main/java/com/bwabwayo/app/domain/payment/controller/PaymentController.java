@@ -1,7 +1,7 @@
 package com.bwabwayo.app.domain.payment.controller;
 
 import com.bwabwayo.app.domain.auth.annotation.LoginUser;
-import com.bwabwayo.app.domain.payment.dto.request.PaymentConfirmRequestDTO;
+import com.bwabwayo.app.domain.payment.dto.request.PaymentConfirmRequest;
 import com.bwabwayo.app.domain.product.domain.Sale;
 import com.bwabwayo.app.domain.product.service.SaleService;
 import com.bwabwayo.app.domain.user.domain.User;
@@ -75,7 +75,7 @@ public class PaymentController {
      * 토스에 결제 승인받기
      */
     @PostMapping("/confirm")
-    public ResponseEntity<?> confirmPayment(@RequestBody PaymentConfirmRequestDTO requestDTO, @LoginUser User loginUser) throws IOException {
+    public ResponseEntity<?> confirmPayment(@RequestBody PaymentConfirmRequest requestDTO, @LoginUser User loginUser) throws IOException {
         log.info("loginUser.ID={}", loginUser.getId());
         String buyerId = loginUser.getId();
         Long productId = requestDTO.getProductId();
