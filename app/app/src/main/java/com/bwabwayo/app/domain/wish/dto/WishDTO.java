@@ -1,4 +1,4 @@
-package com.bwabwayo.app.domain.wish.dto.response;
+package com.bwabwayo.app.domain.wish.dto;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;

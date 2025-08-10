@@ -15,9 +15,9 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class ProductSearchResponseDTO {
+public class ProductQueryResponse {
     private Integer size;
-    private List<ProductSearchResultDTO> result; // 조회된 상품 목록
+    private List<ProductQueryResult> result; // 조회된 상품 목록
 
     private Integer start = 1; // 시작 페이지 번혼
     private Integer last; // 끝 페이지 번호

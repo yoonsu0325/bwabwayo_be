@@ -9,6 +9,10 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class ExistsResponseDTO {
+public class WishExistsResponse {
     private boolean exists;
+
+    public static WishExistsResponse from(boolean exists) {
+        return new WishExistsResponse(exists);
+    }
 }

@@ -96,7 +96,7 @@ public class ProductService {
      * 상품 검색
      */
     @Transactional(readOnly = true)
-    public PageResponseDTO<ProductSearchResultDTO> searchProducts(ProductQueryRequest requestDTO, User loginUser) {
+    public PageResponseDTO<ProductQueryResult> searchProducts(ProductQueryRequest requestDTO, User loginUser) {
         String keyword = requestDTO.getKeyword();
         Long categoryId = requestDTO.getCategoryId();
         String sellerId = requestDTO.getSellerId();
@@ -174,7 +174,7 @@ public class ProductService {
             User seller = product.getSeller();
             UserSimpleDTO sellerDTO = new UserSimpleDTO(seller.getId(), seller.getNickname());
 
-            return ProductSearchResultDTO.builder()
+            return ProductQueryResult.builder()
                     .product(productDTO)
                     .seller(sellerDTO)
                     .build();
@@ -185,10 +185,10 @@ public class ProductService {
      * 상품 상세 정보 조회
      */
     @Transactional(readOnly = true)
-    public ProductDetailResponseDTO getProductDetail(Product product, User loginUser) {
+    public ProductDetailResponse getProductDetail(Product product, User loginUser) {
         // 상품이 속한 카테고리부터 조상 카테고리까지의 모음
         List<CategoryDTO> superCategories = CategoryUtil.getSupperCategories(product.getCategory())
-                .stream().map(CategoryDTO::fromEntity).toList();
+                .stream().map(CategoryDTO::from).toList();
 
         // 상품에 포함된 이미지 URL 모음
         List<String> imageKeys = product.getProductImages().stream()
@@ -206,7 +206,7 @@ public class ProductService {
         User seller = product.getSeller();
         List<ProductSimpleDTO> others = searchProducts(ProductQueryRequest.builder().sellerId(seller.getId()).size(otherCount + 1).build(), loginUser)
                 .getResult().stream()
-                .map(ProductSearchResultDTO::getProduct)
+                .map(ProductQueryResult::getProduct)
                 .filter(p ->!p.getId().equals(product.getId()))
                 .limit(otherCount)
                 .toList();
@@ -240,7 +240,7 @@ public class ProductService {
                             .viewCount(viewCountService.getViewCount(p.getId()).intValue())
                             .wishCount(p.getWishCount())
                             .chatCount(p.getChatCount())
-                            .isLike(loginUser != null && wishService.existsWish(p.getId(), loginUser.getId()))
+                            .isLike(loginUser != null && wishService.existsWish(p, loginUser))
                             .canVideoCall(p.isCanVideoCall())
                             .saleStatusCode(p.getSaleStatus().getLevel())
                             .saleStatus(p.getSaleStatus().getDescription())
@@ -249,7 +249,7 @@ public class ProductService {
                     ).toList();
         }
 
-        return ProductDetailResponseDTO.builder()
+        return ProductDetailResponse.builder()
                 .title(product.getTitle())
                 .description(product.getDescription())
                 .price(product.getPrice())
@@ -258,7 +258,7 @@ public class ProductService {
                 .canDirect(product.isCanDirect())
                 .canDelivery(product.isCanDelivery())
                 .canVideoCall(product.isCanVideoCall())
-                .isLike(loginUser != null && wishService.existsWish(product.getId(), loginUser.getId()))
+                .isLike(loginUser != null && wishService.existsWish(product, loginUser))
                 .viewCount(viewCountService.getViewCount(product.getId()).intValue())
                 .wishCount(product.getWishCount())
                 .chatCount(product.getChatCount())

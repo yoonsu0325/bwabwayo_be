@@ -13,7 +13,7 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class ProductDetailResponseDTO {
+public class ProductDetailResponse {
     private String title;
     private String description;
     private Integer price;

@@ -7,7 +7,7 @@ import lombok.*;
 @NoArgsConstructor
 @AllArgsConstructor
 @ToString
-public class PaymentConfirmRequestDTO {
+public class PaymentConfirmRequest {
     private String orderId;
     private String paymentKey;
     private Integer amount;
