@@ -120,68 +120,28 @@ public class EmbeddingService {
             Pageable pageable,
             Map<String, Object> filter
     ) {
-        int offset = pageable.getPageNumber() * pageable.getPageSize();
-        int limit = pageable.getPageSize();
-
-        // 1) 각각 검색 (여유 있게 topK*5)
-        final int buffer = 5;
-        List<Map<String, Object>> titleHits = queryOnce("title", queryTitleVector, offset, limit, true, filter);
-        List<Map<String, Object>> categoryHits = queryOnce("category", queryCategoryVector, offset, limit, true, filter);
-
-        // 2) 가중치 합성 (예: title 0.8, category 0.2)
-        final double wTitle = 0.8;
-        final double wCategory = 0.2;
-
-        Map<Long, Double> fusedScore = new HashMap<>();
-        Map<Long, Map<String, Object>> payloadById = new HashMap<>();
-
-        for (Map<String, Object> h : titleHits) {
-            Long id = ((Number) h.get("id")).longValue();
-            double score = ((Number) h.get("score")).doubleValue();
-
-            fusedScore.merge(id, score * wTitle, Double::sum);
-            payloadById.putIfAbsent(id, (Map<String, Object>) h.get("payload"));
-        }
-        for (Map<String, Object> h : categoryHits) {
-            Long id = ((Number) h.get("id")).longValue();
-            double score = ((Number) h.get("score")).doubleValue();
-
-            fusedScore.merge(id, score * wCategory, Double::sum);
-            payloadById.putIfAbsent(id, (Map<String, Object>) h.get("payload"));
-        }
-
-        // 3) 정렬 후 상위 topK 반환
-        return fusedScore.entrySet().stream()
-                .sorted((a, b) -> Double.compare(b.getValue(), a.getValue()))
-                .limit(limit)
-                .map(e -> {
-                    Long id = e.getKey();
-                    double score = e.getValue();
-
-                    Map<String, Object> payload = payloadById.get(id);
-                    String title = payload != null ? String.valueOf(payload.get("title")) : null;
-                    String category = payload != null ? String.valueOf(payload.get("category")) : null;
-
-                    return new QueryItemDto(id, title, category, score);
-                })
-                .toList();
-    }
-
-    private List<Map<String, Object>> queryOnce(String using, List<Double> vector, int offset, int limit, boolean withPayload, Map<String, Object> filter) {
         final String url = qdrantUrl + "/collections/" + collectionName + "/points/query";
 
-        ensureSize(using, vector);
+        ensureSize("title", queryTitleVector);
+        ensureSize("category", queryCategoryVector);
+
+        int offset = pageable.getPageNumber() * pageable.getPageSize();
+        int limit = pageable.getPageSize();
+        int prefetchLimit = offset + limit + Math.min(limit, 50);
 
         Map<String, Object> body = new HashMap<>();
-        body.put("using", using);
-        body.put("query", vector);
+        body.put("prefetch", List.of(
+                Map.of("using", "title", "query", queryTitleVector, "limit", prefetchLimit, "filter", filter),
+                Map.of("using", "category", "query", queryCategoryVector, "limit", prefetchLimit, "filter", filter)
+        ));
+        body.put("query", Map.of("fusion", "rrf"));
         body.put("offset", offset);
         body.put("limit", limit);
-        if(withPayload) body.put("with_payload", true);
-        if(filter != null) body.put("filter", filter);
+        body.put("with_payload", true);
+        body.put("filter", filter);
 
         try {
-            log.debug("Qdrant 검색 요청 JSON (using={}):\n{}", using, objectMapper.writeValueAsString(body));
+            log.debug("Qdrant 검색 요청 JSON:\n{}", objectMapper.writeValueAsString(body));
 
             // 요청
             HttpEntity<Map<String, Object>> request = new HttpEntity<>(body, getJsonHeader());
@@ -189,13 +149,23 @@ public class EmbeddingService {
 
             // 반환값 확인
             Object result = response.getBody() != null ? response.getBody().get("result") : null;
-            if (!(result instanceof Map)) return List.of();
+            if (!(result instanceof Map<?, ?>)) return List.of();
 
-            Object points = ((Map)result).get("points");
-            if (points instanceof List) {
-                return (List<Map<String, Object>>) points;
-            }
-            return List.of();
+            Object points = ((Map<?, ?>) result).get("points");
+            if (!(points instanceof List<?>)) return List.of();
+
+            List<Map<String, Object>> hits = (List<Map<String, Object>>) points;
+
+            return hits.stream()
+                    .map(hit -> {
+                        Long id = ((Number) hit.get("id")).longValue();
+                        double score = ((Number) hit.get("score")).doubleValue();
+                        Map<String, Object> payload = (Map<String, Object>) hit.get("payload");
+                        String title   = payload != null ? String.valueOf(payload.get("title"))   : null;
+                        String category= payload != null ? String.valueOf(payload.get("category")): null;
+                        return new QueryItemDto(id, title, category, score);
+                    })
+                    .toList();
         } catch (Exception e) {
             throw new RuntimeException("Qdrant 유사도 검색 실패", e);
         }
