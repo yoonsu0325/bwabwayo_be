@@ -42,6 +42,19 @@ public class UserService {
     private final ReviewEvaluationCountService reviewEvaluationCountService;
     private final PointService pointService;
 
+    // ====== 신뢰도 계산 ======
+    private static final double BASE = 500.0;
+    private static final double K_T = 120.0;
+    private static final double T_MAX = 240.0;
+    private static final double K_R = 40.0;
+    private static final double RATE_MAX = 210.0;
+    private static final double R_MAX = 60.0;
+    private static final double PENALTY_UNIT = 40.0;
+    private static final double PENALTY_CAP = 200.0;
+
+    private static final int SCORE_MIN = 0;
+    private static final int SCORE_MAX = 1000;
+
     @Value("${storage.path.temp}")
     private String tempPath;
     @Value("${storage.path.profileImage}")
@@ -265,6 +278,56 @@ public class UserService {
         System.out.println("재시도 3회 실패: " + e.getMessage());
         throw new IllegalStateException("포인트 처리에 실패했습니다. 다시 시도해주세요.");
     }
+
+    public int computeScore(int transactions, int reviews, double rating, int penalties) {
+        int T = Math.max(0, transactions);
+        int R = Math.max(0, Math.min(reviews, T));
+        double r = clamp(rating, 0.0, 5.0);
+        int P = Math.max(0, penalties);
+
+        double fT = T_MAX * (1.0 - Math.exp(-T / K_T));
+        double w = 1.0 - Math.exp(-R / K_R);
+        double q = Math.tanh(2.0 * (r - 4.0));
+        double fRate = RATE_MAX * w * q;
+        double fR = R_MAX * (1.0 - Math.exp(-R / 100.0));
+        double fP = -Math.min(PENALTY_CAP, PENALTY_UNIT * P);
+
+        double raw = BASE + fT + fRate + fR + fP;
+        int score = (int) Math.round(raw);
+
+        return (int) clamp(score, SCORE_MIN, SCORE_MAX);
+    }
+
+    private static double clamp(double v, double min, double max) {
+        return Math.max(min, Math.min(max, v));
+    }
+
+    // ====== 신뢰도 계산 후 저장 ======
+    @Transactional
+    public void updateUserTrustScore(User user,
+                                     Integer transactions,
+                                     Integer reviews,
+                                     Double rating,
+                                     Integer penalties) {
+        ReviewAgg reviewAgg = reviewAggService.getReviewAgg(user.getId())
+                .orElseThrow(() -> new IllegalArgumentException("리뷰 정보가 존재하지 않습니다."));;
+
+        // 값이 null이면 기존 값 유지
+        int t = (transactions != null) ? transactions : user.getDealCount();
+        int r = (reviews != null) ? reviews : reviewAgg.getReviewCount();
+        double rate = (rating != null) ? rating : reviewAgg.getAvgRating();
+        int p = (penalties != null) ? penalties : user.getPenaltyCount();
+        log.info("t {}, r {}, rate {}, penalties {}", t, r, rate, p);
+
+        // 신뢰도 계산
+        int trustScore = computeScore(t, r, rate, p);
+
+        // DB 저장
+        user.setScore(trustScore);
+
+        userRepository.save(user);
+    }
+
 
     public ReviewAgg findReviewAggByUser(String userId) {
         return reviewAggRepository.findByUserId(userId)

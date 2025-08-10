@@ -47,6 +47,7 @@ public class ReviewAggService {
                         .avgRating(0f)
                         .build());
         agg.addReview(rating); // 도메인 메서드
+
         reviewAggRepository.save(agg);
     }
 }
