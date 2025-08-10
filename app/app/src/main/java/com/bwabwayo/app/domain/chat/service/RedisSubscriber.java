@@ -44,14 +44,25 @@ public class RedisSubscriber {
             String partnerId = dto.getPartnerId();
 
             // 로그인 유저 채팅방 리스트 최신화 -> 내 계정에 보냄
-            messagingTemplate.convertAndSend(
-                    "/sub/chat/roomlist/" + userId, chatRoomListGetResponseList
+            messagingTemplate.convertAndSendToUser(
+                    userId.toString(), // JwtChannelInterceptor에서 acc.setUser(name=userId)
+                    "/chat/roomlist",
+                    chatRoomListGetResponseList
             );
+            /*messagingTemplate.convertAndSend(
+                    "/sub/chat/roomlist/" + userId, chatRoomListGetResponseList
+            );*/
 
             // 파트너 계정에도 리스트 최신화 보냄.
-            messagingTemplate.convertAndSend(
-                    "/sub/chat/roomlist/" + partnerId, chatRoomListGetResponseListPartner
+            messagingTemplate.convertAndSendToUser(
+                    partnerId.toString(),
+                    "/chat/roomlist",
+                    chatRoomListGetResponseListPartner
             );
+
+            /*messagingTemplate.convertAndSend(
+                    "/sub/chat/roomlist/" + partnerId, chatRoomListGetResponseListPartner
+            );*/
 
         } catch (Exception e) {
             log.error("Exception {}", e);

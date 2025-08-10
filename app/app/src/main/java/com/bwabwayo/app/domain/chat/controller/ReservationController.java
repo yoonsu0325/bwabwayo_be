@@ -25,7 +25,7 @@ public class ReservationController {
         try{
             VideocallReservation reservation = reservationService.makeReservation(user, reservationRequest, roomId);
             return ResponseEntity.ok(reservation);
-        } catch (IllegalAccessException e) {
+        } catch (Exception e) {
             return ResponseEntity.badRequest().body(e.getMessage());
         }
 
