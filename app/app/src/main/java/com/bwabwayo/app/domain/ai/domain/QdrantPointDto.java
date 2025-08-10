@@ -10,8 +10,13 @@ import java.util.List;
 @Builder
 public class QdrantPointDto {
     private Long id;
+
     private String title;
-    private String category;
+    private String categoryName;
+
+    private Long categoryId;
+    private Integer price;
+    private Boolean isSale;
 
     private List<Double> titleVector;
     private List<Double> categoryVector;
@@ -19,7 +24,7 @@ public class QdrantPointDto {
     public static QdrantPointDto from(Long id, String title, String category,
                                       List<Double> titleVec, List<Double> categoryVec) {
         return QdrantPointDto.builder()
-                .id(id).title(title).category(category)
+                .id(id).title(title).categoryName(category)
                 .titleVector(titleVec).categoryVector(categoryVec)
                 .build();
     }

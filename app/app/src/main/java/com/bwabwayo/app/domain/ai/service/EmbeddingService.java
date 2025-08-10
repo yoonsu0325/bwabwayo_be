@@ -41,31 +41,34 @@ public class EmbeddingService {
     /* ===================== Upsert ===================== */
 
     /** Qdrant에 Vector를 Upsert */
-    public void upsertPoint(QdrantPointDto dto) {
-        upsertPoints(List.of(dto));
+    public void upsertPoint(QdrantPointDto pointDto) {
+        upsertPoints(List.of(pointDto));
     }
 
-    public void upsertPoints(List<QdrantPointDto> dtos) {
+    public void upsertPoints(List<QdrantPointDto> pointDtos) {
         final String url = qdrantUrl + "/collections/" + collectionName + "/points?wait=true";
 
         List<Map<String, Object>> points = new ArrayList<>();
-        for (QdrantPointDto dto : dtos) {
+        for (QdrantPointDto pointDto : pointDtos) {
             // 1. vectors 구성
-            ensureSize("title", dto.getTitleVector());
-            ensureSize("category", dto.getCategoryVector());
+            ensureSize("title", pointDto.getTitleVector());
+            ensureSize("category", pointDto.getCategoryVector());
 
             Map<String, Object> vectors = new HashMap<>();
-            vectors.put("title", dto.getTitleVector());
-            vectors.put("category", dto.getCategoryVector());
+            vectors.put("title", pointDto.getTitleVector());
+            vectors.put("category", pointDto.getCategoryVector());
 
             // 2. payload 구성
             Map<String, Object> payload = new HashMap<>();
-            payload.put("title", dto.getTitle());
-            payload.put("category", dto.getCategory());
+            payload.put("title", pointDto.getTitle());
+            payload.put("category", pointDto.getCategoryName());
+            payload.put("categoryId", pointDto.getCategoryId());
+            payload.put("price", pointDto.getPrice());
+            payload.put("isSale", pointDto.getIsSale());
 
             // 3. point 구성
             Map<String, Object> point = new HashMap<>();
-            point.put("id", dto.getId());
+            point.put("id", pointDto.getId());
             point.put("vector", vectors);
             point.put("payload", payload);
 
@@ -107,6 +110,7 @@ public class EmbeddingService {
         }
     }
 
+    /* ===================== Query ===================== */
 
     /** 검색 */
     public List<SimilarResultResponse> query(

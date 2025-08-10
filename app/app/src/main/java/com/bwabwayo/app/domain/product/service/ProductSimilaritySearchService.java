@@ -4,6 +4,7 @@ import com.bwabwayo.app.domain.ai.domain.QdrantPointDto;
 import com.bwabwayo.app.domain.ai.dto.response.SimilarResultResponse;
 import com.bwabwayo.app.domain.ai.service.EmbeddingService;
 import com.bwabwayo.app.domain.product.domain.Product;
+import com.bwabwayo.app.domain.product.enums.SaleStatus;
 import com.bwabwayo.app.global.client.OpenAiClient;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -23,14 +24,27 @@ public class ProductSimilaritySearchService {
     public void upsert(Product product) {
         Long id = product.getId();
         String title = product.getTitle();
-        String category = product.getCategory().getName();
+        String categoryName = product.getCategory().getName();
 
-        // 2. 임베딩 벡터 추출
+        Long categoryId = product.getCategory().getId();
+        Integer price = product.getPrice();
+        Boolean isSale = product.getSaleStatus() == SaleStatus.SOLD_OUT;
+
+        // 임베딩 벡터 추출
         List<Double> titleVector = openAiClient.getEmbedding(title);
-        List<Double> categoryVector = openAiClient.getEmbedding(category);
-
-        // 3. QdrantPointDto 생성
-        QdrantPointDto qdrantPointDto = QdrantPointDto.from(id, title, category, titleVector, categoryVector);
+        List<Double> categoryVector = openAiClient.getEmbedding(categoryName);
+        
+        // Point DTO 생성
+        QdrantPointDto qdrantPointDto = QdrantPointDto.builder()
+                .id(id)
+                .title(title)
+                .categoryName(categoryName)
+                .titleVector(titleVector)
+                .categoryVector(categoryVector)
+                .categoryId(categoryId)
+                .price(price)
+                .isSale(isSale)
+                .build();
 
         embeddingService.upsertPoint(qdrantPointDto);
     }
