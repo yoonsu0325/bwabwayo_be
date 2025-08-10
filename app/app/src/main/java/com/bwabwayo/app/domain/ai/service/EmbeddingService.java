@@ -1,7 +1,7 @@
 package com.bwabwayo.app.domain.ai.service;
 
 import com.bwabwayo.app.domain.ai.domain.QdrantPointDto;
-import com.bwabwayo.app.domain.ai.dto.response.SimilarResultResponse;
+import com.bwabwayo.app.domain.ai.dto.response.QueryItemDto;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -113,7 +113,7 @@ public class EmbeddingService {
     /* ===================== Query ===================== */
 
     /** 검색 */
-    public List<SimilarResultResponse> query(
+    public List<QueryItemDto> query(
             List<Double> queryTitleVec,
             List<Double> queryCategoryVec,
             int topK
@@ -156,7 +156,7 @@ public class EmbeddingService {
                     String title = payload != null ? String.valueOf(payload.get("title")) : null;
                     String category = payload != null ? String.valueOf(payload.get("category")) : null;
 
-                    return new SimilarResultResponse(id, title, category, score);
+                    return new QueryItemDto(id, title, category, score);
                 })
                 .toList();
     }

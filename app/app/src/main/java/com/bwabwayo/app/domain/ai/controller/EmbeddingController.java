@@ -1,10 +1,12 @@
 package com.bwabwayo.app.domain.ai.controller;
 
 import com.bwabwayo.app.domain.ai.domain.QdrantPointDto;
-import com.bwabwayo.app.domain.ai.dto.request.PointRequest;
-import com.bwabwayo.app.domain.ai.dto.response.SimilarResultResponse;
+import com.bwabwayo.app.domain.ai.dto.response.QueryItemDto;
 import com.bwabwayo.app.domain.ai.service.EmbeddingService;
+import com.bwabwayo.app.domain.product.domain.Product;
+import com.bwabwayo.app.domain.product.service.ProductService;
 import com.bwabwayo.app.global.client.OpenAiClient;
+import io.swagger.v3.oas.annotations.Operation;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -19,21 +21,21 @@ public class EmbeddingController {
 
     private final EmbeddingService embeddingService;
     private final OpenAiClient openAiClient;
+    private final ProductService productService;
 
-
-    // 판매게시글 임베팅 벡터화 후 Qdrant에 벡터 저장
-    @PostMapping("/save")
-    public ResponseEntity<String> savePoint(@RequestBody PointRequest ponintRequest) {
+    @Operation(summary = "[TEST] 상품을 벡터 DB에 저장")
+    @PostMapping("/save/{productId}")
+    public ResponseEntity<String> savePoint(@PathVariable Long productId) {
+        Product product = productService.findById(productId);
 
         // 1. title 추출
-        Long id = ponintRequest.getId();
-        String title = ponintRequest.getTitle();
-        String category = ponintRequest.getCategory();
+        Long id = product.getId();
+        String title = product.getTitle();
+        String category = product.getCategory().getName();
 
         // 2. 임베딩 벡터 추출
         List<Double> titleVec = openAiClient.getEmbedding(title);
         List<Double> categoryVec = openAiClient.getEmbedding(category);
-
 
         // 3. QdrantPointDto 생성
         QdrantPointDto qdrantPointDto = QdrantPointDto.from(id, title, category, titleVec, categoryVec);
@@ -41,36 +43,31 @@ public class EmbeddingController {
         embeddingService.upsertPoint(qdrantPointDto);
         return ResponseEntity.ok("Qdrant에 벡터 저장 완료");
     }
+    
+    @Operation(summary = "[TEST] 유사도 검색 (전체 검색)")
+    @GetMapping("/search")
+    public ResponseEntity<?> search(
+            @RequestParam(required = false) String keyword,
+            @RequestParam(required = false, defaultValue = "3") Integer limit
+    ) {
+        List<Double> titleVector = openAiClient.getEmbedding(keyword);
+        List<Double> categoryVector = titleVector;
 
-    // 유사도 검색
-    @PostMapping("/search")
-    public ResponseEntity<List<SimilarResultResponse>> searchSimilarTitles(@RequestBody PointRequest request) {
-        String queryTitle = request.getTitle();
-        String queryCat   = request.getCategory();
+        List<QueryItemDto> queryResult = embeddingService.query(titleVector, categoryVector, limit);
 
-        // 벡터화
-        List<Double> qTitleVec = openAiClient.getEmbedding(queryTitle);
-        List<Double> qCatVec   = (queryCat != null && !queryCat.isBlank())
-                ? openAiClient.getEmbedding(queryCat)
-                : qTitleVec; // 카테고리 없으면 타이틀 벡터 재사용
-
-        // 유사도 검색 (Top 3)
-        List<SimilarResultResponse> similarTitles = embeddingService.query(qTitleVec, qCatVec, 3);
-
-        return ResponseEntity.ok(similarTitles);
+        return ResponseEntity.ok(Map.of("results", queryResult));
     }
 
-
-    // Qdrant에 저장되어 있는 벡터 데이터 삭제
-    @PostMapping("/delete")
-    public ResponseEntity<?> deletePoint(@RequestBody Map<String, List<Long>> requestBody) {
-        Long id = requestBody.get("points").get(0);
-        embeddingService.deleteById(id);
+    @Operation(summary = "[TEST] 상품을 벡터 DB에서 삭제")
+    @DeleteMapping("/delete/{productId}")
+    public ResponseEntity<Void> deletePoint(@PathVariable Long productId) {
+        embeddingService.deleteById(productId);
         return ResponseEntity.ok().build();
     }
 
+    @Operation(summary = "[TEST] 저장된 Point의 목록 반환")
     @GetMapping("/scroll")
-    public ResponseEntity<?> scroll(){
-        return embeddingService.getPoints(100);
+    public ResponseEntity<?> scroll(@RequestParam(defaultValue = "100") Integer limit){
+        return embeddingService.getPoints(limit);
     }
 }

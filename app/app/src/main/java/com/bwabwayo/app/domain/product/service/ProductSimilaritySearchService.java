@@ -1,7 +1,7 @@
 package com.bwabwayo.app.domain.product.service;
 
 import com.bwabwayo.app.domain.ai.domain.QdrantPointDto;
-import com.bwabwayo.app.domain.ai.dto.response.SimilarResultResponse;
+import com.bwabwayo.app.domain.ai.dto.response.QueryItemDto;
 import com.bwabwayo.app.domain.ai.service.EmbeddingService;
 import com.bwabwayo.app.domain.product.domain.Product;
 import com.bwabwayo.app.domain.product.enums.SaleStatus;
@@ -59,7 +59,7 @@ public class ProductSimilaritySearchService {
 
         // 유사도 검색 (Top N)
         return embeddingService.query(titleQueryVector, categoryQueryVector,  n)
-                .stream().map(SimilarResultResponse::getId).toList();
+                .stream().map(QueryItemDto::getId).toList();
     }
 
     /**
