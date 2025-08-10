@@ -7,10 +7,12 @@ import com.bwabwayo.app.domain.product.domain.Category;
 import com.bwabwayo.app.domain.product.domain.Courier;
 import com.bwabwayo.app.domain.product.domain.Product;
 import com.bwabwayo.app.domain.product.domain.ProductImage;
+import com.bwabwayo.app.domain.product.dto.ProductQueryCondition;
 import com.bwabwayo.app.domain.product.dto.request.ProductUpsertRequest;
 import com.bwabwayo.app.domain.product.dto.request.ProductQueryRequest;
 import com.bwabwayo.app.domain.product.dto.response.*;
 import com.bwabwayo.app.domain.product.enums.DeliveryStatus;
+import com.bwabwayo.app.domain.product.enums.ProductSortType;
 import com.bwabwayo.app.domain.product.exception.ProductNotFoundException;
 import com.bwabwayo.app.domain.product.repository.CourierRepository;
 import com.bwabwayo.app.domain.product.repository.ProductImageRepository;
@@ -28,7 +30,6 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -96,63 +97,64 @@ public class ProductService {
      * 상품 검색
      */
     @Transactional(readOnly = true)
-    public PageResponseDTO<ProductQueryResult> searchProducts(ProductQueryRequest requestDTO, User loginUser) {
+    public PageResponseDTO<ProductQueryResult> query(ProductQueryRequest requestDTO, User loginUser) {
+        // 검색 조건
         String keyword = requestDTO.getKeyword();
         Long categoryId = requestDTO.getCategoryId();
         String sellerId = requestDTO.getSellerId();
+
         Boolean canVideoCall = requestDTO.getCanVideoCall();
         Boolean canNegotiate = requestDTO.getCanNegotiate();
         Boolean canDirect =  requestDTO.getCanDirect();
         Boolean canDelivery = requestDTO.getCanDelivery();
+
         Integer minPrice = requestDTO.getMinPrice();
         Integer maxPrice = requestDTO.getMaxPrice();
+        
+        // 현재 카테고리에 포함되는 모든 카테고리의 모음 생성
+        List<Long> categoryIds = null;
+        if(categoryId != null){
+            Category topCategory = categoryService.findByIdOptional(categoryId).orElse(null);
+            categoryIds = CategoryUtil.getSubCategories(topCategory).stream().map(Category::getId).toList();
 
+            // fallback
+            if(categoryIds.isEmpty()) {
+                categoryIds = List.of(categoryId);
+            }
+        }
+
+        // 페이징 조건
         // 페이지는 1부터 시작
         Integer page = requestDTO.getPage();
         // 각 페이지에는 최소 0개가 할당
         Integer size = requestDTO.getSize();
         // 기본 정렬 속성은 '최신순'
-        String sortBy = requestDTO.getSortBy();
-
-        // 정렬 조건 생성
-        Sort.Order option = switch (sortBy){
-            case "oldest" -> Sort.Order.asc("createdAt");
-            case "views" -> Sort.Order.desc("view_count");
-            case "wishes" -> Sort.Order.desc("wish_count");
-            default -> Sort.Order.desc("createdAt");
-        };
-        Sort sort = Sort.by(option, Sort.Order.asc("id"));
+        ProductSortType sortType = ProductSortType.from(requestDTO.getSortBy());
+        if(sortType == ProductSortType.RELATED && keyword == null){ // 키워드가 없으면 관련 검색 불가
+            log.warn("키워드가 없어 관련성 검색이 불가합니다; 기본 검색으로 대체");
+            sortType = ProductSortType.LATEST;
+        }
 
         // 페이지네이션 생성
-        Pageable pageable = PageRequest.of(page - 1, size, sort);
-        
-        // 현재 카테고리에 포함되는 모든 카테고리의 모음 생성
-        List<Long> categoryIds = new ArrayList<>();
-        if(categoryId != null){
-            if(categoryService.existsById(categoryId)) {
-                Category topCategory = categoryService.findById(categoryId);
-                categoryIds = CategoryUtil.getSubCategories(topCategory).stream().map(Category::getId).toList();
-            } else {
-                categoryIds.add(categoryId);
-            }
-        }
+        Pageable pageable = PageRequest.of(page - 1, size, sortType.getSort());
         
         // DB 조회
-        Page<ProductWithWishDTO> pageData = productRepository.searchByCondition(
-                keyword,
-                categoryIds,
-                pageable,
-                loginUser != null ? loginUser.getId() : null,
-                sellerId,
-                canVideoCall,
-                canNegotiate,
-                canDelivery,
-                canDirect,
-                minPrice,
-                maxPrice
-        );
+        ProductQueryCondition queryCondition = ProductQueryCondition.builder()
+                .viewerId(loginUser != null ? loginUser.getId() : null)
+                .keyword(keyword)
+                .categoryIds(categoryIds)
+                .sellerId(sellerId)
+                .canVideoCall(canVideoCall)
+                .canNegotiate(canNegotiate)
+                .canDirect(canDirect)
+                .canDelivery(canDelivery)
+                .minPrice(minPrice)
+                .maxPrice(maxPrice)
+                .build();
 
-        return PageResponseDTO.fromEntity(pageData, dto -> {
+        Page<ProductWithIsLikeDTO> pageData = productRepository.searchByCondition(queryCondition, pageable);
+
+        return PageResponseDTO.from(pageData, dto -> {
             Product product = dto.getProduct();
 
             ProductSimpleDTO productDTO = ProductSimpleDTO.builder()
@@ -204,7 +206,7 @@ public class ProductService {
 
         // 판매자 정보
         User seller = product.getSeller();
-        List<ProductSimpleDTO> others = searchProducts(ProductQueryRequest.builder().sellerId(seller.getId()).size(otherCount + 1).build(), loginUser)
+        List<ProductSimpleDTO> others = query(ProductQueryRequest.builder().sellerId(seller.getId()).size(otherCount + 1).build(), loginUser)
                 .getResult().stream()
                 .map(ProductQueryResult::getProduct)
                 .filter(p ->!p.getId().equals(product.getId()))

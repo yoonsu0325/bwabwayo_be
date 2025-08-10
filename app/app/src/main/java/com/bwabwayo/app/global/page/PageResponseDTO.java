@@ -26,7 +26,7 @@ public class PageResponseDTO<T> {
 
     private Boolean hasPrev, hasNext;
 
-    public static <T, R> PageResponseDTO<R> fromEntity(Page<T> page, Function<T, R> mapper) {
+    public static <T, R> PageResponseDTO<R> from(Page<T> page, Function<T, R> mapper) {
         int current = page.getNumber() + 1;
         int end = (int) Math.ceil(current / 10.0) * 10;
         int start = Math.max(1, end - 9);

@@ -9,16 +9,36 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 @Service
 @RequiredArgsConstructor
 public class CategoryService {
 
     private final CategoryRepository categoryRepository;
+
+    /**
+     * 카테고리 가져오기
+     */
+    @Transactional(readOnly = true)
+    public Category findById(Long categoryId){
+        return  categoryRepository.findById(categoryId)
+                .orElseThrow(()->new CategoryNotFoundException(categoryId));
+
+    }
+
+    @Transactional(readOnly = true)
+    public Optional<Category> findByIdOptional(Long categoryId){
+        return  categoryRepository.findById(categoryId);
+    }
+
+    /**
+     * 카테고리 존재 여부 확인
+     */
+    @Transactional(readOnly = true)
+    public boolean existsById(Long categoryId){
+        return categoryRepository.existsById(categoryId);
+    }
 
     /**
      * 최상위 카테고리 조회
@@ -34,24 +54,6 @@ public class CategoryService {
                 .categories(categoryTreeDTOs)
                 .build();
     }
-
-    /**
-     * 카테고리 가져오기
-     */
-    @Transactional(readOnly = true)
-    public Category findById(Long categoryId){
-        return  categoryRepository.findById(categoryId)
-                .orElseThrow(()->new CategoryNotFoundException(categoryId));
-
-    }
-
-    /**
-     * 카테고리 존재 여부 확인
-     */
-    public boolean existsById(Long categoryId){
-        return categoryRepository.existsById(categoryId);
-    }
-
 
     /**
      * 카테고리의 flatList를 tree로 재구성

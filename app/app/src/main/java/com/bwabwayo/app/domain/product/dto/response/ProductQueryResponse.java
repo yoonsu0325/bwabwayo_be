@@ -8,9 +8,6 @@ import lombok.NoArgsConstructor;
 
 import java.util.List;
 
-/**
- * 상품 조회 목록 DTO
- */
 @Getter
 @NoArgsConstructor
 @AllArgsConstructor

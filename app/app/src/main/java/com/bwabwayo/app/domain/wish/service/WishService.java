@@ -37,7 +37,7 @@ public class WishService {
 
         Page<Wish> page = wishRepository.findAllByUserId(user.getId(), pageable);
 
-        return PageResponseDTO.fromEntity(page, wish -> {
+        return PageResponseDTO.from(page, wish -> {
             Product product = wish.getProduct();
             Category category = product.getCategory();
             SaleStatus saleStatus = product.getSaleStatus();

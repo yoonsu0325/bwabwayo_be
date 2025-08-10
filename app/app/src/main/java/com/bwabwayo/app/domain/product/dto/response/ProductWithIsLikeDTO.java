@@ -11,7 +11,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class ProductWithWishDTO{
+public class ProductWithIsLikeDTO {
     Product product;
     Boolean isLike;
 }

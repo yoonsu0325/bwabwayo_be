@@ -4,9 +4,6 @@ import lombok.*;
 
 import java.time.LocalDateTime;
 
-/**
- * 상품 요약 정보 DTO
- */
 @Getter
 @NoArgsConstructor
 @AllArgsConstructor

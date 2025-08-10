@@ -120,10 +120,10 @@ public class ProductController {
     )
     @GetMapping
     public ResponseEntity<?> getProducts(
-            @Valid @ModelAttribute ProductQueryRequest requestDTO,
+            @Valid @ModelAttribute ProductQueryRequest request,
             @LoginUser(required = false) User user
     ) {
-        return ResponseEntity.ok(productService.searchProducts(requestDTO, user));
+        return ResponseEntity.ok(productService.query(request, user));
     }
 
     @Operation(summary = "상품 상세 조회")

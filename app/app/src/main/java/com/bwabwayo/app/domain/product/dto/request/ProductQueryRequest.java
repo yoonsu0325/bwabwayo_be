@@ -1,13 +1,11 @@
 package com.bwabwayo.app.domain.product.dto.request;
 
+import com.bwabwayo.app.domain.product.enums.ProductSortType;
 import io.swagger.v3.oas.annotations.Parameter;
 import jakarta.validation.constraints.Min;
 import lombok.*;
 import org.springdoc.core.annotations.ParameterObject;
 
-/**
- * 상품 조회 조건 요청 DTO
- */
 @Getter
 @Setter
 @NoArgsConstructor
@@ -29,9 +27,9 @@ public class ProductQueryRequest {
     private String keyword; // 검색 키워드
     private Long categoryId; // 카테고리 ID
 
-    @Parameter(example = "latest")
+    @Parameter(example = "latest", description = "latest(최신순), views(조회수 순), wishes(찜 순), related(관련순: 키워드 필수)")
     @Builder.Default
-    private String sortBy = "latest"; // 정렬 기준
+    private String sortBy = ProductSortType.LATEST.getQueryValue(); // 정렬 기준
 
     private String sellerId; // 판매자 ID
 
