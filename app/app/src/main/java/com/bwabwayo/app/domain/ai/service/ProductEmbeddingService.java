@@ -80,6 +80,6 @@ public class ProductEmbeddingService {
         Map<String, Object> filter = builder.build();
 
         // 유사도 검색
-        return embeddingService.query(titleQueryVector, categoryQueryVector,  pageable.getPageSize(), filter);
+        return embeddingService.query(titleQueryVector, categoryQueryVector, pageable, filter);
     }
 }

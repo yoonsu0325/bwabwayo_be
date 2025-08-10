@@ -6,6 +6,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
@@ -116,13 +117,16 @@ public class EmbeddingService {
     public List<QueryItemDto> query(
             List<Double> queryTitleVector,
             List<Double> queryCategoryVector,
-            int topK,
+            Pageable pageable,
             Map<String, Object> filter
     ) {
+        int offset = pageable.getPageNumber() * pageable.getPageSize();
+        int limit = pageable.getPageSize();
+
         // 1) 각각 검색 (여유 있게 topK*5)
         final int buffer = 5;
-        List<Map<String, Object>> titleHits = queryOnce("title", queryTitleVector, topK * buffer, true, filter);
-        List<Map<String, Object>> categoryHits = queryOnce("category", queryCategoryVector, topK * buffer, true, filter);
+        List<Map<String, Object>> titleHits = queryOnce("title", queryTitleVector, offset, limit, true, filter);
+        List<Map<String, Object>> categoryHits = queryOnce("category", queryCategoryVector, offset, limit, true, filter);
 
         // 2) 가중치 합성 (예: title 0.8, category 0.2)
         final double wTitle = 0.8;
@@ -149,7 +153,7 @@ public class EmbeddingService {
         // 3) 정렬 후 상위 topK 반환
         return fusedScore.entrySet().stream()
                 .sorted((a, b) -> Double.compare(b.getValue(), a.getValue()))
-                .limit(topK)
+                .limit(limit)
                 .map(e -> {
                     Long id = e.getKey();
                     double score = e.getValue();
@@ -163,7 +167,7 @@ public class EmbeddingService {
                 .toList();
     }
 
-    private List<Map<String, Object>> queryOnce(String using, List<Double> vector, int limit, boolean withPayload, Map<String, Object> filter) {
+    private List<Map<String, Object>> queryOnce(String using, List<Double> vector, int offset, int limit, boolean withPayload, Map<String, Object> filter) {
         final String url = qdrantUrl + "/collections/" + collectionName + "/points/query";
 
         ensureSize(using, vector);
@@ -171,6 +175,7 @@ public class EmbeddingService {
         Map<String, Object> body = new HashMap<>();
         body.put("using", using);
         body.put("query", vector);
+        body.put("offset", offset);
         body.put("limit", limit);
         if(withPayload) body.put("with_payload", true);
         if(filter != null) body.put("filter", filter);
