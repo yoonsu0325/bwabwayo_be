@@ -14,6 +14,7 @@ import com.bwabwayo.app.domain.auth.service.AuthRedisService;
 import com.bwabwayo.app.domain.auth.utils.JWTUtils;
 import io.jsonwebtoken.Jwts;
 import io.swagger.v3.oas.annotations.Operation;
+import jakarta.persistence.EntityManager;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
