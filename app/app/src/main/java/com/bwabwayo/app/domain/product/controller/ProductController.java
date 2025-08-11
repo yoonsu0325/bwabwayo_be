@@ -76,7 +76,7 @@ public class ProductController {
             @LoginUser User loginUser
     ) {
         Product product = productService.findById(productId);
-        ensureOwner(loginUser, product);
+//        ensureOwner(loginUser, product);
 
         try{
             productService.update(product, request);
