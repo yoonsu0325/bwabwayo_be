@@ -66,15 +66,15 @@ public class UserService {
 
     public User createUser(UserSignUpRequest request) {
         String profileImage = request.getProfileImage();
-        if(profileImage == null || profileImage.isEmpty()){
-            throw new IllegalArgumentException("프로필 이미지가 존재하지 않습니다.");
-        }
-
         String targetKey;
-        if (URLValidator.isValidURL(request.getProfileImage())) { // 다운로드 후 S3 업로드
-            targetKey = storageService.upload(profileImage, profilePath);
-        } else { // S3의 profile로 이동
-            targetKey = storageUtil.copyToDirectory(profileImage, tempPath, profilePath);
+        if(profileImage == null || profileImage.isEmpty()){
+            targetKey = "profiles/20250811162152_6cccbdf7-b8be-4ca9-adea-09bba6a90e1b.png";
+        } else {
+            if (URLValidator.isValidURL(request.getProfileImage())) { // 다운로드 후 S3 업로드
+                targetKey = storageService.upload(profileImage, profilePath);
+            } else { // S3의 profile로 이동
+                targetKey = storageUtil.copyToDirectory(profileImage, tempPath, profilePath);
+            }
         }
 
 
@@ -95,21 +95,24 @@ public class UserService {
                 .isActive(true)
                 .role(Role.USER)
                 .build();
-        return userRepository.save(user);
+        User returnUser = userRepository.save(user);
+        userRepository.flush();
+        return returnUser;
     }
 
     public User updateUser(User user, UserSignUpRequest request) {
         String profileImage = request.getProfileImage();
+        String targetKey;
         if(profileImage == null || profileImage.isEmpty()){
-            throw new IllegalArgumentException("프로필 이미지가 존재하지 않습니다.");
+            targetKey = "profiles/20250811162152_6cccbdf7-b8be-4ca9-adea-09bba6a90e1b.png";
+        } else {
+            if (URLValidator.isValidURL(request.getProfileImage())) { // 다운로드 후 S3 업로드
+                targetKey = storageService.upload(profileImage, profilePath);
+            } else { // S3의 profile로 이동
+                targetKey = storageUtil.copyToDirectory(profileImage, tempPath, profilePath);
+            }
         }
 
-        String targetKey;
-        if (URLValidator.isValidURL(request.getProfileImage())) { // 다운로드 후 S3 업로드
-            targetKey = storageService.upload(profileImage, profilePath);
-        } else { // S3의 profile로 이동
-            targetKey = storageUtil.copyToDirectory(profileImage, tempPath, profilePath);
-        }
         user.setNickname(request.getNickname());
         user.setEmail(request.getEmail());
         user.setPhoneNumber(request.getPhoneNumber());
