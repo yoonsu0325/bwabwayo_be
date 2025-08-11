@@ -13,9 +13,13 @@ import java.util.List;
 @Component
 @RequiredArgsConstructor
 public class StorageUtil {
+    private final boolean ENABLE_REALTIME_DELETE = false;
+
     private final StorageService storageService;
 
     public void deleteWithoutException(String key) {
+        if(!ENABLE_REALTIME_DELETE) return;
+
         try {
             storageService.delete(key);
         } catch (Exception e) {
@@ -55,12 +59,16 @@ public class StorageUtil {
      * keys 중 prefix가 srcPrefix가 tgtPrefix로 복사된 key를 삭제
      */
     public void rollback(List<String> keys, String srcPrefix, String tgtPrefix){
+        if(!ENABLE_REALTIME_DELETE) return;
+
         for(String key : keys){
             rollback(key, srcPrefix, tgtPrefix);
         }
     }
 
     public void rollback(String key, String srcPrefix, String tgtPrefix){
+        if(!ENABLE_REALTIME_DELETE) return;
+
         if(key.startsWith(srcPrefix)){
             String deletingKey = tgtPrefix + key.substring(srcPrefix.length());
             deleteWithoutException(deletingKey);
