@@ -17,6 +17,7 @@ public class ReservationResponse {
     private String title;
     private String startAt;
     private String replayUrl;
+    private Long scheduleId;
     private boolean isEnd;
 
     public static ReservationResponse from(VideocallReservation reservation, String partnerNickname,
@@ -29,6 +30,7 @@ public class ReservationResponse {
                 .title(title)
                 .startAt(reservation.getStartAt())
                 .replayUrl(replay)
+                .scheduleId(reservation.getId())
                 .isEnd(isEnd)
                 .build();
     }
