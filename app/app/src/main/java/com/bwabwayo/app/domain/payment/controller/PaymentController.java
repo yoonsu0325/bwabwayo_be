@@ -3,6 +3,7 @@ package com.bwabwayo.app.domain.payment.controller;
 import com.bwabwayo.app.domain.auth.annotation.LoginUser;
 import com.bwabwayo.app.domain.payment.dto.request.PaymentConfirmRequest;
 import com.bwabwayo.app.domain.product.domain.Sale;
+import com.bwabwayo.app.domain.product.enums.PaymentStatus;
 import com.bwabwayo.app.domain.product.service.SaleService;
 import com.bwabwayo.app.domain.user.domain.User;
 import com.bwabwayo.app.global.exception.BadRequestException;
@@ -83,7 +84,7 @@ public class PaymentController {
         Sale sale = null;
         try {
             sale = saleService.findByBuyerIdAndProductId(buyerId, productId);
-            if (sale.isPaid()) throw new BadRequestException("중복 결제 요청입니다.");
+//            if (sale.isPaid()) throw new BadRequestException("중복 결제 요청입니다.");
         } catch (IllegalArgumentException e) {
             throw new NotFoundException(e.getMessage());
         }
@@ -93,10 +94,11 @@ public class PaymentController {
         int statusCode = response.containsKey("error") ? 400 : 200;
         if (statusCode == 200) {
             log.info("결제 성공: {}", requestDTO);
+            saleService.changePaymentStatus(sale.getId(), PaymentStatus.COMPLETED);
         } else {
             log.info("결제 실패: {}", requestDTO);
+            saleService.changePaymentStatus(sale.getId(), PaymentStatus.FAILED);
         }
-        saleService.setPaid(sale.getId(), true);
 
         return ResponseEntity.status(statusCode).body(response);
     }
