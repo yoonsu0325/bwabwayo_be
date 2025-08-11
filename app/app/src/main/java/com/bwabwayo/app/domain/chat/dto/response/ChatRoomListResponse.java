@@ -38,7 +38,8 @@ public class ChatRoomListResponse implements Serializable {
     public static ChatRoomListResponse fromInitial(
             ChatRoom room, String userId,
             User seller, ReviewAgg sellerReview, User buyer,
-            Product product, String productImageUrl) {
+            Product product, String productImageUrl,
+            String sellerImageUrl, String buyerImageUrl) {
 
         boolean isBuyer = room.getBuyerId().equals(userId);
         String userNickname = isBuyer ? buyer.getNickname() : seller.getNickname();
@@ -47,8 +48,8 @@ public class ChatRoomListResponse implements Serializable {
         return ChatRoomListResponse.builder()
                 .roomId(room.getRoomId())
                 .userId(userId)
-                .buyer(BuyerInfoResponse.from(buyer))
-                .seller(SellerInfoResponse.from(seller, sellerReview))
+                .buyer(BuyerInfoResponse.from(buyer, buyerImageUrl))
+                .seller(SellerInfoResponse.from(seller, sellerReview, sellerImageUrl))
                 .product(ProductInfoResponse.from(product, productImageUrl))
                 .lastMessage(null)
                 .unreadCount(0L)

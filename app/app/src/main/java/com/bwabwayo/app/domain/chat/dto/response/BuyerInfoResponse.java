@@ -17,11 +17,11 @@ public class BuyerInfoResponse {
 
     private String profileImageUrl;
 
-    public static BuyerInfoResponse from(User user){
+    public static BuyerInfoResponse from(User user, String profileImageUrl){
         return BuyerInfoResponse.builder()
                 .id(user.getId())
                 .nickname(user.getNickname())
-                .profileImageUrl(user.getProfileImage())
+                .profileImageUrl(profileImageUrl)
                 .build();
     }
 

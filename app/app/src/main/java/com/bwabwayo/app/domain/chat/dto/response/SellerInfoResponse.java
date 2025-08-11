@@ -24,11 +24,11 @@ public class SellerInfoResponse {
     private int dealCount;
 
 
-    public static SellerInfoResponse from(User user, ReviewAgg reviewAgg){
+    public static SellerInfoResponse from(User user, ReviewAgg reviewAgg, String profileImageUrl){
         return SellerInfoResponse.builder()
                 .id(user.getId())
                 .nickname(user.getNickname())
-                .profileImageUrl(user.getProfileImage())
+                .profileImageUrl(profileImageUrl)
                 .reviewCount(reviewAgg.getReviewCount())
                 .avgRating(reviewAgg.getAvgRating())
                 .dealCount(user.getDealCount())
