@@ -3,6 +3,7 @@ package com.bwabwayo.app.domain.product.service;
 import com.bwabwayo.app.domain.chat.domain.ChatRoom;
 import com.bwabwayo.app.domain.product.domain.Product;
 import com.bwabwayo.app.domain.product.domain.Sale;
+import com.bwabwayo.app.domain.product.enums.PaymentStatus;
 import com.bwabwayo.app.domain.product.enums.SaleStatus;
 import com.bwabwayo.app.domain.product.repository.SaleRepository;
 import com.bwabwayo.app.domain.user.domain.PurchaseConfirmStatus;
@@ -94,9 +95,9 @@ public class SaleService {
     }
 
     @Transactional
-    public void setPaid(Long saleId, boolean value){
+    public void changePaymentStatus(Long saleId, PaymentStatus status){
         Sale sale = saleRepository.findById(saleId).orElseThrow(()->new IllegalArgumentException("판매 내역이 존재하지 않습니다."));
-        sale.setPaid(value);
+        sale.changePaymentStatus(status);
     }
 
     public Sale getSaleById(Long saleId){
