@@ -8,6 +8,7 @@ import com.bwabwayo.app.domain.chat.repository.ChatRoomRedisRepository;
 import com.bwabwayo.app.domain.chat.repository.ChatRoomRepository;
 import com.bwabwayo.app.domain.product.domain.Product;
 import com.bwabwayo.app.domain.product.repository.ProductRepository;
+import com.bwabwayo.app.domain.product.service.ProductService;
 import com.bwabwayo.app.domain.user.domain.ReviewAgg;
 import com.bwabwayo.app.domain.user.domain.User;
 import com.bwabwayo.app.domain.user.service.UserService;
@@ -33,7 +34,7 @@ public class ChatRoomService {
     private final ChatRoomRepository chatRoomRepository;
     private final ChatRoomRedisRepository chatRoomRedisRepository;
     private final UserService userService;
-    private final ProductRepository productRepository;
+    private final ProductService productService;
     private final RedisService redisService;
     private final CommonService commonService;
     private final StorageService storageService;
@@ -52,7 +53,7 @@ public class ChatRoomService {
         Long productId = savedChatRoom.getProductId();
 
         User seller = userService.findById(sellerId);
-        Product product = productRepository.findById(productId).orElseThrow(() -> new IllegalArgumentException("해당 사용자가 존재하지 않습니다."));
+        Product product = productService.findById(productId);
 
         ReviewAgg reviewAgg = userService.findReviewAggByUser(sellerId);
         String url = storageService.getUrlFromKey(product.getThumbnail());
@@ -116,7 +117,7 @@ public class ChatRoomService {
                 String sellerImage = storageService.getUrlFromKey(seller.getProfileImage());
                 String buyerImage = storageService.getUrlFromKey(buyer.getProfileImage());
 
-                Product product = productRepository.findById(productId).orElseThrow(() -> new IllegalArgumentException("해당 사용자가 존재하지 않습니다."));
+                Product product = productService.findById(productId);
 
                 String partnerId = chatRoom.getOtherUserId(userId); // 상대 유저 ID 구하는 메서드 필요
 
@@ -188,7 +189,7 @@ public class ChatRoomService {
         String buyerImage = storageService.getUrlFromKey(buyer.getProfileImage());
 
 
-        Product product = productRepository.findById(productId).orElseThrow(() -> new IllegalArgumentException("해당 사용자가 존재하지 않습니다."));
+        Product product = productService.findById(productId);
 
         ReviewAgg reviewAgg = userService.findReviewAggByUser(sellerId);
         String url = storageService.getUrlFromKey(product.getThumbnail());
