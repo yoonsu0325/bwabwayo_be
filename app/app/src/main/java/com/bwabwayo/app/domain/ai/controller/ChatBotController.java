@@ -28,18 +28,27 @@ public class ChatBotController {
         return ResponseEntity.ok(response);
     }
 
-    // 추천한 상품에 관련댄 판매글
+    // 추천한 상품에 관련된 판매글
     @GetMapping
-    public ResponseEntity<List<RecommendAiProductResponse>> getRecommendation(@RequestParam String keyword){
-        List<Product> products = productService.recommendTopK(keyword,3);
-        List<RecommendAiProductResponse> reList = products.stream().map(Product->
+    public ResponseEntity<List<RecommendAiProductResponse>> getRecommendation(@RequestParam String keyword) {
+        List<Product> products = productService.recommendTopK(keyword, 3);
+
+        List<RecommendAiProductResponse> reList = products.stream().map(p ->
                 RecommendAiProductResponse.builder()
-                        .id(Product.getId())
-                        .title(Product.getTitle())
-                        .category(Product.getCategory())
-                        .price(Product.getPrice())
-                        .productImages(Product.getProductImages())
-                        .build()).collect(Collectors.toList());
+                        .id(p.getId())
+                        .categoryId(p.getCategory() != null ? p.getCategory().getId() : null)
+                        .categoryName(p.getCategory() != null ? p.getCategory().getName() : null) // 필드명에 맞게
+                        .title(p.getTitle())
+                        .price(p.getPrice())
+                        .imageUrls(
+                                p.getProductImages() == null ? List.of() :
+                                        p.getProductImages().stream()
+                                                .map(img -> img.getUrl()) // 필드명(url/imageUrl/path)에 맞게 수정
+                                                .toList()
+                        )
+                        .build()
+        ).toList();
+
         return ResponseEntity.ok(reList);
     }
 }
