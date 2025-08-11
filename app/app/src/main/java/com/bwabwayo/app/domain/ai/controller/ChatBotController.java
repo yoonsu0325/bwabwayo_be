@@ -6,6 +6,7 @@ import com.bwabwayo.app.domain.ai.dto.response.RecommendAiProductResponse;
 import com.bwabwayo.app.domain.ai.service.ChatBotService;
 import com.bwabwayo.app.domain.product.domain.Product;
 import com.bwabwayo.app.domain.product.service.ProductService;
+import com.bwabwayo.app.global.storage.service.StorageService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -20,6 +21,7 @@ public class ChatBotController {
 
     private final ChatBotService chatBotService;
     private final ProductService productService;
+    private final StorageService storageService;
 
     // 챗봇 응답 전체
     @PostMapping
@@ -43,7 +45,7 @@ public class ChatBotController {
                         .imageUrls(
                                 p.getProductImages() == null ? List.of() :
                                         p.getProductImages().stream()
-                                                .map(img -> img.getUrl()) // 필드명(url/imageUrl/path)에 맞게 수정
+                                                .map(img -> storageService.getUrlFromKey(p.getThumbnail()))
                                                 .toList()
                         )
                         .build()
