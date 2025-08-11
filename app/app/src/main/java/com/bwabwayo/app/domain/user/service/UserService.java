@@ -175,23 +175,32 @@ public class UserService {
                 .nickname(user.getNickname())
                 .profileImage(storageService.getUrlFromKey(user.getProfileImage()))
                 .bio(user.getBio())
+                .email(user.getEmail())
+                .phoneNumber(user.getPhoneNumber())
                 .accountNumber(Optional.ofNullable(account).map(Account::getAccountNumber).orElse(null))
                 .bankName(Optional.ofNullable(account).map(Account::getBankName).orElse(null))
                 .accountHolder(Optional.ofNullable(account).map(Account::getAccountHolder).orElse(null))
                 .build();
     }
 
+    @Transactional
     public void updateUserDetail(UserDetailRequest request, User user) {
         if (request.getNickname() != null) {
             user.setNickname(request.getNickname());
         }
 
-        if (request.getProfileImage() != null) {
-            String targetKey = storageUtil.copyToDirectory(
-                    request.getProfileImage(), tempPath, profilePath
-            );
-            user.setProfileImage(targetKey);
+        String profileImage = request.getProfileImage();
+        String targetKey;
+        if(profileImage == null || profileImage.isEmpty()){
+            targetKey = "profiles/20250811162152_6cccbdf7-b8be-4ca9-adea-09bba6a90e1b.png";
+        } else {
+            if (URLValidator.isValidURL(request.getProfileImage())) { // 다운로드 후 S3 업로드
+                targetKey = storageService.upload(profileImage, profilePath);
+            } else { // S3의 profile로 이동
+                targetKey = storageUtil.copyToDirectory(profileImage, tempPath, profilePath);
+            }
         }
+        user.setProfileImage(targetKey);
 
         if (request.getBio() != null) {
             user.setBio(request.getBio());
@@ -204,6 +213,7 @@ public class UserService {
         if (request.getPhoneNumber() != null) {
             user.setPhoneNumber(request.getPhoneNumber());
         }
+        userRepository.saveAndFlush(user);
 
 
         boolean hasAllAccountFields = request.getAccountNumber() != null &&
