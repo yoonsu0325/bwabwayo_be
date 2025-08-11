@@ -13,6 +13,7 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
+@EqualsAndHashCode(of = "id")
 @Table(
         name = "user",
         uniqueConstraints = {
@@ -43,7 +44,7 @@ public class User {
     @Column(name = "phone_number", unique = true, length = 11)
     private String phoneNumber;
 
-    @Column(name = "profile_image", length = 255)
+    @Column(name = "profile_image", length = 2083)
     private String profileImage;
 
     @Column(nullable = false, columnDefinition = "TEXT")

@@ -7,6 +7,7 @@ import com.bwabwayo.app.domain.user.dto.request.ReviewRequest;
 import com.bwabwayo.app.domain.user.repository.ReviewRepository;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.util.Map;
@@ -15,6 +16,7 @@ import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class ReviewService {
     private final ReviewRepository reviewRepository;
     private final EvaluationService evaluationService;
@@ -75,8 +77,9 @@ public class ReviewService {
         userService.calcPoint(PointEventType.REVIEW_WRITTEN, PointEventType.REVIEW_WRITTEN.getPoint(),
                 userService.findById(request.getBuyerId()));
 
-        // 6. (선택) 신뢰도 업데이트 등 추가 로직
-//        userService.updateTrustScore(request.getSellerId(), request.getRating());
+        // 7. 신뢰도 업데이트 (이미 위에서 리뷰수와 평점을 업데이트 했기에 저장된 기본값 사용을 위해 null 처리)
+        User user = userService.findById(request.getSellerId());
+        userService.updateUserTrustScore(user, null, null, null, null);
     }
 
 }

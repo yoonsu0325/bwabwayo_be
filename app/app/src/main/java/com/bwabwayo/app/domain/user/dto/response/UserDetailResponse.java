@@ -12,6 +12,8 @@ public class UserDetailResponse {
     private String nickname;
     private String profileImage;
     private String bio;
+    private String email;
+    private String phoneNumber;
     private String accountNumber;
     private String bankName;
     private String accountHolder;

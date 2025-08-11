@@ -24,7 +24,7 @@ public class ReportController {
 
     // 신고 게시물 페이지 페이징
     @GetMapping
-    public ResponseEntity<Page<ReportResponse>> getInqueryAll(
+    public ResponseEntity<Page<ReportResponse>> getInquiryAll(
             @PageableDefault(sort = "id", direction = Sort.Direction.DESC)
             Pageable pageable) {
         return ResponseEntity.ok(reportService.findAll(pageable));

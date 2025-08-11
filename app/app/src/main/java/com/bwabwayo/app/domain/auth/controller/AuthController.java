@@ -3,6 +3,7 @@ package com.bwabwayo.app.domain.auth.controller;
 
 import com.bwabwayo.app.domain.auth.annotation.LoginUser;
 import com.bwabwayo.app.domain.auth.utils.EncryptUtil;
+import com.bwabwayo.app.domain.user.domain.PointEventType;
 import com.bwabwayo.app.domain.user.service.UserService;
 import com.bwabwayo.app.domain.auth.utils.JwtProperties;
 import com.bwabwayo.app.domain.user.domain.User;
@@ -13,6 +14,7 @@ import com.bwabwayo.app.domain.auth.service.AuthRedisService;
 import com.bwabwayo.app.domain.auth.utils.JWTUtils;
 import io.jsonwebtoken.Jwts;
 import io.swagger.v3.oas.annotations.Operation;
+import jakarta.persistence.EntityManager;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
@@ -29,6 +31,9 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ResponseStatusException;
 
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.Date;
 import java.util.Map;
 
@@ -215,11 +220,27 @@ public class AuthController {
             }
         }
 
+        //출석체크
+        LocalDateTime lastLoginAt = user.getLastLoginAt().plusHours(9);
+        // 오늘 00:00 (즉, 오늘의 시작 시각)
+        ZoneId seoulZone = ZoneId.of("Asia/Seoul");
+        LocalDateTime todayStartInSeoul = LocalDate.now(seoulZone).atStartOfDay();
+        int loginPoint = 0;
+        if (lastLoginAt.isBefore(todayStartInSeoul)) {
+            // 오늘 처음 로그인한 유저
+            // 포인트 갱신
+            userService.calcPoint(PointEventType.ATTENDANCE, PointEventType.ATTENDANCE.getPoint(), user);
+            loginPoint = PointEventType.ATTENDANCE.getPoint();
+        }
+        user.setLastLoginAt(LocalDateTime.now(seoulZone));
+        userService.saveUser(user);
+
         Map<String, Object> responseBody = Map.of(
                 "accessToken", newAccessToken,
                 "message", refreshReissued
                         ? "AccessToken과 RefreshToken이 모두 재발급되었습니다."
-                        : "AccessToken이 재발급되었습니다."
+                        : "AccessToken이 재발급되었습니다.",
+                "loginPoint", loginPoint
         );
 
         return ResponseEntity.ok()

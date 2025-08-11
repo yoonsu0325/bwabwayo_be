@@ -1,6 +1,5 @@
 package com.bwabwayo.app.domain.support.repository;
 
-import com.bwabwayo.app.domain.support.domain.Inquery;
 import com.bwabwayo.app.domain.support.domain.Report;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;

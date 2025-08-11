@@ -59,6 +59,9 @@ public class AuthService {
         if(defaultUser != null && !defaultUser.isActive()){
             //재가입 유저
 
+            //2. User 저장
+            defaultUser = userService.updateUser(defaultUser, request);
+
             //출석체크
             LocalDateTime lastLoginAt = defaultUser.getLastLoginAt().plusHours(9);
             // 오늘 00:00 (즉, 오늘의 시작 시각)
@@ -70,8 +73,6 @@ public class AuthService {
                 userService.calcPoint(PointEventType.ATTENDANCE, PointEventType.ATTENDANCE.getPoint(), defaultUser);
                 loginPoint = PointEventType.ATTENDANCE.getPoint();
             }
-            //2. User 저장
-            defaultUser = userService.updateUser(defaultUser, request);
 
             // 3. Account 저장 조건 검사
             if (request.getAccountNumber() != null &&
@@ -95,6 +96,7 @@ public class AuthService {
 
             // 2. User 저장
             User user = userService.createUser(request);
+
             //포인트 얻기
             signUpPoint = PointEventType.SIGNUP_FIRST.getPoint();
             loginPoint = PointEventType.ATTENDANCE.getPoint();

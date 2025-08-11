@@ -14,7 +14,7 @@ public class CategoryDTO {
     private Long id;
     private String name;
 
-    public static CategoryDTO fromEntity(Category category) {
+    public static CategoryDTO from(Category category) {
         return CategoryDTO.builder().id(category.getId()).name(category.getName()).build();
     }
 }

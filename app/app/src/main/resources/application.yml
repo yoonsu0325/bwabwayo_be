@@ -83,6 +83,9 @@ cloud:
       bucket: bwabwayo-general-bucket
     stack:
       auto: false
+    multipart-upload:
+      threshold: 10485760 # 10 * 1024 *  1024 (10MB)
+      part-size: 8388608 # 8 * 1024 *  1024 (8MB)
 
 qdrant:
   base-url: "https://i13e202.p.ssafy.io/qdrant"

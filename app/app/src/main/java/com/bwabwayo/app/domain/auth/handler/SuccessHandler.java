@@ -49,18 +49,20 @@ public class SuccessHandler extends SimpleUrlAuthenticationSuccessHandler {
         response.setContentType("application/json");
         response.setCharacterEncoding("UTF-8");
         if (user.getRole() == Role.PREUSER) {
+            log.info("신규유저 혹은 재가입유저 로그인");
             String redirectUrl = UriComponentsBuilder
                     .fromUriString("https://i13e202.p.ssafy.io/fe/logincallback")
                     .queryParam("accessToken", accessToken)
                     .queryParam("isNewUser", user.getRole() == Role.PREUSER)
                     .queryParam("id", user.getId())
                     .queryParam("email", user.getEmail())
-                    .queryParam("profileImage", URLEncoder.encode(user.getProfileImage(), StandardCharsets.UTF_8))
+                    .queryParam("profileImage", user.getProfileImage())
                     .build()
                     .toUriString();
 
             response.sendRedirect(redirectUrl);
         }else { //AT 토큰 발행 후 전달, RT를 여기서 발급하면 kakao쪽으로 응답이 가버림
+            log.info("기본유저 로그인");
             User defaultUser = userService.findById(user.getId());
             LocalDateTime lastLoginAt = defaultUser.getLastLoginAt().plusHours(9);
             log.info(lastLoginAt.toString());

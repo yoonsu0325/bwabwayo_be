@@ -37,7 +37,10 @@ public interface StorageService {
      * @param sourceKey 이동할 원본 객체의 키
      * @param targetKey 이동 대상 객체의 키
      */
-    void move(String sourceKey, String targetKey);
+    default void move(String sourceKey, String targetKey){
+        copy(sourceKey, targetKey);
+        delete(sourceKey);
+    }
 
 
     /**

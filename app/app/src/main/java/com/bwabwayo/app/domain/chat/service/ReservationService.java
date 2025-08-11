@@ -39,8 +39,19 @@ public class ReservationService {
     private final Scheduler scheduler;
     private final StorageService storageService;
     private final SystemChatService systemChatService;
-
+    private static final String JOB_GROUP = "openvidu-jobs";
+    private static final String TRIGGER_GROUP = "openvidu-triggers";
+    private static final String JOB_NAME_PREFIX = "openvidu-job-";
+    private static final String TRIGGER_NAME_PREFIX = "openvidu-trigger-";
     private final Integer RESERVATION_POINT = 1000;
+
+    private JobKey jobKeyOf(Long reservationId) {
+        return JobKey.jobKey(JOB_NAME_PREFIX + reservationId, JOB_GROUP);
+    }
+
+    private TriggerKey triggerKeyOf(Long reservationId) {
+        return TriggerKey.triggerKey(TRIGGER_NAME_PREFIX + reservationId, TRIGGER_GROUP);
+    }
 
 
     public VideocallReservation makeReservation(
@@ -73,7 +84,7 @@ public class ReservationService {
 
             // 2) JobDetail 생성
             JobDetail jobDetail = JobBuilder.newJob(OpenViduJob.class)
-                    .withIdentity("openvidu-job-" + reservation.getId())
+                    .withIdentity(jobKeyOf(reservation.getId()))
                     .usingJobData(dataMap)
                     .build();
 
@@ -87,6 +98,7 @@ public class ReservationService {
                             .toInstant()
             );
             Trigger trigger = TriggerBuilder.newTrigger()
+                    .withIdentity(triggerKeyOf(reservation.getId()))
                     .forJob(jobDetail)
                     .startAt(startAt)
                     .build();
@@ -96,6 +108,24 @@ public class ReservationService {
 
         } catch (SchedulerException e) {
             throw new RuntimeException("예약 스케줄 등록 실패", e);
+        }
+    }
+
+    private void cancelOpenViduSchedule(VideocallReservation reservation) {
+        JobKey jobKey = jobKeyOf(reservation.getId());
+        TriggerKey triggerKey = triggerKeyOf(reservation.getId());
+        try {
+            // 트리거 먼저 해제(선택) 후 잡 삭제
+            if (scheduler.checkExists(triggerKey)) {
+                scheduler.unscheduleJob(triggerKey);
+                log.info("Unscheduled trigger: {}", triggerKey);
+            }
+            if (scheduler.checkExists(jobKey)) {
+                scheduler.deleteJob(jobKey); // 관련 트리거도 함께 제거됨
+                log.info("Deleted job: {}", jobKey);
+            }
+        } catch (SchedulerException e) {
+            log.warn("스케줄 취소 실패 reservationId={}", reservation.getId(), e);
         }
     }
 
@@ -115,6 +145,9 @@ public class ReservationService {
         if(!reservation.getRoomId().equals(roomId)){
             throw new IllegalAccessException("접근할 수 없는 채팅방입니다");
         }
+
+        cancelOpenViduSchedule(reservation);
+
         LocalDateTime now = LocalDateTime.now();
 
         LocalDateTime reservedTime = commonService.parseSafe(reservation.getStartAt());
@@ -130,7 +163,7 @@ public class ReservationService {
             //판매자가 취소 -> 판매자 패널티 + 구매자 포인트 돌려받음
             if(user.getId().equals(reservation.getSellerId())){
                 User seller = userService.findById(reservation.getSellerId());
-                //userService.panalize(seller);
+                userService.penalize(seller);
                 userService.calcPoint(PointEventType.VIDEO_CALL, RESERVATION_POINT, buyer);
             }
             //구매자가 취소 -> 그냥 취소

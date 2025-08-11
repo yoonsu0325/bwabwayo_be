@@ -16,7 +16,7 @@ import java.util.Set;
 @Service
 public class ViewCountService {
 
-    private static final Duration VIEW_TTL = Duration.ofHours(1);
+    private static final Duration VIEW_TTL = Duration.ofMinutes(1);
     private static final String PREFIX = "viewCount:";
 
     private final RedisTemplate<String, Long> viewCountRedisTemplate;
