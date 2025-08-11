@@ -328,6 +328,11 @@ public class UserService {
         userRepository.save(user);
     }
 
+    public void penalize(User user){
+        user.setPenaltyCount(user.getPenaltyCount() + 1);
+        userRepository.save(user);
+    }
+
 
     public ReviewAgg findReviewAggByUser(String userId) {
         return reviewAggRepository.findByUserId(userId)
