@@ -30,6 +30,7 @@ import org.springframework.web.client.RestTemplate;
 import org.springframework.web.util.UriComponentsBuilder;
 
 import java.util.List;
+import java.util.Map;
 
 
 @Slf4j
@@ -70,7 +71,7 @@ public class ProductController {
     @Operation(summary = "상품 정보 갱신")
     @ApiResponse(responseCode = "200", description = "상품 정보 갱신 완료")
     @PutMapping("/{productId}")
-    public ResponseEntity<Void> updateProduct(
+    public ResponseEntity<?> updateProduct(
             @PathVariable Long productId,
             @Valid @RequestBody ProductUpsertRequest request,
             @LoginUser User loginUser
@@ -87,7 +88,7 @@ public class ProductController {
         // 검색 엔진 내 상품 정보 갱신
         productEmbeddingService.upsert(product);
 
-        return ResponseEntity.ok().build();
+        return ResponseEntity.ok(Map.of("result", "수정완료"));
     }
 
     @Operation(summary = "상품 삭제")
