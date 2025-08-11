@@ -163,7 +163,7 @@ public class ReservationService {
             //판매자가 취소 -> 판매자 패널티 + 구매자 포인트 돌려받음
             if(user.getId().equals(reservation.getSellerId())){
                 User seller = userService.findById(reservation.getSellerId());
-                //userService.panalize(seller);
+                userService.penalize(seller);
                 userService.calcPoint(PointEventType.VIDEO_CALL, RESERVATION_POINT, buyer);
             }
             //구매자가 취소 -> 그냥 취소

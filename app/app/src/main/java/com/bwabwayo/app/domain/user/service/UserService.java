@@ -1,14 +1,14 @@
 package com.bwabwayo.app.domain.user.service;
 
-import com.bwabwayo.app.global.exception.NotFoundException;
-import com.bwabwayo.app.domain.auth.service.AuthService;
-import com.bwabwayo.app.domain.user.domain.*;
 import com.bwabwayo.app.domain.auth.dto.request.UserSignUpRequest;
+import com.bwabwayo.app.domain.user.domain.*;
 import com.bwabwayo.app.domain.user.dto.request.UserDetailRequest;
 import com.bwabwayo.app.domain.user.dto.response.UserDetailResponse;
 import com.bwabwayo.app.domain.user.dto.response.UserEvaluationStat;
 import com.bwabwayo.app.domain.user.dto.response.UserInfoResponse;
-import com.bwabwayo.app.domain.user.repository.*;
+import com.bwabwayo.app.domain.user.repository.ReviewAggRepository;
+import com.bwabwayo.app.domain.user.repository.UserRepository;
+import com.bwabwayo.app.global.exception.NotFoundException;
 import com.bwabwayo.app.global.storage.service.StorageService;
 import com.bwabwayo.app.global.storage.util.StorageUtil;
 import com.bwabwayo.app.global.url.URLValidator;
@@ -330,6 +330,12 @@ public class UserService {
 
     public void penalize(User user){
         user.setPenaltyCount(user.getPenaltyCount() + 1);
+        userRepository.save(user);
+    }
+
+    public void addDealCount(String userId){
+        User user = findById(userId);
+        user.setDealCount(user.getDealCount() + 1);
         userRepository.save(user);
     }
 

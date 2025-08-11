@@ -10,6 +10,7 @@ import com.bwabwayo.app.domain.product.enums.SaleStatus;
 import com.bwabwayo.app.domain.product.service.ProductService;
 import com.bwabwayo.app.domain.product.service.SaleService;
 import com.bwabwayo.app.domain.user.domain.User;
+import com.bwabwayo.app.domain.user.service.UserService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -25,6 +26,7 @@ public class SystemChatService {
     private final ChatRoomService chatRoomService;
     private final ProductService productService;
     private final SaleService saleService;
+    private final UserService userService;
 
     public void sendVideoCallMessage(ChatRoom chatRoom, String sessionId){
         MessageDTO messageDTO = MessageDTO.builder()
@@ -162,6 +164,8 @@ public class SystemChatService {
                 .productStatus(SaleStatus.SOLD_OUT).build();
 
         setProductStatus(productId, productStatusRequest);
+
+        userService.addDealCount(chatRoom.getSellerId());
 
         //리뷰작성 메세지
         MessageDTO messageDTO = MessageDTO.builder()
