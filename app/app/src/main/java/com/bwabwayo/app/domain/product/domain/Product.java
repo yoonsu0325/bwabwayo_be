@@ -43,7 +43,7 @@ public class Product {
     @Column(nullable = false)
     private int price; // 판매가
 
-    @Column(length = 1024, nullable = false)
+    @Column(length = 2083, nullable = false)
     private String thumbnail; // 썸네일 key
 
     @Setter(AccessLevel.NONE)

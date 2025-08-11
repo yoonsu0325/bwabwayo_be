@@ -172,6 +172,7 @@ public class S3Service implements StorageService {
 
     @Override
     public String getUrlFromKey(String key) {
+        if(key.startsWith("http")) return key;
         return amazonS3.getUrl(bucketName, key).toString();
     }
 
