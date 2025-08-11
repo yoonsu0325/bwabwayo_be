@@ -353,7 +353,7 @@ public class ProductService {
             // 이전 이미지 제거
             List<ProductImage> productImages = product.getProductImages();
             oldImageCount = productImages != null ? productImages.size() : 0;
-            if(ENABLE_REALTIME_DELETE && oldImageCount > 0){
+            if(oldImageCount > 0){
                 product.getProductImages().clear();
                 productImageRepository.deleteAllByProduct(product);
                 productImageRepository.flush();

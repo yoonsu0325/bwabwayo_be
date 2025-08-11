@@ -19,13 +19,4 @@ public class ReportRequest {
     private String description;
     private User target;
     private List<String> imageUrlList;
-
-    public static Report toEntity(ReportRequest request){
-        return Report.builder()
-                .title(request.getTitle())
-                .imageUrlList(request.getImageUrlList())
-                .description(request.getDescription())
-                .target(request.getTarget())
-                .build();
-    }
 }
