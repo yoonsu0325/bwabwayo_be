@@ -126,7 +126,9 @@ public class UserService {
         user.setLastLoginAt(LocalDateTime.now(ZoneId.of("Asia/Seoul")));
         user.setActive(true);
         user.setRole(Role.USER);
-        return userRepository.save(user);
+        User returnUser = userRepository.save(user);
+        userRepository.flush();
+        return returnUser;
     }
 
     public UserInfoResponse getUserInfo(User user) {
