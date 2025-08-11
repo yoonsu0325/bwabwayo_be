@@ -148,7 +148,7 @@ public class EmbeddingService {
 //        body.put("filter", filter);
 
         try {
-            log.debug("Qdrant 검색 요청 JSON:\n{}", objectMapper.writeValueAsString(body));
+            log.trace("Qdrant 검색 요청 JSON:\n{}", objectMapper.writeValueAsString(body));
 
             // 요청
             HttpEntity<Map<String, Object>> request = new HttpEntity<>(body, getJsonHeader());
