@@ -3,6 +3,9 @@ package com.bwabwayo.app.domain.chat.service;
 import com.bwabwayo.app.domain.chat.dto.MessageDTO;
 import com.bwabwayo.app.domain.chat.dto.MessageSubDTO;
 import com.bwabwayo.app.domain.chat.dto.response.ChatRoomListResponse;
+import com.bwabwayo.app.domain.notification.dto.request.UpsertRequest;
+import com.bwabwayo.app.domain.notification.service.NotificationService;
+import com.bwabwayo.app.domain.notification.service.SseService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -17,6 +20,7 @@ import java.util.List;
 public class RedisSubscriber {
     private final ObjectMapper objectMapper;
     private final SimpMessageSendingOperations messagingTemplate;
+    private final SseService sseService;
 
     public void sendMessage(String publishMessage) {
         try {
@@ -27,6 +31,8 @@ public class RedisSubscriber {
                     "/sub/chat/room/" + chatMessage.getRoomId(), chatMessage
             );
 
+            // TODO: 알림 연결
+            sseService.upsertChatNotification(chatMessage.getRoomId(), UpsertRequest.of(chatMessage.getReceiverId(), chatMessage.getContent()));
         } catch (Exception e) {
             log.error("[sendMessage] Exception: {}", e.getMessage(), e);
         }
