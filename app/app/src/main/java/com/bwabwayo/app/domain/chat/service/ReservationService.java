@@ -198,8 +198,8 @@ public class ReservationService {
             }
             else{
                 //화상거래함
-                replayUrl = storageService.getUrlFromKey(reservation.getVideoCallUrl());
-                isEnd = true;
+                if(reservation.getVideoCallUrl() == null) isEnd = false;
+                else replayUrl = storageService.getUrlFromKey(reservation.getVideoCallUrl());
             }
 
             reservationResponseList.add(ReservationResponse.from(reservation, seller.getNickname(), product.getTitle(), Optional.ofNullable(replayUrl), isEnd));
@@ -225,8 +225,8 @@ public class ReservationService {
             }
             else{
                 //화상거래함
-                replayUrl = storageService.getUrlFromKey(reservation.getVideoCallUrl());
-                isEnd = true;
+                if(reservation.getVideoCallUrl() == null) isEnd = false;
+                else replayUrl = storageService.getUrlFromKey(reservation.getVideoCallUrl());
             }
 
             reservationResponseList.add(ReservationResponse.from(reservation, seller.getNickname(), product.getTitle(), Optional.ofNullable(replayUrl), isEnd));
