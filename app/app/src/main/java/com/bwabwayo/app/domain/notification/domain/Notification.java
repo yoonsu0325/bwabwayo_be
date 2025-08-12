@@ -33,6 +33,10 @@ public class Notification {
     @Column(nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
+    @Column(nullable = false)
+    @Builder.Default
+    private boolean isRead = false;
+
     @PrePersist
     public void prePersist(){
         this.createdAt = LocalDateTime.now(ZoneId.of("Asia/Seoul"));

@@ -6,6 +6,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
 import java.io.IOException;
@@ -27,47 +28,22 @@ public class SseService {
     @Value("${sse.timeout}")
     private Long timeout;
 
-
     /**
      * 사용자에게 알림을 보낼 수 있도록 등록
      */
-    public SseEmitter subscribe(String userId, String lastEventId) {
-//        try {
-//            // 연결 확인용 event 발송
-//            emitter.send(SseEmitter.event()
-//                    .id(String.valueOf(System.currentTimeMillis()))
-//                    .name("connect")
-//                    .data("connected")
-//                    .reconnectTime(3000));
-//        } catch (IOException e) {
-//            emitter.completeWithError(e);
-//        }
-
-        List<Notification> notifications = null;
-        try {
-            try{
-                if(lastEventId != null){
-                    long millis = Long.parseLong(lastEventId);
-                    LocalDateTime lastTime = Instant.ofEpochMilli(millis)
-                            .atZone(ZoneId.of("Asia/Seoul"))
-                            .toLocalDateTime();
-
-                    notifications = notificationRepository
-                            .findAllByReceiverIdAndIsReadFalseAndCreatedAtAfter(userId, lastTime);
-                }
-            } catch (NumberFormatException e){
-                log.warn("LastEventId의 형식이 올바르지 않습니다: LastEventId={}", lastEventId);
-            } finally {
-                if(notifications == null){
-                    notifications = notificationRepository
-                            .findAllByReceiverIdAndIsReadFalseOrderByCreatedAtDesc(userId);
-                }
-            }
-        } catch (Exception e) {
-            log.warn("알림 복원 실패: {}", e.getMessage());
-        }
-
+    public SseEmitter subscribe(String userId) {
         SseEmitter emitter = new SseEmitter(timeout);
+
+        try {
+            // 연결 확인용 event 발송
+            emitter.send(SseEmitter.event()
+                    .id(String.valueOf(System.currentTimeMillis()))
+                    .name("connect")
+                    .data("connected")
+                    .reconnectTime(3000));
+        } catch (IOException e) {
+            emitter.completeWithError(e);
+        }
 
         // 이전 연결 제거
         SseEmitter old = emitters.put(userId, emitter);
@@ -88,21 +64,38 @@ public class SseService {
             log.info("SSE 에러 발생: userId={}", userId);
         });
 
-        if(notifications != null) {
-            try {
-                for (Notification n : notifications) {
-                    log.info("알림 전송: notificationId={}", n.getId());
-                    emitter.send(SseEmitter.event()
-                            .id(String.valueOf(toEpochMilli(n.getCreatedAt())))
-                            .name("notification")
-                            .data(notificationService.build(n))
-                    );
-                }
-            } catch (IOException e){
-                    emitter.completeWithError(e);
-            }
-        }
         return emitter;
+    }
+
+    @Transactional
+    public List<Notification> getRecentNotifications(String userId, String lastEventId){
+        if(lastEventId != null) { // 연결이 끊긴 이후부터 조회
+            long millis = Long.parseLong(lastEventId);
+            LocalDateTime lastTime = Instant.ofEpochMilli(millis)
+                    .atZone(ZoneId.of("Asia/Seoul"))
+                    .toLocalDateTime();
+
+            return notificationRepository
+                    .findAllByReceiverIdAndIsReadFalseAndCreatedAtAfter(userId, lastTime);
+        } else{ // 전체에서 조회
+            return notificationRepository
+                    .findAllByReceiverIdAndIsReadFalseOrderByCreatedAtDesc(userId);
+        }
+    }
+
+    // 알림 발송
+    @Transactional
+    public void pop(String userId, String lastEventId) {
+        List<Notification> notifications = getRecentNotifications(userId, lastEventId);
+
+        SseEmitter emitter = emitters.get(userId);
+        if(emitter == null) return;
+        if(notifications == null || notifications.isEmpty()) return;
+
+        for (Notification n : notifications) {
+            sendOne(emitter, userId,n);
+        }
+
     }
 
     private long toEpochMilli(LocalDateTime ldt) {
@@ -110,23 +103,25 @@ public class SseService {
     }
 
     public void send(String userId, Notification notification) {
-        notificationRepository.save(notification);
-
         SseEmitter emitter = emitters.get(userId);
-        if(emitter != null) {
-            log.warn("사용자가 현재 알림을 받을 수 없는 상태입니다: user={}, notificationId={}", userId, notification.getId());
+        sendOne(emitter, userId, notification);
+    }
 
-            try {
-                log.info("알림 전송: notificationId={}", notification.getId());
+    public void sendOne(SseEmitter emitter, String userId, Notification notification){
+        if(emitter == null) return;
 
-                emitter.send(SseEmitter.event()
-                        .name("notification")
-                        .data(notificationService.build(notification))
-                        .reconnectTime(3000));
-            } catch (IOException e) {
-                emitters.remove(userId);
-                emitter.completeWithError(e);
-            }
+        try {
+            log.info("알림 전송: notificationId={}", notification.getId());
+
+            emitter.send(SseEmitter.event()
+                    .id(String.valueOf(toEpochMilli(notification.getCreatedAt())))
+                    .name("notification")
+                    .data(notificationService.build(notification))
+                    .reconnectTime(3000));
+        } catch (IOException e) {
+            emitters.remove(userId);
+            emitter.completeWithError(e);
+            throw new RuntimeException("SSE 알림 전송 중 예외 발생");
         }
     }
 }

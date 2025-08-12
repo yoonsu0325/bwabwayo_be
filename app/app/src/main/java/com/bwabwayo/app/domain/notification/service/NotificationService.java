@@ -78,7 +78,6 @@ public class NotificationService {
 
     public NotificationDTO build(Notification notification){
         Product product = notification.getProduct();
-        User receiver = notification.getReceiver();
 
         return NotificationDTO.builder()
                 .id(notification.getId())

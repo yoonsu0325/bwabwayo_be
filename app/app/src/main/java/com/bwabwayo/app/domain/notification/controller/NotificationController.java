@@ -34,7 +34,8 @@ public class NotificationController {
             @RequestHeader(value = "Last-Event-ID", required = false) String lastEventId,
             @LoginUser User user
     ){
-        return sseService.subscribe(user.getId(), lastEventId);
+//        return sseService.subscribe(user.getId(), lastEventId);
+        return sseService.subscribe(user.getId());
     }
 
     @Operation(summary = "내 알림 목록 조회", description = "내 알림 목록을 조회합니다.")
