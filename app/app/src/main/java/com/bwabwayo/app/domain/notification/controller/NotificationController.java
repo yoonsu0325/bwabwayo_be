@@ -65,6 +65,7 @@ public class NotificationController {
         return ResponseEntity.ok(NotificationListResponseDTO.of(dtos));
     }
 
+    @Operation(summary = "채팅방 알림/메시지 보내기")
     @PostMapping("/send/chat/{chatId}")
     public ResponseEntity<?> upsertChatNotification(
             @PathVariable Long chatId,
@@ -74,6 +75,7 @@ public class NotificationController {
         return ResponseEntity.ok(Map.of("result", "채팅 알림 전송"));
     }
 
+    @Operation(summary = "상품 알림 보내기")
     @PostMapping("/send/product/{productId}")
     public ResponseEntity<?> upsertProductNotification(
             @PathVariable Long productId,
@@ -83,6 +85,7 @@ public class NotificationController {
         return ResponseEntity.ok(Map.of("result", "상품 알림 전송"));
     }
 
+    @Operation(summary = "채팅방 알림/메시지 읽기")
     @PostMapping("/mark/chat/{chatId}")
     public ResponseEntity<?> markChatRead(
             @PathVariable Long chatId,
@@ -92,6 +95,7 @@ public class NotificationController {
         return ResponseEntity.ok(Map.of("result", "채팅 읽음 표시: chatId="+chatId));
     }
 
+    @Operation(summary = "상품 알림 읽기")
     @PostMapping("/mark/product/{productId}")
     public ResponseEntity<?> markProductRead(
             @PathVariable Long productId,
