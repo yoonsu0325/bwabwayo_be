@@ -302,6 +302,9 @@ public class ProductService {
         if(seller != null && product.getSeller() == null)  product.setSeller(seller);
 
         Category category = categoryService.findById(dto.getCategoryId());
+        while(!category.getChildren().isEmpty()){ // 상품이 말단 카테고리에 소속되도록 강제
+            category = category.getChildren().get(0);
+        }
         product.setCategory(category);
 
         product.setTitle(dto.getTitle());
