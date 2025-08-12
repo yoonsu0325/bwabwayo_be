@@ -27,19 +27,11 @@ public class Notification {
     @JoinColumn(name = "product_id", nullable = false)
     private Product product;
 
-    @Enumerated(EnumType.STRING)
-    @Column(nullable = false, length = 50)
-    private NotificationType type;
-
     @Column(nullable = false)
     private String message;
 
     @Column(nullable = false, updatable = false)
     private LocalDateTime createdAt;
-
-    @Builder.Default
-    @Column(nullable = false)
-    private boolean isRead = false;
 
     @PrePersist
     public void prePersist(){

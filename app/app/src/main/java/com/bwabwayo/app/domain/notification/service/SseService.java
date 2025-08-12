@@ -1,7 +1,6 @@
 package com.bwabwayo.app.domain.notification.service;
 
 import com.bwabwayo.app.domain.notification.domain.Notification;
-import com.bwabwayo.app.domain.notification.dto.response.NotificationDTO;
 import com.bwabwayo.app.domain.notification.repository.NotificationRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -24,6 +23,7 @@ public class SseService {
 
     private final NotificationRepository notificationRepository;
     private final Map<String, SseEmitter> emitters = new ConcurrentHashMap<>();
+    private final NotificationService notificationService;
     @Value("${sse.timeout}")
     private Long timeout;
 
@@ -95,7 +95,7 @@ public class SseService {
                     emitter.send(SseEmitter.event()
                             .id(String.valueOf(toEpochMilli(n.getCreatedAt())))
                             .name("notification")
-                            .data(NotificationDTO.fromEntity(n))
+                            .data(notificationService.build(n))
                     );
                 }
             } catch (IOException e){
@@ -121,7 +121,7 @@ public class SseService {
 
                 emitter.send(SseEmitter.event()
                         .name("notification")
-                        .data(NotificationDTO.fromEntity(notification))
+                        .data(notificationService.build(notification))
                         .reconnectTime(3000));
             } catch (IOException e) {
                 emitters.remove(userId);
