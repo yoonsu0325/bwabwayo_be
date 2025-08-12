@@ -156,7 +156,10 @@ public class SseService {
     public void handleMessage(MessageDTO message){
         String contnet = message.getContent();
         switch (message.getType()){
-            case TEXT: break;
+            case TEXT: {
+                upsertChatNotification(message.getRoomId(), UpsertRequest.of(message.getReceiverId(), contnet));
+                return;
+            }
             case IMAGE: contnet = "이미지 파일입니다."; break;
             case CREATE_ROOM: contnet = "채팅방이 생성되었습니다."; break;
             case RESERVE_VIDEOCALL: contnet = "화상 거래가 예약되었습니다"; break;
@@ -170,7 +173,7 @@ public class SseService {
             case CONFIRM_PURCHASE: contnet = "구매가 확정되었습니다."; break;
             case END_TRADE: contnet = "거래가 종료됩니다."; break;
         }
-
         upsertChatNotification(message.getRoomId(), UpsertRequest.of(message.getReceiverId(), contnet));
+        upsertChatNotification(message.getRoomId(), UpsertRequest.of(message.getSenderId(), contnet));
     }
 }
