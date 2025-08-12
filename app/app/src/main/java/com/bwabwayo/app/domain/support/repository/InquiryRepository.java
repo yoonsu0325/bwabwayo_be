@@ -9,4 +9,6 @@ import org.springframework.stereotype.Repository;
 @Repository
 public interface InquiryRepository extends JpaRepository<Inquiry,Integer> {
     Page<Inquiry> findAll(Pageable pageable);
+
+    Page<Inquiry> findInquiriesByUser_Id(String userId, Pageable pageable);
 }

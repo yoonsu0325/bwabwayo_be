@@ -42,6 +42,22 @@ public class InquiryService {
                         .build());
     }
 
+    public Page<InquiryResponse> findInquiryByUserId(User user, Pageable pageable) {
+        Page<Inquiry> inquiries = inquiryRepository.findInquiriesByUser_Id(user.getId(), pageable);
+
+        // Inquiry response 객체로 변환
+        return inquiries.map(inquiry ->
+                InquiryResponse.builder()
+                        .id(inquiry.getId())
+                        .title(inquiry.getTitle())
+                        .imageUrlList(inquiry.getInquiryImages().stream().map(img->storageService.getUrlFromKey(img.getUrl())).toList())
+                        .name(inquiry.getUser().getNickname())
+                        .description(inquiry.getDescription())
+                        .reply(inquiry.getReply())
+                        .createdAt(inquiry.getCreatedAt().toString())
+                        .build());
+    }
+
     // 문의 게시물 작성
     @Transactional
     public void save(InquiryRequest inquiryRequest, User user) {

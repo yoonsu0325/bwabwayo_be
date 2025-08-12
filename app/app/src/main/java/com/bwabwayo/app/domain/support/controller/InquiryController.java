@@ -30,6 +30,15 @@ public class InquiryController {
         return ResponseEntity.ok(inquiryService.findAll(pageable));
     }
 
+    @GetMapping("/me")
+    public ResponseEntity<Page<InquiryResponse>> getInquiryByUserId(
+            @LoginUser User user,
+            @PageableDefault(sort = "id", direction = Sort.Direction.DESC)
+            Pageable pageable
+    ) {
+        return ResponseEntity.ok(inquiryService.findInquiryByUserId(user, pageable));
+    }
+
     // 문의 게시물 작성
     @PostMapping("/save")
     public ResponseEntity<?> saveInquiry(@RequestBody InquiryRequest inqueryRequest, @LoginUser User user) {
