@@ -2,9 +2,13 @@ package com.bwabwayo.app.domain.payment.controller;
 
 import com.bwabwayo.app.domain.auth.annotation.LoginUser;
 import com.bwabwayo.app.domain.payment.dto.request.PaymentConfirmRequest;
+import com.bwabwayo.app.domain.product.domain.Product;
 import com.bwabwayo.app.domain.product.domain.Sale;
+import com.bwabwayo.app.domain.product.enums.PaymentStatus;
+import com.bwabwayo.app.domain.product.service.ProductService;
 import com.bwabwayo.app.domain.product.service.SaleService;
 import com.bwabwayo.app.domain.user.domain.User;
+import com.bwabwayo.app.domain.user.service.UserService;
 import com.bwabwayo.app.global.exception.BadRequestException;
 import com.bwabwayo.app.global.exception.NotFoundException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -31,6 +35,8 @@ import java.util.Base64;
 @RequestMapping("/api/payments")
 public class PaymentController {
     private final SaleService saleService;
+    private final ProductService productService;
+    private final UserService userService;
     @Value("${toss.url.confirm}")
     private String TOSS_CONFIRM_URL;
     @Value("${toss.key.secret-key}")
@@ -80,12 +86,33 @@ public class PaymentController {
         String buyerId = loginUser.getId();
         Long productId = requestDTO.getProductId();
 
+//        User buyer = userService.findById(buyerId);
+        Product product = productService.findById(productId);
+
         Sale sale = null;
         try {
             sale = saleService.findByBuyerIdAndProductId(buyerId, productId);
-            if (sale.isPaid()) throw new BadRequestException("중복 결제 요청입니다.");
+            if(sale.getPaymentStatus() == PaymentStatus.COMPLETED){
+                log.warn("이미 완료된 요청입니다: saleId={}", sale.getId());
+//                throw new BadRequestException("중복 결제 요청입니다.");
+            }
         } catch (IllegalArgumentException e) {
-            throw new NotFoundException(e.getMessage());
+            log.warn("사전에 등록되지 않은 거래에 대한 결제 요청 입니다: productId={}, sellerId={}, buyerId={}, amount={}",
+                    product.getId(),
+                    product.getSeller().getId(),
+                    buyerId,
+                    requestDTO.getAmount()
+            );
+
+            sale = Sale.builder()
+                    .product(product)
+                    .buyerId(buyerId)
+                    .sellerId(product.getSeller().getId())
+                    .salePrice(requestDTO.getAmount())
+                    .build();
+
+            saleService.saveSale(sale);
+//            throw new NotFoundException(e.getMessage());
         }
 
         String jsonBody = serialize(requestDTO);
@@ -93,10 +120,11 @@ public class PaymentController {
         int statusCode = response.containsKey("error") ? 400 : 200;
         if (statusCode == 200) {
             log.info("결제 성공: {}", requestDTO);
+            saleService.changePaymentStatus(sale.getId(), PaymentStatus.COMPLETED);
         } else {
             log.info("결제 실패: {}", requestDTO);
+            saleService.changePaymentStatus(sale.getId(), PaymentStatus.FAILED);
         }
-        saleService.setPaid(sale.getId(), true);
 
         return ResponseEntity.status(statusCode).body(response);
     }
