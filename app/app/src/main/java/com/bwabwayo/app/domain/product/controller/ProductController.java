@@ -112,8 +112,12 @@ public class ProductController {
             content = @Content(mediaType = "application/json", schema = @Schema(implementation = ProductQueryResponse.class))
     )
     @GetMapping("/my")
-    public ResponseEntity<?> getMyProductList(@LoginUser User loginUser){
-        return getProducts(ProductQueryRequest.builder().sellerId(loginUser.getId()).build(), loginUser);
+    public ResponseEntity<?> getMyProductList(
+            @Valid @ModelAttribute ProductQueryRequest request,
+            @LoginUser User loginUser
+    ){
+        request.setSellerId(loginUser.getId());
+        return getProducts(request, loginUser);
     }
 
     @Operation(summary = "상품 목록 조회")

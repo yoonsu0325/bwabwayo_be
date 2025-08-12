@@ -37,7 +37,7 @@ public class PageResponse<T> {
                 .toList();
 
         return PageResponse.<R>builder()
-                .size((int)page.getTotalElements())
+                .size(page.getContent().size())
                 .result(mapped)
                 .currentPage(current)
                 .startPage(start)
