@@ -19,4 +19,6 @@ public class NotificationDTO {
     private LocalDateTime createdAt; // 발신 시각
 
     private String thumbnail; // 상품의 썸네일
+
+    private Integer unreadCount;
 }

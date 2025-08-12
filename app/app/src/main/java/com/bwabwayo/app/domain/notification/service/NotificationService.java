@@ -69,6 +69,7 @@ public class NotificationService {
         NotificationDTO.NotificationDTOBuilder builder = NotificationDTO.builder()
                 .id(notification.getId())
                 .message(notification.getMessage())
+                .unreadCount(notification.getUnreadCount())
                 .createdAt(notification.getUpdatedAt());
 
         if(chatRoom != null){ // 채팅
