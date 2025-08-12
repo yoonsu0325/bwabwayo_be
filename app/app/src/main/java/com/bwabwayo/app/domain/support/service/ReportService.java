@@ -41,6 +41,22 @@ public class ReportService {
                         .build());
     }
 
+    public Page<ReportResponse> findReportByReportId(User user, Pageable pageable) {
+        Page<Report> reports = reportRepository.findReportsByReporter_Id(user.getId(), pageable);
+
+        return reports.map(Report ->
+                ReportResponse.builder()
+                        .id(Report.getId())
+                        .title(Report.getTitle())
+                        .imageUrlList(Report.getReportImages().stream().map(img->storageService.getUrlFromKey(img.getUrl())).toList())
+                        .targetName(Report.getTarget().getNickname())
+                        .name(Report.getReporter().getNickname())
+                        .description(Report.getDescription())
+                        .reply(Report.getReply())
+                        .createdAt(Report.getCreatedAt().toString())
+                        .build());
+    }
+
     // 신고 게시물 작성
     public String save(ReportRequest reportRequest, User user) {
         Report report = Report.builder()

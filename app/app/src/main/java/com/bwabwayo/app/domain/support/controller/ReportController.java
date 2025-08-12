@@ -24,11 +24,21 @@ public class ReportController {
 
     // 신고 게시물 페이지 페이징
     @GetMapping
-    public ResponseEntity<Page<ReportResponse>> getInquiryAll(
+    public ResponseEntity<Page<ReportResponse>> getReportAll(
             @PageableDefault(sort = "id", direction = Sort.Direction.DESC)
             Pageable pageable) {
         return ResponseEntity.ok(reportService.findAll(pageable));
     }
+
+    @GetMapping("me")
+    public ResponseEntity<Page<ReportResponse>> getReportByReporterId(
+            @LoginUser User user,
+            @PageableDefault(sort = "id", direction = Sort.Direction.DESC)
+            Pageable pageable) {
+        return ResponseEntity.ok(reportService.findReportByReportId(user, pageable));
+    }
+
+
 
     // 문의 게시물 작성
     @PostMapping("/save")
