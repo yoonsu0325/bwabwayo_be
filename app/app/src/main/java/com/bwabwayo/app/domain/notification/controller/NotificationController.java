@@ -1,18 +1,28 @@
 package com.bwabwayo.app.domain.notification.controller;
+import com.bwabwayo.app.domain.chat.repository.ChatRoomRepository;
+import com.bwabwayo.app.domain.notification.domain.Notification;
+import com.bwabwayo.app.domain.notification.dto.request.UpsertRequest;
+import com.bwabwayo.app.domain.notification.dto.response.NotificationDTO;
 import com.bwabwayo.app.domain.notification.dto.response.NotificationListResponseDTO;
+import com.bwabwayo.app.domain.notification.repository.NotificationRepository;
 import com.bwabwayo.app.domain.notification.service.NotificationService;
 import com.bwabwayo.app.domain.notification.service.SseService;
 import com.bwabwayo.app.domain.auth.annotation.LoginUser;
+import com.bwabwayo.app.domain.product.repository.ProductRepository;
 import com.bwabwayo.app.domain.user.domain.User;
+import com.bwabwayo.app.domain.user.repository.UserRepository;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
+import java.util.List;
 import java.util.Map;
 
 @RestController
@@ -22,6 +32,10 @@ public class NotificationController {
 
     private final SseService sseService;
     private final NotificationService notificationService;
+    private final ChatRoomRepository chatRoomRepository;
+    private final UserRepository userRepository;
+    private final NotificationRepository notificationRepository;
+    private final ProductRepository productRepository;
 
     @Operation(summary = "SSE 알림 구독", description = "로그인한 사용자가 SSE를 통해 실시간 알림을 구독합니다.")
     @ApiResponse(
@@ -34,41 +48,56 @@ public class NotificationController {
             @RequestHeader(value = "Last-Event-ID", required = false) String lastEventId,
             @LoginUser User user
     ){
-//        return sseService.subscribe(user.getId(), lastEventId);
-        return sseService.subscribe(user.getId());
+        return sseService.subscribe(user.getId(), lastEventId);
     }
 
-    @Operation(summary = "내 알림 목록 조회", description = "내 알림 목록을 조회합니다.")
-    @ApiResponse(responseCode = "200", description = "내 알림 목록을 가져옵니다.")
+    @Operation(summary = "인박스 알림 가져오기")
+    @ApiResponse(responseCode = "200")
     @GetMapping
-    public ResponseEntity<NotificationListResponseDTO> getNotifications(@LoginUser User loginUser){
-        NotificationListResponseDTO responseDTO = notificationService.findAllByReceiverId(loginUser.getId());
-        return ResponseEntity.ok(responseDTO);
+    public ResponseEntity<?> getUnreadNotifications(
+            @LoginUser User user,
+            @RequestParam(defaultValue = "0") Integer page,
+            @RequestParam(defaultValue = "3") Integer size
+        ){
+        Page<Notification> notifications = notificationService.findInbox(user.getId(), PageRequest.of(page, size));
+        List<NotificationDTO> dtos = notifications.getContent().stream().map(notificationService::build).toList();
+
+        return ResponseEntity.ok(NotificationListResponseDTO.of(dtos));
     }
 
-    @Operation(summary = "알림 읽음 처리", description = "특정 알림을 읽음 상태로 처리합니다. 삭제되지 않습니다.")
-    @ApiResponse(responseCode = "200", description = "알림 읽음 처리 성공")
-    @DeleteMapping("/{notificationId}")
-    public ResponseEntity<Void> deleteNotification(@PathVariable Long notificationId, @LoginUser User user){
-        notificationService.readNotification(notificationId, user.getId());
-        return ResponseEntity.ok().build();
-    }
-
-    @Operation(summary = "전체 알림 읽음 처리", description = "모든 알림을 읽음 처리합니다.")
-    @DeleteMapping
-    public ResponseEntity<Void> deleteAllNotifications(@LoginUser User user) {
-        notificationService.readAllNotifications(user.getId());
-        return ResponseEntity.ok().build();
-    }
-
-    @PostMapping("/send")
-    public ResponseEntity<?> sendNotification(
-            @RequestParam String targetUserId,
-            @RequestParam String message,
-            @RequestParam Long chatroomId
+    @PostMapping("/send/chat/{chatId}")
+    public ResponseEntity<?> upsertChatNotification(
+            @PathVariable Long chatId,
+            @RequestBody UpsertRequest request
     ){
-        notificationService.send(targetUserId, message, chatroomId);
-        
-        return ResponseEntity.ok(Map.of("result", "알림 전송"));
+        sseService.upsertChatNotification(chatId, request);
+        return ResponseEntity.ok(Map.of("result", "채팅 알림 전송"));
+    }
+
+    @PostMapping("/send/product/{productId}")
+    public ResponseEntity<?> upsertProductNotification(
+            @PathVariable Long productId,
+            @RequestBody UpsertRequest request
+    ){
+        sseService.upsertProductNotification(productId, request);
+        return ResponseEntity.ok(Map.of("result", "상품 알림 전송"));
+    }
+
+    @PostMapping("/mark/chat/{chatId}")
+    public ResponseEntity<?> markChatRead(
+            @PathVariable Long chatId,
+            @LoginUser User user
+    ){
+        notificationService.markChatRead(user.getId(), chatId);
+        return ResponseEntity.ok(Map.of("result", "채팅 읽음 표시: chatId="+chatId));
+    }
+
+    @PostMapping("/mark/product/{productId}")
+    public ResponseEntity<?> markProductRead(
+            @PathVariable Long productId,
+            @LoginUser User user
+    ){
+        notificationService.markProductRead(user.getId(), productId);
+        return ResponseEntity.ok(Map.of("result", "상품 읽음 표시: productId="+productId));
     }
 }

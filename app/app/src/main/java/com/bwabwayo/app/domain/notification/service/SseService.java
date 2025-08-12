@@ -1,10 +1,21 @@
 package com.bwabwayo.app.domain.notification.service;
 
+import com.bwabwayo.app.domain.chat.domain.ChatRoom;
+import com.bwabwayo.app.domain.chat.repository.ChatRoomRepository;
 import com.bwabwayo.app.domain.notification.domain.Notification;
+import com.bwabwayo.app.domain.notification.dto.request.UpsertRequest;
+import com.bwabwayo.app.domain.notification.dto.response.NotificationDTO;
 import com.bwabwayo.app.domain.notification.repository.NotificationRepository;
+import com.bwabwayo.app.domain.product.domain.Product;
+import com.bwabwayo.app.domain.product.repository.ProductRepository;
+import com.bwabwayo.app.domain.user.domain.User;
+import com.bwabwayo.app.domain.user.repository.UserRepository;
+import com.bwabwayo.app.global.exception.BadRequestException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
@@ -25,13 +36,19 @@ public class SseService {
     private final NotificationRepository notificationRepository;
     private final Map<String, SseEmitter> emitters = new ConcurrentHashMap<>();
     private final NotificationService notificationService;
+    private final UserRepository userRepository;
+    private final ChatRoomRepository chatRoomRepository;
+    private final ProductRepository productRepository;
     @Value("${sse.timeout}")
     private Long timeout;
 
     /**
      * 사용자에게 알림을 보낼 수 있도록 등록
      */
-    public SseEmitter subscribe(String userId) {
+    @Transactional
+    public SseEmitter subscribe(String userId, String lastEventId) {
+        List<Notification> notifications = notificationService.findInbox(userId, PageRequest.of(0, 3)).getContent();
+
         SseEmitter emitter = new SseEmitter(timeout);
 
         try {
@@ -47,7 +64,7 @@ public class SseService {
 
         // 이전 연결 제거
         SseEmitter old = emitters.put(userId, emitter);
-        if(old != null) old.complete();
+        if (old != null) old.complete();
 
         // 연결종료, 타임아웃, 에러발생 시 emitter 제거 (메모리 누수 방지)
         log.info("SSE 구독 시작: userId={}", userId);
@@ -64,57 +81,40 @@ public class SseService {
             log.info("SSE 에러 발생: userId={}", userId);
         });
 
+        for (Notification n : notifications) {
+            pushEvent(emitter, userId, n);
+        }
         return emitter;
     }
 
     @Transactional
-    public List<Notification> getRecentNotifications(String userId, String lastEventId){
-        if(lastEventId != null) { // 연결이 끊긴 이후부터 조회
+    public List<Notification> getRecentNotifications(String userId, String lastEventId) {
+        if (lastEventId != null) { // 연결이 끊긴 이후부터 조회
             long millis = Long.parseLong(lastEventId);
             LocalDateTime lastTime = Instant.ofEpochMilli(millis)
                     .atZone(ZoneId.of("Asia/Seoul"))
                     .toLocalDateTime();
 
             return notificationRepository
-                    .findAllByReceiverIdAndIsReadFalseAndCreatedAtAfter(userId, lastTime);
-        } else{ // 전체에서 조회
+                    .findAllByReceiverIdAndIsReadFalseAndUpdatedAtAfter(userId, lastTime);
+        } else { // 전체에서 조회
             return notificationRepository
-                    .findAllByReceiverIdAndIsReadFalseOrderByCreatedAtDesc(userId);
+                    .findAllByReceiverIdAndIsReadFalseOrderByUpdatedAtDesc(userId);
         }
     }
 
-    // 알림 발송
-    @Transactional
-    public void pop(String userId, String lastEventId) {
-        List<Notification> notifications = getRecentNotifications(userId, lastEventId);
-
+    public void pushEvent(String userId, Notification notification){
         SseEmitter emitter = emitters.get(userId);
-        if(emitter == null) return;
-        if(notifications == null || notifications.isEmpty()) return;
-
-        for (Notification n : notifications) {
-            sendOne(emitter, userId,n);
-        }
-
+        pushEvent(emitter, userId, notification);
     }
-
-    private long toEpochMilli(LocalDateTime ldt) {
-        return ldt.atZone(ZoneId.of("Asia/Seoul")).toInstant().toEpochMilli();
-    }
-
-    public void send(String userId, Notification notification) {
-        SseEmitter emitter = emitters.get(userId);
-        sendOne(emitter, userId, notification);
-    }
-
-    public void sendOne(SseEmitter emitter, String userId, Notification notification){
+    private void pushEvent(SseEmitter emitter, String userId, Notification notification){
         if(emitter == null) return;
 
         try {
             log.info("알림 전송: notificationId={}", notification.getId());
 
             emitter.send(SseEmitter.event()
-                    .id(String.valueOf(toEpochMilli(notification.getCreatedAt())))
+                    .id(String.valueOf(toEpochMilli(notification.getUpdatedAt())))
                     .name("notification")
                     .data(notificationService.build(notification))
                     .reconnectTime(3000));
@@ -123,5 +123,31 @@ public class SseService {
             emitter.completeWithError(e);
             throw new RuntimeException("SSE 알림 전송 중 예외 발생");
         }
+    }
+
+    private long toEpochMilli(LocalDateTime ldt) {
+        return ldt.atZone(ZoneId.of("Asia/Seoul")).toInstant().toEpochMilli();
+    }
+
+    @Transactional
+    public void upsertChatNotification(Long chatId, UpsertRequest request){
+        String receiverId = request.getReceiverId();
+        String message = request.getMessage();
+
+        notificationService.upsertChat(receiverId, chatId, message, 1);
+        Notification notification = notificationService.findByChat(receiverId, chatId);
+
+        pushEvent(receiverId, notification);
+    }
+
+    @Transactional
+    public void upsertProductNotification(Long productId, UpsertRequest request){
+        String receiverId = request.getReceiverId();
+        String message = request.getMessage();
+
+        notificationService.upsertProduct(receiverId, productId, message);
+        Notification notification = notificationService.findByProduct(receiverId, productId);
+
+        pushEvent(receiverId, notification);
     }
 }

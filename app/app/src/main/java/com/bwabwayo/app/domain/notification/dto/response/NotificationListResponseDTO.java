@@ -1,6 +1,5 @@
 package com.bwabwayo.app.domain.notification.dto.response;
 
-import com.bwabwayo.app.domain.notification.domain.Notification;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -18,4 +17,11 @@ public class NotificationListResponseDTO {
 
     @Builder.Default
     List<NotificationDTO> results = new ArrayList<>();
+
+    public static NotificationListResponseDTO of(List<NotificationDTO> notificationDTOs) {
+        return NotificationListResponseDTO.builder()
+                .size(notificationDTOs.size())
+                .results(notificationDTOs)
+                .build();
+    }
 }
