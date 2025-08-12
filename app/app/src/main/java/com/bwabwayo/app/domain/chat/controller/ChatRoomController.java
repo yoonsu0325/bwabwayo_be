@@ -11,6 +11,7 @@ import com.bwabwayo.app.domain.chat.service.ChatRoomService;
 import com.bwabwayo.app.domain.chat.service.ChatService;
 import com.bwabwayo.app.domain.chat.service.RedisService;
 import com.bwabwayo.app.domain.auth.annotation.LoginUser;
+import com.bwabwayo.app.domain.notification.service.NotificationService;
 import com.bwabwayo.app.domain.user.domain.User;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -31,6 +32,7 @@ public class ChatRoomController {
     private final ChatMongoService chatMongoService;
     private final RedisService redisService;
     private final ChatService chatService;
+    private final NotificationService notificationService;
 
     @GetMapping
     public ResponseEntity<List<ChatRoomListResponse>> getChatRoomList(
@@ -59,7 +61,7 @@ public class ChatRoomController {
                     ChatMessageRedisEntity entity = ChatMessageRedisEntity.of(msg); // DTO → Entity 변환 메서드 필요
                     redisService.markAsRead(entity);
                 });
-
+        notificationService.markChatRead(user.getId(), roomId);
         return ResponseEntity.ok(messages);
     }
 
