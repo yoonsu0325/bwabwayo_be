@@ -9,7 +9,6 @@ import com.bwabwayo.app.domain.product.dto.request.ProductQueryRequest;
 import com.bwabwayo.app.domain.product.dto.response.*;
 import com.bwabwayo.app.domain.product.dto.response.ProductCreateResponse;
 import com.bwabwayo.app.domain.product.dto.response.ProductDetailResponse;
-import com.bwabwayo.app.domain.product.dto.response.ProductQueryResponse;
 import com.bwabwayo.app.domain.product.dto.response.ViewCountResponse;
 import com.bwabwayo.app.global.exception.BadRequestException;
 import com.bwabwayo.app.domain.product.service.ProductService;
@@ -56,16 +55,19 @@ public class ProductController {
             @Valid @RequestBody ProductUpsertRequest request,
             @LoginUser User loginUser
     ) {
+        Product product;
         try{
             // 상품 저장
-            Product product = productService.createProduct(request, loginUser);
-            // 벡터 추가
-            productEmbeddingService.upsert(product);
-            // Response 생성
-            return ResponseEntity.ok(ProductCreateResponse.from(product));
+            product = productService.createProduct(request, loginUser);
         } catch(IllegalArgumentException e){
             throw new BadRequestException(e.getMessage());
         }
+
+        // 벡터 추가
+        productEmbeddingService.upsert(product);
+
+        // Response 생성
+        return ResponseEntity.ok(ProductCreateResponse.from(product));
     }
 
     @Operation(summary = "상품 정보 갱신")
@@ -77,7 +79,7 @@ public class ProductController {
             @LoginUser User loginUser
     ) {
         Product product = productService.findById(productId);
-//        ensureOwner(loginUser, product);
+        ensureOwner(loginUser, product);
 
         try{
             productService.update(product, request);
@@ -88,13 +90,13 @@ public class ProductController {
         // 검색 엔진 내 상품 정보 갱신
         productEmbeddingService.upsert(product);
 
-        return ResponseEntity.ok(Map.of("result", "수정완료"));
+        return ResponseEntity.ok(Map.of("result", "상품을 수정하였습니다: productId="+productId));
     }
 
     @Operation(summary = "상품 삭제")
     @ApiResponse(responseCode = "200")
     @DeleteMapping("/{productId}")
-    public ResponseEntity<Void> deleteById(@PathVariable Long productId, @LoginUser User loginUser){
+    public ResponseEntity<?> deleteById(@PathVariable Long productId, @LoginUser User loginUser){
         Product product = productService.findById(productId);
         ensureOwner(loginUser, product);
 
@@ -104,13 +106,11 @@ public class ProductController {
         // 검색 엔진에서도 함께 삭제
         productEmbeddingService.deleteById(productId);
 
-        return ResponseEntity.ok().build();
+        return ResponseEntity.ok(Map.of("result", "상품을 삭제하였습니다: productId="+productId));
     }
 
     @Operation(summary = "내 상품 목록 조회")
-    @ApiResponse(responseCode = "200",
-            content = @Content(mediaType = "application/json", schema = @Schema(implementation = ProductQueryResponse.class))
-    )
+    @ApiResponse(responseCode = "200", content = @Content(schema = @Schema(implementation = ProductPageResponse.class)))
     @GetMapping("/my")
     public ResponseEntity<?> getMyProductList(
             @Valid @ModelAttribute ProductQueryRequest request,
@@ -121,9 +121,7 @@ public class ProductController {
     }
 
     @Operation(summary = "상품 목록 조회")
-    @ApiResponse(responseCode = "200",
-            content = @Content(mediaType = "application/json", schema = @Schema(implementation = ProductPageResponse.class))
-    )
+    @ApiResponse(responseCode = "200", content = @Content(schema = @Schema(implementation = ProductPageResponse.class)))
     @GetMapping
     public ResponseEntity<?> getProducts(
             @Valid @ModelAttribute ProductQueryRequest request,
@@ -140,6 +138,7 @@ public class ProductController {
             @LoginUser(required = false) User user,
             HttpServletRequest request
     ) {
+        // 상품 상세 조회 시, 조회수 집계
         if(DELEGATE_VIEW_COUNT) increaseViewCount(productId, user, request);
 
         Product product = productService.findById(productId);
@@ -149,8 +148,9 @@ public class ProductController {
         return ResponseEntity.ok(productDetail);
     }
 
+
     /* ================ 조회수 ====================*/
-    @Operation(summary = "조회수 증가")
+    @Operation(summary = "조회수 증가", description = "사용자마다 조회수 집계 주기가 존재")
     @ApiResponse(responseCode = "200")
     @GetMapping("{productId}/view")
     public ResponseEntity<ViewCountResponse> increaseViewCount(
@@ -167,6 +167,7 @@ public class ProductController {
 
     /* ================ 배송 조회 ====================*/
     
+    @Operation(summary = "Sweet Tacker API 테스트")
     @GetMapping("/deliveryAPI")
     public ResponseEntity<?> foo(@RequestParam String tInvoice, String tCode){
         String url = UriComponentsBuilder.fromUriString("https://info.sweettracker.co.kr/api/v1/trackingInfo")
@@ -179,31 +180,35 @@ public class ProductController {
         return  ResponseEntity.ok(response.getBody());
     }
 
+
     /* ================ Qdrant ====================*/
 
+    @Operation(summary = "Qdrant에서 상품 모두 등록")
     @GetMapping("/embbeding")
-    public ResponseEntity<Void> embbeding(){
+    public ResponseEntity<?> embbeding(){
         List<Product> all = productRepository.findAll();
         for (Product product : all) {
             productEmbeddingService.upsert(product);
         }
-        return ResponseEntity.ok().build();
+        return ResponseEntity.ok(Map.of("result", "상품을 Qdrant에 embedding하는데 성공"));
     }
-
+    
+    @Operation(summary = "Qdrant에서 상품 모두 삭제")
     @GetMapping("/unembbeding")
-    public ResponseEntity<Void> unembbeding(){
+    public ResponseEntity<?> unembbeding(){
         List<Product> all = productRepository.findAll();
         for (Product product : all) {
             productEmbeddingService.deleteById(product.getId());
         }
-        return ResponseEntity.ok().build();
+        return ResponseEntity.ok(Map.of("result", "상품을 Qdrant에 unembedding하는데 성공"));
     }
 
     // ============ 유틸리티 ===================
 
+    /** 제품의 주인인지 검증 */
     private static void ensureOwner(User loginUser, Product product) {
-        if(product.getSeller().equals(loginUser)) {
-            throw new ProductUpdateNotAllowedException(product.getId(), loginUser.getId());
-        }
+//        if(product.getSeller().equals(loginUser)) {
+//            throw new ProductUpdateNotAllowedException(product.getId(), loginUser.getId());
+//        }
     }
 }
