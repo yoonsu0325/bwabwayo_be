@@ -110,7 +110,7 @@ public class SystemChatService {
         productService.setPrice(request, productId);
 
         MessageDTO messageDTO = MessageDTO.builder()
-                .content("")
+                .content(request.getPrice().toString())
                 .senderId(chatRoom.getSellerId())
                 .receiverId(chatRoom.getBuyerId())
                 .roomId(roomId)
