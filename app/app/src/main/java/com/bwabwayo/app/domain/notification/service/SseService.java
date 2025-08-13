@@ -111,6 +111,8 @@ public class SseService {
     }
 
     public void handleMessage(MessageDTO message){
+        if(true) return;
+
         String contnet = message.getContent();
         switch (message.getType()){
             case TEXT: {
