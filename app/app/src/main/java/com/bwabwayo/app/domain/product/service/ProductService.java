@@ -157,8 +157,12 @@ public class ProductService {
         Page<ProductWithIsLikeDTO> pageData;
         if(sortType == ProductSortType.RELATED) {
             pageData = queryWithRelated(queryCondition, pageable, loginUser);
-        } else{
+        } else if(sortType != ProductSortType.LATEST_AND_RELATED || keyword == null || keyword.isBlank()){
             pageData = productRepository.searchByCondition(queryCondition, pageable);
+        } else{
+            Page<ProductWithIsLikeDTO> related = queryWithRelated(queryCondition, pageable, loginUser);
+            Page<ProductWithIsLikeDTO> latest = productRepository.searchByCondition(queryCondition, pageable);
+            pageData = merge(related, latest, pageable.getPageSize());
         }
 
         return PageResponse.from(pageData, dto -> {
@@ -384,5 +388,24 @@ public class ProductService {
 
     public List<Product> getWillDeliveryProducts(){
         return productRepository.findAllByEmptyInvoiceNumberAndDeliveryStatus(DeliveryStatus.PREPARING);
+    }
+
+    private Page<ProductWithIsLikeDTO> merge(Page<ProductWithIsLikeDTO> related, Page<ProductWithIsLikeDTO> latest, int limit){
+        List<ProductWithIsLikeDTO> list = new ArrayList<>(latest.getContent());
+
+        if(latest.getTotalElements() < limit){
+            Set<Long> set = new HashSet<>();
+            for(ProductWithIsLikeDTO r : latest.getContent()) set.add(r.getProduct().getId());
+
+            if(list.size() < limit) {
+                for(ProductWithIsLikeDTO r : related.getContent()){
+                    if(!set.contains(r.getProduct().getId())) {
+                        list.add(r);
+                        if(list.size() == limit) break;
+                    }
+                }
+            }
+        }
+        return new PageImpl<>(list);
     }
 }

@@ -14,7 +14,8 @@ public enum ProductSortType {
     PRICE_DESC("price_desc", SortUtils.withIdDesc("price", Sort.Direction.DESC)),
     VIEWS_DESC("views_desc", SortUtils.withIdDesc("viewCount", Sort.Direction.DESC)),
     WISH_DESC("wishes_desc", SortUtils.withIdDesc("wishCount", Sort.Direction.DESC)),
-    RELATED("related", Sort.by("id").descending());
+    RELATED("related", Sort.by("id").descending()),
+    LATEST_AND_RELATED("latest_and_related", SortUtils.withIdDesc("createdAt", Sort.Direction.DESC));
 
     private final String queryValue;
     private final Sort sort;
