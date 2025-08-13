@@ -88,7 +88,13 @@ public class SaleService {
 
     public Sale findByBuyerIdAndProductId(String buyerId, Long productId){
         List<Sale> sales = saleRepository.findByBuyerIdAndProductId(buyerId, productId);
-        if(sales == null || sales.isEmpty()) throw new IllegalArgumentException("판매 내역이 존재하지 않습니다.");
+        if(sales == null || sales.isEmpty()) throw new IllegalArgumentException("판매 내역이 존재하지 않습니다: buyerId="+buyerId+", productId="+productId);
+        return sales.get(0);
+    }
+
+    public Sale findByProductId(Long productId){
+        List<Sale> sales = saleRepository.findByProductId(productId);
+        if(sales == null || sales.isEmpty()) throw new IllegalArgumentException("판매 내역이 존재하지 않습니다: productId="+productId);
         return sales.get(0);
     }
 

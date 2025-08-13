@@ -19,4 +19,6 @@ public interface SaleRepository extends JpaRepository<Sale, Long> {
     Page<Sale> findWithProductAndCourierByBuyerId(String buyerId, Pageable pageable);
 
     List<Sale> findByBuyerIdAndProductId(String buyerId, Long productId);
+
+    List<Sale> findByProductId(Long productId);
 }

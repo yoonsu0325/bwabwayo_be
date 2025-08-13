@@ -22,7 +22,7 @@ public class Sale {
 
     // 1:1 Product
     @OneToOne
-    @JoinColumn(name = "product_id", nullable = false, unique = true)
+    @JoinColumn(name = "product_id", nullable = false)
     private Product product;
 
     // 판매자/구매자
