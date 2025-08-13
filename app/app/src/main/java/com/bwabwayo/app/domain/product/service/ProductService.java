@@ -292,7 +292,9 @@ public class ProductService {
     @Transactional
     public void setStatus(SetProductStatusRequest request, Long productId) {
         Product product = productRepository.getProductById(productId);
+        System.out.println(productId +" " + product.getSaleStatus());
         product.setSaleStatus(request.getProductStatus());
+        System.out.println(product.getSaleStatus());
     }
 
     public Product findById(Long productId) {
