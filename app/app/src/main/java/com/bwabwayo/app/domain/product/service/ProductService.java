@@ -196,6 +196,7 @@ public class ProductService {
 
     private Page<ProductWithIsLikeDTO> queryWithRelated(ProductQueryCondition queryCondition, Pageable pageable, User viewer){
         List<QueryItemDto> query = productEmbeddingService.query(queryCondition, pageable);
+        query = query.stream().filter(dto->dto.getScore() > 0.3).toList();
 
         List<Long> ids = query.stream().map(QueryItemDto::getId).toList();
         if (ids.isEmpty()) return Page.empty(pageable);
