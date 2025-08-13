@@ -100,7 +100,8 @@
             const roomId = document.getElementById('roomId').value;
             stompClient.subscribe(`/sub/chat/room/${roomId}`, function (messageOutput) {
                 const msg = JSON.parse(messageOutput.body);
-                appendMessage(msg, msg.senderId === parseInt(document.getElementById("senderId").value));
+                const isMine = String(msg.senderId) === document.getElementById("senderId").value;
+                appendMessage(msg, isMine);
             });
 
             appendSystemMessage("✅ 연결되었습니다.");

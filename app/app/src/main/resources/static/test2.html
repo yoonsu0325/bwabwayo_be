@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8" />
+    <title>채팅 테스트</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            height: 100vh;
+            margin: 0;
+        }
+        .chat-room-list {
+            width: 30%;
+            border-right: 1px solid #ccc;
+            padding: 10px;
+            overflow-y: auto;
+        }
+        .chat-room-item {
+            padding: 10px;
+            cursor: pointer;
+            border-bottom: 1px solid #eee;
+        }
+        .chat-room-item:hover {
+            background-color: #f0f0f0;
+        }
+        .chat-container {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+        .chat-header {
+            padding: 10px;
+            background: #4a90e2;
+            color: white;
+            text-align: center;
+        }
+        .chat-body {
+            flex: 1;
+            padding: 10px;
+            overflow-y: auto;
+            background: #f9f9f9;
+        }
+        .chat-message {
+            margin-bottom: 8px;
+        }
+        .chat-message.you {
+            text-align: right;
+            font-weight: bold;
+        }
+        .chat-input {
+            display: flex;
+            border-top: 1px solid #ddd;
+        }
+        .chat-input input {
+            flex: 1;
+            padding: 10px;
+            border: none;
+        }
+        .chat-input button {
+            padding: 10px;
+            background: #4a90e2;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+
+<div class="chat-room-list" id="roomList">
+    <div><strong>🔔 채팅방 목록</strong></div>
+</div>
+
+<div class="chat-container">
+    <div class="chat-header" id="chatHeader">실시간 채팅</div>
+    <div class="chat-body" id="chatBody"></div>
+    <div class="chat-input">
+        <input type="text" id="messageInput" placeholder="메시지를 입력하세요..." />
+        <button onclick="sendMessage()">전송</button>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/sockjs-client@1/dist/sockjs.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/stompjs@2.3.3/lib/stomp.min.js"></script>
+<script>
+    let stompClient = null;
+    const myUserId = prompt("내 유저 ID를 입력하세요");  // 예: "4375126834"
+    let currentRoomId = null;
+    let currentReceiverId = null;
+    let roomList = [];
+
+    function connect() {
+        const socket = new SockJS('http://localhost:8081/ws-stomp');
+        stompClient = Stomp.over(socket);
+
+        stompClient.connect({}, function () {
+            console.log("✅ 웹소켓 연결 성공");
+
+            // 내 채팅방 목록 구독
+            stompClient.subscribe(`/sub/chat/roomlist/${myUserId}`, function (output) {
+                roomList = JSON.parse(output.body);
+                console.log("📥 채팅방 목록 수신:", roomList);
+                updateRoomList(roomList);
+            });
+        });
+    }
+
+    function updateRoomList(list) {
+        const container = document.getElementById("roomList");
+        container.innerHTML = "<div><strong>🔔 채팅방 목록</strong></div>";
+
+        list.forEach(room => {
+            const div = document.createElement("div");
+            div.className = "chat-room-item";
+            div.innerText = `[${room.productName}] ${room.partnerNickName}: ${room.lastChatmessageDto.content}`;
+            div.addEventListener("click", () => enterRoom(room.roomId));
+            container.appendChild(div);
+        });
+    }
+
+    function enterRoom(roomId) {
+        if (currentRoomId) {
+            stompClient.unsubscribe("room-" + currentRoomId); // 이전 방 구독 해제
+        }
+
+        currentRoomId = roomId;
+
+        const room = roomList.find(r => r.roomId === roomId);
+        if (room) {
+            currentReceiverId = room.partnerId;
+        }
+
+        document.getElementById("chatHeader").innerText = `채팅방 #${roomId}`;
+        document.getElementById("chatBody").innerHTML = "";
+
+        stompClient.subscribe(`/sub/chat/room/${roomId}`, function (output) {
+            const msg = JSON.parse(output.body);
+            console.log("📩 채팅 수신:", msg);
+            appendMessage(msg);
+        }, { id: "room-" + roomId });
+    }
+
+    function appendMessage(message) {
+        const chatBody = document.getElementById("chatBody");
+        const div = document.createElement("div");
+        const isMine = message.senderId === myUserId;
+        div.className = "chat-message" + (isMine ? " you" : "");
+        div.innerText = `${isMine ? "나" : "상대"}: ${message.content}`;
+        chatBody.appendChild(div);
+        chatBody.scrollTop = chatBody.scrollHeight;
+    }
+
+    function sendMessage() {
+        if (!currentRoomId || !currentReceiverId) {
+            alert("먼저 채팅방을 선택하세요!");
+            return;
+        }
+
+        const message = {
+            roomId: currentRoomId,
+            senderId: myUserId,
+            receiverId: currentReceiverId,
+            content: document.getElementById("messageInput").value,
+            type: "TEXT",
+            isRead: false,
+            createdAt: new Date().toISOString()
+        };
+
+        stompClient.send("/pub/chat/message", {}, JSON.stringify(message));
+        document.getElementById("messageInput").value = "";
+    }
+
+    connect();
+</script>
+
+</body>
+</html>
