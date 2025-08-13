@@ -70,6 +70,7 @@ public class SystemChatService {
         chatService.sendChatMessage(messageDTO);
     }
 
+    @Transactional
     public void setInvoiceNumber(Long roomId, SetInvoiceNumberRequest request) {
 
         ChatRoom chatRoom = chatRoomService.findByRoomId(roomId).orElseThrow(() -> new IllegalArgumentException("해당 채팅방이 존재하지 않습니다."));
@@ -102,6 +103,7 @@ public class SystemChatService {
         chatService.sendChatMessage(messageDTO2);
     }
 
+    @Transactional
     public void setFinalPrice(Long roomId, SetPriceRequest request) {
         ChatRoom chatRoom = chatRoomService.findByRoomId(roomId).orElseThrow(() -> new IllegalArgumentException("해당 채팅방이 존재하지 않습니다."));
         Long productId = chatRoom.getProductId();
@@ -120,8 +122,10 @@ public class SystemChatService {
         chatService.sendChatMessage(messageDTO);
     }
 
-    public void setProductStatus(Long productId, SetProductStatusRequest request) {
-        productService.setStatus(request, productId);
+    @Transactional
+    public void setProductStatus(Long roomId, SetProductStatusRequest request) {
+        ChatRoom chatRoom = chatRoomService.findByRoomId(roomId).orElseThrow();
+        productService.setStatus(request, chatRoom.getProductId());
     }
 
     @Transactional
