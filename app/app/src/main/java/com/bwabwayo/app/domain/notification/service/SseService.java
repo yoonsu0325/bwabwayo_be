@@ -42,6 +42,7 @@ public class SseService {
      */
     @Transactional
     public SseEmitter subscribe(String userId, String lastEventId) {
+        if(true) return null;
         List<Notification> notifications = notificationService.findInbox(userId, PageRequest.of(0, 3)).getContent();
 
         SseEmitter emitter = new SseEmitter(timeout);
@@ -84,6 +85,8 @@ public class SseService {
 
     @Transactional
     public List<Notification> getRecentNotifications(String userId, String lastEventId) {
+        if(true) return List.of();
+
         if (lastEventId != null) { // 연결이 끊긴 이후부터 조회
             long millis = Long.parseLong(lastEventId);
             LocalDateTime lastTime = Instant.ofEpochMilli(millis)
@@ -99,10 +102,12 @@ public class SseService {
     }
 
     public void pushEvent(String userId, Notification notification){
+        if(true) return;
         SseEmitter emitter = emitters.get(userId);
         pushEvent(emitter, userId, notification);
     }
     private void pushEvent(SseEmitter emitter, String userId, Notification notification){
+        if(true) return;
         if(emitter == null) return;
 
         try {
@@ -126,6 +131,7 @@ public class SseService {
 
     @Transactional
     public void upsertChatNotification(Long chatId, UpsertRequest request){
+        if(true) return;
         String receiverId = request.getReceiverId();
         String message = request.getMessage();
 
@@ -137,6 +143,7 @@ public class SseService {
 
     @Transactional
     public void upsertProductNotification(Long productId, UpsertRequest request){
+        if(true) return;
         String receiverId = request.getReceiverId();
         String message = request.getMessage();
 
@@ -148,6 +155,7 @@ public class SseService {
 
     @Transactional
     public void handleMessage(MessageDTO message){
+        if(true) return;
         String contnet = message.getContent();
         switch (message.getType()){
             case TEXT: {
