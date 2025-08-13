@@ -96,7 +96,7 @@ public class PaymentController {
             sale = saleService.findByBuyerIdAndProductId(buyerId, productId);
             if(sale.getPaymentStatus() == PaymentStatus.COMPLETED){
                 log.warn("이미 완료된 요청입니다: saleId={}", sale.getId());
-                throw new BadRequestException("중복 결제 요청입니다.");
+//                throw new BadRequestException("중복 결제 요청입니다.");
             }
         } catch (IllegalArgumentException e) {
             log.warn("사전에 등록되지 않은 거래에 대한 결제 요청 입니다: productId={}, sellerId={}, buyerId={}, amount={}, error={}",
