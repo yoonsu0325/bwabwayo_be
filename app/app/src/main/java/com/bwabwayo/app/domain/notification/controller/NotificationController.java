@@ -1,16 +1,12 @@
 package com.bwabwayo.app.domain.notification.controller;
-import com.bwabwayo.app.domain.chat.repository.ChatRoomRepository;
 import com.bwabwayo.app.domain.notification.domain.Notification;
 import com.bwabwayo.app.domain.notification.dto.request.UpsertRequest;
 import com.bwabwayo.app.domain.notification.dto.response.NotificationDTO;
 import com.bwabwayo.app.domain.notification.dto.response.NotificationListResponseDTO;
-import com.bwabwayo.app.domain.notification.repository.NotificationRepository;
 import com.bwabwayo.app.domain.notification.service.NotificationService;
 import com.bwabwayo.app.domain.notification.service.SseService;
 import com.bwabwayo.app.domain.auth.annotation.LoginUser;
-import com.bwabwayo.app.domain.product.repository.ProductRepository;
 import com.bwabwayo.app.domain.user.domain.User;
-import com.bwabwayo.app.domain.user.repository.UserRepository;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;

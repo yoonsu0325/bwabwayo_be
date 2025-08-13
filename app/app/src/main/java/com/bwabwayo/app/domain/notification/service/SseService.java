@@ -1,25 +1,17 @@
 package com.bwabwayo.app.domain.notification.service;
 
 import com.bwabwayo.app.domain.chat.dto.MessageDTO;
-import com.bwabwayo.app.domain.chat.repository.ChatRoomRepository;
-import com.bwabwayo.app.domain.notification.domain.Notification;
 import com.bwabwayo.app.domain.notification.dto.request.UpsertRequest;
-import com.bwabwayo.app.domain.notification.repository.NotificationRepository;
-import com.bwabwayo.app.domain.product.repository.ProductRepository;
-import com.bwabwayo.app.domain.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
 import java.io.IOException;
-import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
-import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -28,12 +20,8 @@ import java.util.concurrent.ConcurrentHashMap;
 @RequiredArgsConstructor
 public class SseService {
 
-    private final NotificationRepository notificationRepository;
     private final Map<String, SseEmitter> emitters = new ConcurrentHashMap<>();
     private final NotificationService notificationService;
-    private final UserRepository userRepository;
-    private final ChatRoomRepository chatRoomRepository;
-    private final ProductRepository productRepository;
     @Value("${sse.timeout}")
     private Long timeout;
 
@@ -42,9 +30,6 @@ public class SseService {
      */
     @Transactional
     public SseEmitter subscribe(String userId, String lastEventId) {
-        if(true) return null;
-        List<Notification> notifications = notificationService.findInbox(userId, PageRequest.of(0, 3)).getContent();
-
         SseEmitter emitter = new SseEmitter(timeout);
 
         try {
@@ -77,46 +62,25 @@ public class SseService {
             log.info("SSE 에러 발생: userId={}", userId);
         });
 
-        for (Notification n : notifications) {
-            pushEvent(emitter, userId, n);
-        }
+        pushEvent(userId);
+
         return emitter;
     }
 
-    @Transactional
-    public List<Notification> getRecentNotifications(String userId, String lastEventId) {
-        if(true) return List.of();
-
-        if (lastEventId != null) { // 연결이 끊긴 이후부터 조회
-            long millis = Long.parseLong(lastEventId);
-            LocalDateTime lastTime = Instant.ofEpochMilli(millis)
-                    .atZone(ZoneId.of("Asia/Seoul"))
-                    .toLocalDateTime();
-
-            return notificationRepository
-                    .findAllByReceiverIdAndIsReadFalseAndUpdatedAtAfter(userId, lastTime);
-        } else { // 전체에서 조회
-            return notificationRepository
-                    .findAllByReceiverIdAndIsReadFalseOrderByUpdatedAtDesc(userId);
-        }
-    }
-
-    public void pushEvent(String userId, Notification notification){
-        if(true) return;
+    public void pushEvent(String userId){
         SseEmitter emitter = emitters.get(userId);
-        pushEvent(emitter, userId, notification);
+        pushEvent(emitter, userId);
     }
-    private void pushEvent(SseEmitter emitter, String userId, Notification notification){
-        if(true) return;
+    private void pushEvent(SseEmitter emitter, String userId){
         if(emitter == null) return;
 
         try {
-            log.info("알림 전송: notificationId={}", notification.getId());
+            log.info("알림 전송");
 
             emitter.send(SseEmitter.event()
-                    .id(String.valueOf(toEpochMilli(notification.getUpdatedAt())))
+//                    .id(String.valueOf(toEpochMilli(notification.getUpdatedAt())))
                     .name("notification")
-                    .data(notificationService.build(notification))
+                    .data("새로운 알림을 조회하세요.")
                     .reconnectTime(3000));
         } catch (IOException e) {
             emitters.remove(userId);
@@ -129,33 +93,25 @@ public class SseService {
         return ldt.atZone(ZoneId.of("Asia/Seoul")).toInstant().toEpochMilli();
     }
 
-    @Transactional
     public void upsertChatNotification(Long chatId, UpsertRequest request){
-        if(true) return;
         String receiverId = request.getReceiverId();
         String message = request.getMessage();
 
         notificationService.upsertChat(receiverId, chatId, message, 1);
-        Notification notification = notificationService.findByChat(receiverId, chatId);
 
-        pushEvent(receiverId, notification);
+        pushEvent(receiverId);
     }
 
-    @Transactional
     public void upsertProductNotification(Long productId, UpsertRequest request){
-        if(true) return;
         String receiverId = request.getReceiverId();
         String message = request.getMessage();
 
         notificationService.upsertProduct(receiverId, productId, message);
-        Notification notification = notificationService.findByProduct(receiverId, productId);
 
-        pushEvent(receiverId, notification);
+        pushEvent(receiverId);
     }
 
-    @Transactional
     public void handleMessage(MessageDTO message){
-        if(true) return;
         String contnet = message.getContent();
         switch (message.getType()){
             case TEXT: {
@@ -175,6 +131,7 @@ public class SseService {
             case CONFIRM_PURCHASE: contnet = "구매가 확정되었습니다."; break;
             case END_TRADE: contnet = "거래가 종료됩니다."; break;
         }
+
         upsertChatNotification(message.getRoomId(), UpsertRequest.of(message.getReceiverId(), contnet));
         upsertChatNotification(message.getRoomId(), UpsertRequest.of(message.getSenderId(), contnet));
     }
