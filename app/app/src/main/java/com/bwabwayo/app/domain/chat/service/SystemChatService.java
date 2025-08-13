@@ -183,13 +183,16 @@ public class SystemChatService {
 
         if(!(user.getId().equals(chatRoom.getBuyerId())))
             throw new IllegalAccessException("상품의 구매자만 구매확정을 할 수 있습니다.\n" + "유저 아이디: "+user.getId() +"   구매자 아이디: "+chatRoom.getBuyerId() + "   판매자 아이디: "+chatRoom.getSellerId());
-
+        log.info("1");
         SetProductStatusRequest productStatusRequest = SetProductStatusRequest.builder()
                 .productStatus(SaleStatus.SOLD_OUT).build();
 
-        setProductStatus(productId, productStatusRequest);
+        setProductStatus(roomId, productStatusRequest);
 
         userService.addDealCount(chatRoom.getSellerId());
+
+        //구매 확정 시 포인트 주는 것도 추가해야함...
+
 
         //리뷰작성 메세지
         MessageDTO messageDTO = MessageDTO.builder()
