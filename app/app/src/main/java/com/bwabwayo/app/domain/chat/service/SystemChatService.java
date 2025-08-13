@@ -6,6 +6,7 @@ import com.bwabwayo.app.domain.chat.dto.MessageDTO;
 import com.bwabwayo.app.domain.chat.dto.request.SetInvoiceNumberRequest;
 import com.bwabwayo.app.domain.chat.dto.request.SetPriceRequest;
 import com.bwabwayo.app.domain.chat.dto.request.SetProductStatusRequest;
+import com.bwabwayo.app.domain.product.domain.Sale;
 import com.bwabwayo.app.domain.product.enums.SaleStatus;
 import com.bwabwayo.app.domain.product.service.ProductService;
 import com.bwabwayo.app.domain.product.service.SaleService;
@@ -125,6 +126,8 @@ public class SystemChatService {
         ChatRoom chatRoom = chatRoomService.findByRoomId(roomId).orElseThrow(() -> new IllegalArgumentException("해당 채팅방이 존재하지 않습니다."));
         Long productId = chatRoom.getProductId();
         productService.setPrice(request, productId);
+        Sale sale = saleService.findByProductId(productId);
+        sale.setSalePrice(request.getPrice());
 
         MessageDTO messageDTO = MessageDTO.builder()
                 .content(request.getPrice().toString())
