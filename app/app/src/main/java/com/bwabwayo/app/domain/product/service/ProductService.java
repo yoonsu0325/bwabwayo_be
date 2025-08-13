@@ -151,7 +151,7 @@ public class ProductService {
                 .canDelivery(canDelivery)
                 .minPrice(minPrice)
                 .maxPrice(maxPrice)
-                .urlPrefix(requestDTO.getUrlPrefix())
+//                .urlPrefix(requestDTO.getUrlPrefix())
                 .build();
 
         Page<ProductWithIsLikeDTO> pageData;
