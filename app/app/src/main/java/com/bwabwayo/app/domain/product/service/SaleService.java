@@ -33,7 +33,6 @@ public class SaleService {
                 .sellerId(chatRoom.getSellerId())
                 .buyerId(chatRoom.getBuyerId())
                 .salePrice(product.getPrice())
-                .createdAt(LocalDateTime.now())
                 .isReviewed(false)
                 .roomId(chatRoom.getRoomId())
                 .build();
