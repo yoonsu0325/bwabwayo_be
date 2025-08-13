@@ -191,12 +191,14 @@ public class SystemChatService {
 
         userService.addDealCount(chatRoom.getSellerId());
 
+        Sale sale = saleService.findByProductId(productId);
+
         //구매 확정 시 포인트 주는 것도 추가해야함...
 
 
         //리뷰작성 메세지
         MessageDTO messageDTO = MessageDTO.builder()
-                .content("")
+                .content(sale.getId().toString())
                 .senderId(chatRoom.getSellerId())
                 .receiverId(chatRoom.getBuyerId())
                 .roomId(roomId)
