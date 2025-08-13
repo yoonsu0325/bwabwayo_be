@@ -28,7 +28,6 @@ public class SseService {
     /**
      * 사용자에게 알림을 보낼 수 있도록 등록
      */
-    @Transactional
     public SseEmitter subscribe(String userId, String lastEventId) {
         SseEmitter emitter = new SseEmitter(timeout);
 
@@ -112,8 +111,6 @@ public class SseService {
     }
 
     public void handleMessage(MessageDTO message){
-        if(true) return;
-
         String contnet = message.getContent();
         switch (message.getType()){
             case TEXT: {
