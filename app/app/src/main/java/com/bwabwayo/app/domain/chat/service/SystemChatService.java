@@ -181,8 +181,8 @@ public class SystemChatService {
         ChatRoom chatRoom = chatRoomService.findByRoomId(roomId).orElseThrow(() -> new IllegalArgumentException("해당 채팅방이 존재하지 않습니다."));
         Long productId = chatRoom.getProductId();
 
-        if(!user.getId().equals(chatRoom.getBuyerId()))
-            throw new IllegalAccessException("상품의 구매자만 구매확정을 할 수 있습니다.");
+        if(!(user.getId().equals(chatRoom.getBuyerId())))
+            throw new IllegalAccessException("상품의 구매자만 구매확정을 할 수 있습니다.\n" + "유저 아이디: "+user.getId() +"   구매자 아이디: "+chatRoom.getBuyerId() + "   판매자 아이디: "+chatRoom.getSellerId());
 
         SetProductStatusRequest productStatusRequest = SetProductStatusRequest.builder()
                 .productStatus(SaleStatus.SOLD_OUT).build();
