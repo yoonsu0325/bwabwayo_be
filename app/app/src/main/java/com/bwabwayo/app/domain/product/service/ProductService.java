@@ -131,7 +131,8 @@ public class ProductService {
         Integer size = requestDTO.getSize();
         // 기본 정렬 속성은 '최신순'
         ProductSortType sortType = ProductSortType.from(requestDTO.getSortBy());
-        if(sortType == ProductSortType.RELATED && keyword == null){ // 키워드가 없으면 관련 검색 불가
+        if((sortType == ProductSortType.RELATED || sortType == ProductSortType.LATEST_AND_RELATED)
+                && keyword == null){ // 키워드가 없으면 관련 검색 불가
             log.warn("키워드가 없어 관련성 검색이 불가합니다; 기본 검색으로 대체");
             sortType = ProductSortType.LATEST;
         }
