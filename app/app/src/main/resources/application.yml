@@ -63,7 +63,7 @@ jwt:
 
 
 server:
-  port: 8082
+  port: 8081
 
 openai:
   secret-key: S13P11E202-b866ef0e-647a-4e68-aabe-9953140f6092
@@ -84,7 +84,6 @@ cloud:
       bucket: bwabwayo-general-bucket
     stack:
       auto: false
-<<<<<<< app/app/src/main/resources/application.yml
     multipart-upload:
       threshold: 10485760 # 10 * 1024 *  1024 (10MB)
       part-size: 8388608 # 8 * 1024 *  1024 (8MB)
@@ -126,5 +125,3 @@ product:
 
 sweet-tracker:
   api-key: FezwHddl3sDTP67yZHfbgQ
-=======
->>>>>>> app/app/src/main/resources/application.yml
