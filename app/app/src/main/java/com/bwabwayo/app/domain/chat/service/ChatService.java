@@ -25,6 +25,8 @@ public class ChatService {
     public void sendChatMessage(MessageDTO chatMessage) {
         log.info("📢 메시지 브로드캐스트: {}", chatMessage);
 
+        sseService.handleMessage(chatMessage);
+
         ChatMessageRedisEntity redisEntity = redisService.saveMessageToRedis(chatMessage);
         redisPublisher.publish(redisEntity);
 
@@ -64,8 +66,6 @@ public class ChatService {
                 .build();
 
         redisPublisher.publish(messageSubDto);
-
-        sseService.handleMessage(chatMessage);
     }
 
     private void setNewChatRoomInfo(MessageDTO chatMessage, ChatRoomListResponse newChatRoomListResponse) {
