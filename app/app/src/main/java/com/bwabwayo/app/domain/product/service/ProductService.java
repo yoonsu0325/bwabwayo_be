@@ -200,7 +200,10 @@ public class ProductService {
         });
     }
 
-    private void keywordToCategory(String keyword, List<Long> categoryIds) {
+    private List<Long> keywordToCategory(String keyword, List<Long> categoryIds) {
+        if(keyword == null) return categoryIds;
+
+        if(categoryIds == null) categoryIds = new ArrayList<>();
         String[] tokens = keyword.split(" ");
         for(String token : tokens) {
             for (Category category : categoryRepository.findAll()) {
@@ -210,6 +213,7 @@ public class ProductService {
                 }
             }
         }
+        return categoryIds;
     }
 
     private Page<ProductWithIsLikeDTO> queryWithRelated(ProductQueryCondition queryCondition, Pageable pageable, User viewer){
