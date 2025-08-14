@@ -1,0 +1,50 @@
+package com.bwabwayo.app.global.config;
+
+import com.amazonaws.auth.AWSStaticCredentialsProvider;
+import com.amazonaws.auth.BasicAWSCredentials;
+import com.amazonaws.services.s3.AmazonS3;
+import com.amazonaws.services.s3.AmazonS3ClientBuilder;
+import com.amazonaws.services.s3.transfer.TransferManager;
+import com.amazonaws.services.s3.transfer.TransferManagerBuilder;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+
+@Configuration
+@EnableConfigurationProperties
+public class S3Config {
+
+    @Value("${cloud.aws.credentials.accessKey}")
+    private String accessKey;
+
+    @Value("${cloud.aws.credentials.secretKey}")
+    private String secretKey;
+
+    @Value("${cloud.aws.region.static}")
+    private String region;
+
+    @Value("${cloud.aws.multipart-upload.threshold}")
+    private Long multipartThreshold;
+
+    @Value("${cloud.aws.multipart-upload.part-size}")
+    private Long uploadPartSize;
+
+    @Bean
+    public AmazonS3 amazonS3() {
+        BasicAWSCredentials credentials = new BasicAWSCredentials(accessKey, secretKey);
+        return AmazonS3ClientBuilder.standard()
+                .withRegion(region)
+                .withCredentials(new AWSStaticCredentialsProvider(credentials))
+                .build();
+    }
+
+    @Bean(destroyMethod = "shutdownNow")
+    public TransferManager transferManager() {
+        return TransferManagerBuilder.standard()
+                .withS3Client(amazonS3())
+                .withMultipartUploadThreshold(multipartThreshold)
+                .withMinimumUploadPartSize(uploadPartSize)
+                .build();
+    }
+}

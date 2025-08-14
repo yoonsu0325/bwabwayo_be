@@ -2,18 +2,76 @@ spring:
   application:
     name : app
 
+  data:
+    redis:
+      host: i13e202.p.ssafy.io
+      port: 6379
+      password: whddnjsWkd123!
+      timeout: 6000
+
+    mongodb:
+      uri: mongodb+srv://yoonsu0325:uhcxBQgEMN0uvCiW@bwabwayo.2fgys4l.mongodb.net/chatmessages?retryWrites=true&w=majority
+      database: chatmessages
+
   datasource:
-    url: jdbc:mysql://i13e202.p.ssafy.io/bwabwayo_db
+    url: jdbc:mysql://i13e202.p.ssafy.io/bwabwayo_db?serverTimezone=Asia/Seoul
     username: root
     password: whddnjsWkd123!
     driver-class-name: com.mysql.cj.jdbc.Driver
+
   jpa:
     hibernate:
       ddl-auto: update
     show-sql: true
 
+  security:
+    oauth2:
+      client:
+        registration:
+          kakao:
+            client-name: kakao
+            client-id: "cf27d231cedbfe3904be600d2d10fc48"
+            redirect-uri: "https://i13e202.p.ssafy.io/be/login/oauth2/code/kakao"
+            client-authentication-method: client_secret_post
+            authorization-grant-type: authorization_code
+            scope: profile_image, account_email
+        provider:
+          kakao:
+            authorization_uri: https://kauth.kakao.com/oauth/authorize
+            token_uri: https://kauth.kakao.com/oauth/token
+            user-info-uri: https://kapi.kakao.com/v2/user/me
+            user_name_attribute: id
+
+  servlet:
+    multipart:
+      max-file-size: 2GB
+      max-request-size: 2GB
+
+
+jwt:
+  secret: "vmfhaltmskdlstkfkdgodyroqkfwkasdadowdqfgrgsgsrgsgrgsrgsrgsefjhgku="
+  access-exp-minutes: 5
+  refresh-exp-minutes: 10080 #60*24*7
+  header: Authorization
+  type: Bearer
+  type-access: "access"
+  type-refresh: "refresh"
+  aes-secret-key: "sDuQoYmhOYmR7p7mRb95hw=="
+  aes-iv: "13b6f0a7cfe14a09"
+  refresh-reissue-threshold-days: 3 #3일
+
+
+
 server:
   port: 8082
+
+openai:
+  secret-key: S13P11E202-b866ef0e-647a-4e68-aabe-9953140f6092
+  chat-url: https://gms.ssafy.io/gmsapi/api.openai.com/v1/chat/completions
+  chat-model: gpt-4.1-nano
+
+  embedding-url: https://gms.ssafy.io/gmsapi/api.openai.com/v1/embeddings
+  embedding-model: text-embedding-3-large
 
 cloud:
   aws:
@@ -26,3 +84,47 @@ cloud:
       bucket: bwabwayo-general-bucket
     stack:
       auto: false
+<<<<<<< app/app/src/main/resources/application.yml
+    multipart-upload:
+      threshold: 10485760 # 10 * 1024 *  1024 (10MB)
+      part-size: 8388608 # 8 * 1024 *  1024 (8MB)
+
+qdrant:
+  base-url: "https://i13e202.p.ssafy.io/qdrant"
+  collection-name: "product-embeddings"
+  vector-size: 3072
+
+logging:
+  level:
+    com.bwabwayo.app: DEBUG
+
+openvidu:
+  url: https://i13e202.p.ssafy.io:8443
+  secret: whddnjsWkd123
+
+
+storage:
+  path:
+    temp: temp
+    productImage: products
+    profileImage: profiles
+
+sse:
+  timeout: 1800000
+
+toss:
+  key:
+    client-key: test_ck_yL0qZ4G1VOKNp2R5jMxkVoWb2MQY
+    secret-key: test_sk_pP2YxJ4K87d7epemDNwv3RGZwXLO
+  url:
+    confirm: https://api.tosspayments.com/v1/payments/confirm
+
+product:
+  detail:
+    others: 5
+    similarities: 4
+
+sweet-tracker:
+  api-key: FezwHddl3sDTP67yZHfbgQ
+=======
+>>>>>>> app/app/src/main/resources/application.yml

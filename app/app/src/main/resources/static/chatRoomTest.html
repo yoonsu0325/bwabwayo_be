@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <title>🔥 실시간 채팅방 테스트</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #f7f7f7;
+            display: flex;
+            justify-content: center;
+            margin-top: 50px;
+        }
+
+        .chat-container {
+            width: 400px;
+            background: #fff;
+            border-radius: 10px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+
+        .chat-header {
+            background: #4a90e2;
+            color: white;
+            padding: 15px;
+            font-weight: bold;
+            text-align: center;
+        }
+
+        .chat-body {
+            height: 300px;
+            overflow-y: auto;
+            padding: 15px;
+            background: #f9f9f9;
+        }
+
+        .chat-message {
+            margin-bottom: 10px;
+        }
+
+        .chat-message.you {
+            text-align: right;
+        }
+
+        .chat-input {
+            display: flex;
+            border-top: 1px solid #ddd;
+        }
+
+        .chat-input input {
+            flex: 1;
+            padding: 10px;
+            border: none;
+            outline: none;
+        }
+
+        .chat-input button {
+            background: #4a90e2;
+            border: none;
+            color: white;
+            padding: 10px 20px;
+            cursor: pointer;
+        }
+
+        .chat-info {
+            padding: 10px;
+            background: #eee;
+            font-size: 13px;
+        }
+    </style>
+</head>
+<body>
+<div class="chat-container">
+    <div class="chat-header">💬 실시간 채팅방</div>
+    <div class="chat-info">
+        Room ID: <input id="roomId" value="1" size="5">
+        Sender: <input id="senderId" value="1" size="5">
+        Receiver: <input id="receiverId" value="2" size="5">
+        <button onclick="connect()">연결</button>
+    </div>
+    <div id="chatBody" class="chat-body"></div>
+    <div class="chat-input">
+        <input id="messageInput" type="text" placeholder="메시지를 입력하세요...">
+        <button onclick="sendMessage()">전송</button>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/sockjs-client@1/dist/sockjs.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/stompjs@2.3.3/lib/stomp.min.js"></script>
+
+<script>
+    let stompClient = null;
+
+    function connect() {
+        const socket = new SockJS('http://localhost:8081/ws-stomp'); // 서버 주소로 변경해줘
+        stompClient = Stomp.over(socket);
+
+        stompClient.connect({}, function () {
+            const roomId = document.getElementById('roomId').value;
+            stompClient.subscribe(`/sub/chat/room/${roomId}`, function (messageOutput) {
+                const msg = JSON.parse(messageOutput.body);
+                const isMine = String(msg.senderId) === document.getElementById("senderId").value;
+                appendMessage(msg, isMine);
+            });
+
+            appendSystemMessage("✅ 연결되었습니다.");
+        });
+    }
+
+    function sendMessage() {
+        const message = {
+            roomId: parseInt(document.getElementById("roomId").value),
+            senderId: document.getElementById("senderId").value,
+            receiverId: document.getElementById("receiverId").value,
+            content: document.getElementById("messageInput").value,
+            isRead: false,
+            createdAt : new Date(),
+            type: "TEXT"
+        };
+
+        stompClient.send("/pub/chat/message", {}, JSON.stringify(message));
+        document.getElementById("messageInput").value = '';
+    }
+
+    function appendMessage(message, isMine) {
+        const chatBody = document.getElementById("chatBody");
+        const msgDiv = document.createElement("div");
+        msgDiv.className = "chat-message " + (isMine ? "you" : "other");
+        msgDiv.innerText = `${isMine ? "나" : "상대"}: ${message.content}`;
+        chatBody.appendChild(msgDiv);
+        chatBody.scrollTop = chatBody.scrollHeight;
+    }
+
+    function appendSystemMessage(msg) {
+        const chatBody = document.getElementById("chatBody");
+        const msgDiv = document.createElement("div");
+        msgDiv.style.textAlign = "center";
+        msgDiv.style.color = "#888";
+        msgDiv.style.marginBottom = "10px";
+        msgDiv.innerText = msg;
+        chatBody.appendChild(msgDiv);
+    }
+</script>
+</body>
+</html>
