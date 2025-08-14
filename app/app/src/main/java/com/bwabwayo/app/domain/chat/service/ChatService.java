@@ -25,7 +25,7 @@ public class ChatService {
     public void sendChatMessage(MessageDTO chatMessage) {
         log.info("📢 메시지 브로드캐스트: {}", chatMessage);
 
-        sseService.handleMessage(chatMessage);
+//        sseService.handleMessage(chatMessage);
 
         ChatMessageRedisEntity redisEntity = redisService.saveMessageToRedis(chatMessage);
         redisPublisher.publish(redisEntity);
