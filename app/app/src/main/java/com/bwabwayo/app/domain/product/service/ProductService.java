@@ -126,7 +126,7 @@ public class ProductService {
             }
         }
 
-        keywordToCategory(keyword, categoryIds);
+        categoryIds = keywordToCategory(keyword, categoryIds);
 
         // 페이징 조건
         // 페이지는 1부터 시작
