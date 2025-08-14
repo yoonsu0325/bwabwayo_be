@@ -21,7 +21,7 @@ public class ChatService {
     private final ChatRoomRedisRepository chatRoomRedisRepository;
     private final ChatRoomService chatRoomService;
     private final RedisService redisService;
-    private final NotificationAsyncService notificationAsyncService;
+//    private final NotificationAsyncService notificationAsyncService;
 
     public void sendChatMessage(MessageDTO chatMessage) {
         log.info("📢 메시지 브로드캐스트: {}", chatMessage);
@@ -66,11 +66,11 @@ public class ChatService {
 
         redisPublisher.publish(messageSubDto);
 
-        try {
-            notificationAsyncService.handleMessageAsync(chatMessage); // @Async
-        } catch (Exception e) {
-            log.error("handleMessage 비동기 제출 실패", e);
-        }
+//        try {
+//            notificationAsyncService.handleMessageAsync(chatMessage); // @Async
+//        } catch (Exception e) {
+//            log.error("handleMessage 비동기 제출 실패", e);
+//        }
     }
 
     private void setNewChatRoomInfo(MessageDTO chatMessage, ChatRoomListResponse newChatRoomListResponse) {
