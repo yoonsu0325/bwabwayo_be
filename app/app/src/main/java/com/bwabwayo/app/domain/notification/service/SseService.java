@@ -112,7 +112,7 @@ public class SseService {
 
     public void handleMessage(MessageDTO message){
         log.info("알림 대상: {}", message.toString());
-        if(true) return;
+//        if(true) return;
 
         String contnet = message.getContent();
         switch (message.getType()){
