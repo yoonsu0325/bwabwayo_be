@@ -25,6 +25,7 @@ public class ProductQueryRequest {
     private Integer size = 100; // 상품 수
 
     private String keyword; // 검색 키워드
+    private Long productId; //검색 키워드 없고 productId 있으면 사용
     private Long categoryId; // 카테고리 ID
 
     @Parameter(example = "latest", description = "latest(최신순), views(조회수 순), wishes(찜 순), related(관련순: 키워드 필수)")

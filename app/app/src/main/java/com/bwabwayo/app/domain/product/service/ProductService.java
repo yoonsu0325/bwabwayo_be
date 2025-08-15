@@ -101,6 +101,10 @@ public class ProductService {
     public PageResponse<ProductQueryResult> query(ProductQueryRequest requestDTO, User loginUser) {
         // 검색 조건
         String keyword = requestDTO.getKeyword();
+        Long productId = requestDTO.getProductId();
+        if(keyword == null & productId != null){
+            keyword = productRepository.getProductById(productId).getTitle();
+        }
         Long categoryId = requestDTO.getCategoryId();
         String sellerId = requestDTO.getSellerId();
 
