@@ -6,6 +6,7 @@ import com.bwabwayo.app.domain.notification.dto.response.NotificationResponse;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
@@ -155,5 +156,17 @@ public class SseService {
         }
         upsertHint(UpsertRequest.of(message.getReceiverId(), null, message.getRoomId(), contnet));
         upsertHint(UpsertRequest.of(message.getReceiverId(), null, message.getRoomId(), contnet));
+    }
+
+
+    @Scheduled(fixedRate = 15000) // 15초
+    public void sendKeepAlive() {
+        for (SseEmitter e : emitters.values()) {
+            try {
+                e.send(SseEmitter.event().name("ping").comment("keepalive"));
+            } catch (IOException ex) {
+                e.complete();
+            }
+        }
     }
 }
