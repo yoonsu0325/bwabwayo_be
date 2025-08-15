@@ -120,6 +120,13 @@ public class RedisConfig {
     public RedisTemplate<String, String> notificationRedisTemplate(@Qualifier("redisConnectionFactory4") RedisConnectionFactory redisConnectionFactory) {
         RedisTemplate<String, String> template = new RedisTemplate<>();
         template.setConnectionFactory(redisConnectionFactory);
+
+        StringRedisSerializer s = new StringRedisSerializer();
+        template.setKeySerializer(s);
+        template.setValueSerializer(s);
+        template.setHashKeySerializer(s);
+        template.setHashValueSerializer(s);
+
         template.afterPropertiesSet();
         return template;
     }

@@ -19,7 +19,7 @@ public interface NotificationRepository extends JpaRepository<Notification, Long
     @Query(value = """
 INSERT INTO notification
 (receiver_id, product_id, chatroom_id, message, updated_at, is_read, unread_count)
-VALUES (:receiverId, :productId, :roomId, :message, NOW(3), false, 1)
+VALUES (:receiverId, :productId, :roomId, :message, :updatedAt, false, 1)
 ON DUPLICATE KEY UPDATE
   message = VALUES(message),
   updated_at = :updatedAt,
