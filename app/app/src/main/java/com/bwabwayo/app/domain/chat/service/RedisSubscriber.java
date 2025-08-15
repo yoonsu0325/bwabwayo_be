@@ -31,7 +31,7 @@ public class RedisSubscriber {
                     "/sub/chat/room/" + chatMessage.getRoomId(), chatMessage
             );
 
-            sseService.handleMessage(chatMessage);
+//            sseService.handleMessage(chatMessage);
         } catch (Exception e) {
             log.error("[sendMessage] Exception: {}", e.getMessage(), e);
         }
