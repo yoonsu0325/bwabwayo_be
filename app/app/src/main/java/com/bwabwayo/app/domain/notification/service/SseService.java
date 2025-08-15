@@ -79,6 +79,7 @@ public class SseService {
     }
     /** 메시지 전송 */
     public void pushEvent(String userId, String channel, String message){
+        if(!emitters.containsKey(userId)) return;
         for(SseEmitter emitter : emitters.get(userId)){
             pushEvent(emitter, userId, channel, message);
         }
@@ -95,9 +96,17 @@ public class SseService {
                     .data(message)
                     .reconnectTime(3000L));
         } catch (IOException e) {
-            emitters.remove(userId);
-            emitter.completeWithError(e);
-            log.error("message={}", e.getMessage(), e);
+            // 1) 먼저 조용히 종료 (onCompletion 훅이 있다면 그쪽에서 제거 가능)
+            try { emitter.complete(); } catch (Throwable ignore) {}
+
+            // 2) 원자적으로 emitter 제거
+            emitters.computeIfPresent(userId, (k, set) -> {
+                set.remove(emitter);
+                return set.isEmpty() ? null : set;
+            });
+
+            // 3) 로그 출력
+            log.error("SSE send failed: userId={}, channel={}, message={}", userId, channel, e.getMessage(), e);
         }
     }
 
