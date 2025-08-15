@@ -53,7 +53,6 @@ public class NotificationRedisRepository {
     }
 
     /** 업서트 (Lua 없이 WATCH/MULTI로 원자성 확보) */
-    @Transactional // 트랜잭션 경계는 Redis에 영향 X, Spring AOP 구간 표시용
     public void upsert(String receiverId, Long productId, Long roomId,
                        String message, LocalDateTime updatedAtKst) {
 
