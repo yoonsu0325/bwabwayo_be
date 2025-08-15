@@ -70,7 +70,7 @@ public class ReservationService {
         //스케줄링하기
         scheduleOpenViduJob(reservation);
 
-        systemChatService.sendReservationMessage(chatRoom, reservationRequest.getStartAt());
+        systemChatService.sendReservationMessage(chatRoom, reservation);
 
         return reservation;
     }

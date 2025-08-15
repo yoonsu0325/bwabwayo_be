@@ -2,6 +2,7 @@ package com.bwabwayo.app.domain.chat.service;
 
 import com.bwabwayo.app.domain.chat.domain.ChatRoom;
 import com.bwabwayo.app.domain.chat.domain.MessageType;
+import com.bwabwayo.app.domain.chat.domain.VideocallReservation;
 import com.bwabwayo.app.domain.chat.dto.MessageDTO;
 import com.bwabwayo.app.domain.chat.dto.request.SetInvoiceNumberRequest;
 import com.bwabwayo.app.domain.chat.dto.request.SetPriceRequest;
@@ -12,6 +13,7 @@ import com.bwabwayo.app.domain.product.service.ProductService;
 import com.bwabwayo.app.domain.product.service.SaleService;
 import com.bwabwayo.app.domain.user.domain.User;
 import com.bwabwayo.app.domain.user.service.UserService;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -29,6 +31,7 @@ public class SystemChatService {
     private final ProductService productService;
     private final SaleService saleService;
     private final UserService userService;
+    private final ObjectMapper objectMapper;
 
     public void sendVideoCallMessage(ChatRoom chatRoom, String sessionId){
         MessageDTO messageDTO = MessageDTO.builder()
@@ -44,18 +47,23 @@ public class SystemChatService {
         chatService.sendChatMessage(messageDTO);
     }
 
-    public void sendReservationMessage(ChatRoom chatRoom, String startAt){
-        MessageDTO messageDTO = MessageDTO.builder()
-                .content(startAt)
-                .senderId(chatRoom.getSellerId())
-                .receiverId(chatRoom.getBuyerId())
-                .roomId(chatRoom.getRoomId())
-                .read(false)
-                .createdAt(LocalDateTime.now(ZoneId.of("Asia/Seoul")).toString())
-                .type(MessageType.RESERVE_VIDEOCALL)
-                .build();
+    public void sendReservationMessage(ChatRoom chatRoom, VideocallReservation reservation){
+        try{
+            MessageDTO messageDTO = MessageDTO.builder()
+                    .content(objectMapper.writeValueAsString(reservation))
+                    .senderId(chatRoom.getSellerId())
+                    .receiverId(chatRoom.getBuyerId())
+                    .roomId(chatRoom.getRoomId())
+                    .read(false)
+                    .createdAt(LocalDateTime.now(ZoneId.of("Asia/Seoul")).toString())
+                    .type(MessageType.RESERVE_VIDEOCALL)
+                    .build();
 
-        chatService.sendChatMessage(messageDTO);
+            chatService.sendChatMessage(messageDTO);
+        }
+        catch (Exception e){
+            log.error("예약 메세지 발송 실패: " + e.getMessage());
+        }
     }
 
     public void sendReservationCancelMessage(ChatRoom chatRoom){
