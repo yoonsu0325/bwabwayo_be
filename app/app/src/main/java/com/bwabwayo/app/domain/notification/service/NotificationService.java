@@ -39,7 +39,6 @@ public class NotificationService {
     // ===================== upsert =======================
 
 //    @Transactional
-    @Transactional(propagation = Propagation.NOT_SUPPORTED)
     public void upsert(String receiverId, Long productId, Long roomId, String message){
         log.info("upsert receiverId: {}, productId: {}, roomId: {}, message: {}", receiverId, productId, roomId, message);
 //        notificationRepository.upsert(receiverId, productId, roomId, message, LocalDateTime.now(ZoneId.of("Asia/Seoul")));

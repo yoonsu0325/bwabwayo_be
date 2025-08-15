@@ -1,13 +1,14 @@
 package com.bwabwayo.app.domain.notification.repository;
 
 import com.bwabwayo.app.domain.notification.dto.NotificationDTO;
-import jakarta.transaction.Transactional;
-import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.dao.DataAccessException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.redis.core.RedisOperations;
 import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.data.redis.core.SessionCallback;
 import org.springframework.stereotype.Repository;
 
 import java.time.LocalDateTime;
@@ -17,13 +18,13 @@ import java.util.*;
 @Repository
 public class NotificationRedisRepository {
 
-    public NotificationRedisRepository(@Qualifier("notificationRedisTemplate") RedisTemplate<String, String> template) {
-        this.template = template;
-    }
-
     private final RedisTemplate<String, String> template;
     private static final ZoneId KST = ZoneId.of("Asia/Seoul");
 
+    public NotificationRedisRepository(@Qualifier("notificationRedisTemplate")
+                                       RedisTemplate<String, String> template) {
+        this.template = template;
+    }
 
     private String uniqKey(String receiverId, Long productId, Long roomId) {
         long p = (productId == null ? 0L : productId);
@@ -47,91 +48,87 @@ public class NotificationRedisRepository {
         return String.format("notif:%d", id);
     }
 
-    /** ID 생성 */
-    private long nextId() {
-        return template.opsForValue().increment("notif:seq");
-    }
-
-    /** 업서트 (Lua 없이 WATCH/MULTI로 원자성 확보) */
+    /** 업서트 (WATCH/MULTI/EXEC) — 같은 커넥션 보장 */
     public void upsert(String receiverId, Long productId, Long roomId,
                        String message, LocalDateTime updatedAtKst) {
 
-        String uniq = uniqKey(receiverId, productId, roomId);
-        long nowMillis = updatedAtKst.atZone(KST).toInstant().toEpochMilli();
+        final String uniq = uniqKey(receiverId, productId, roomId);
+        final long nowMillis = updatedAtKst.atZone(KST).toInstant().toEpochMilli();
 
-        // 비관적보다 가벼운 낙관적 잠금
-        template.setEnableTransactionSupport(true);
-        while (true) {
-            template.watch(uniq);
-            String existedId = template.opsForValue().get(uniq);
+        template.execute(new SessionCallback<Void>() {
+            @Override
+            public <K, V> Void execute(RedisOperations<K, V> operations) throws DataAccessException {
+                @SuppressWarnings("unchecked")
+                RedisOperations<String, String> ops = (RedisOperations<String, String>) operations;
 
-            List<Object> exec;
-            if (existedId != null) {
-                String nkey = notifKey(Long.parseLong(existedId));
-                template.multi(); // TX 시작
+                while (true) {
+                    // 1) WATCH + 조회 (같은 커넥션)
+                    ops.watch(uniq);
+                    String existedId = ops.opsForValue().get(uniq);
 
-                // 본문 갱신
-                Map<String, String> patch = new HashMap<>();
-                patch.put("message", message);
-                patch.put("updatedAtMillis", String.valueOf(nowMillis));
-                patch.put("isRead", "false");
-                // unreadCount + 1
-                // Hash에선 HINCRBY
-                template.opsForHash().increment(nkey, "unreadCount", 1);
+                    if (existedId != null) {
+                        String nkey = notifKey(Long.parseLong(existedId));
 
-                template.opsForHash().putAll(nkey, patch);
+                        // 2) MULTI
+                        ops.multi();
+                        ops.opsForHash().put(nkey, "message", message);
+                        ops.opsForHash().put(nkey, "updatedAtMillis", String.valueOf(nowMillis));
+                        ops.opsForHash().put(nkey, "isRead", "false");
+                        ops.opsForHash().increment(nkey, "unreadCount", 1);
+                        ops.opsForZSet().add(inboxKey(receiverId), existedId, nowMillis);
 
-                // 인박스 정렬 최신화
-                template.opsForZSet().add(inboxKey(receiverId), existedId, nowMillis);
+                        // 3) EXEC
+                        List<Object> exec = ops.exec();
+                        if (exec != null) break; // 성공. 충돌이면 null → 루프 재시도
+                    } else {
+                        Long id = ops.opsForValue().increment("notif:seq");
+                        String nkey = notifKey(Objects.requireNonNull(id));
 
-                exec = template.exec(); // 커밋
-            } else {
-                long id = nextId();
-                String nkey = notifKey(id);
-                template.multi();
+                        ops.multi();
+                        Map<String, String> body = new LinkedHashMap<>();
+                        body.put("id", String.valueOf(id));
+                        body.put("receiverId", receiverId);
+                        body.put("productId", String.valueOf(productId == null ? 0L : productId));
+                        body.put("chatroomId", String.valueOf(roomId == null ? 0L : roomId));
+                        body.put("message", message);
+                        body.put("updatedAtMillis", String.valueOf(nowMillis));
+                        body.put("isRead", "false");
+                        body.put("unreadCount", "1");
 
-                Map<String, String> body = new LinkedHashMap<>();
-                body.put("id", String.valueOf(id));
-                body.put("receiverId", receiverId);
-                body.put("productId", String.valueOf(productId == null ? 0L : productId));
-                body.put("chatroomId", String.valueOf(roomId == null ? 0L : roomId));
-                body.put("message", message);
-                body.put("updatedAtMillis", String.valueOf(nowMillis));
-                body.put("isRead", "false");
-                body.put("unreadCount", "1");
+                        ops.opsForHash().putAll(nkey, body);
+                        ops.opsForValue().set(uniq, String.valueOf(id));
+                        if (roomId != null)    ops.opsForValue().set(chatIdxKey(receiverId, roomId), String.valueOf(id));
+                        if (productId != null) ops.opsForValue().set(prodIdxKey(receiverId, productId), String.valueOf(id));
+                        ops.opsForZSet().add(inboxKey(receiverId), String.valueOf(id), nowMillis);
 
-                template.opsForHash().putAll(nkey, body);
-
-                // 유니크/보조 인덱스
-                template.opsForValue().set(uniq, String.valueOf(id));
-                if (roomId != null)    template.opsForValue().set(chatIdxKey(receiverId, roomId), String.valueOf(id));
-                if (productId != null) template.opsForValue().set(prodIdxKey(receiverId, productId), String.valueOf(id));
-
-                // 인박스 ZSET
-                template.opsForZSet().add(inboxKey(receiverId), String.valueOf(id), nowMillis);
-
-                exec = template.exec();
+                        List<Object> exec = ops.exec();
+                        if (exec != null) break;
+                    }
+                }
+                return null;
             }
-
-            if (exec != null) break; // WATCH 충돌 없었으면 성공
-        }
-        template.setEnableTransactionSupport(false);
+        });
     }
 
-    /** 단건 읽음 처리 by notificationId */
+    /** 단건 읽음 처리 — MULTI/EXEC (WATCH 불필요) */
     public void markRead(String receiverId, long notificationId) {
-        String nkey = notifKey(notificationId);
-        // 상태 읽고 미읽음이면 인박스에서 제거
-        List<Object> vals = template.opsForHash().multiGet(nkey, List.of("isRead", "unreadCount"));
-        if (vals == null || vals.isEmpty()) return;
+        final String nkey = notifKey(notificationId);
+        final String zkey = inboxKey(receiverId);
 
-        template.setEnableTransactionSupport(true);
-        template.multi();
-        template.opsForHash().put(nkey, "isRead", "true");
-        template.opsForHash().put(nkey, "unreadCount", "0");
-        template.opsForZSet().remove(inboxKey(receiverId), String.valueOf(notificationId));
-        template.exec();
-        template.setEnableTransactionSupport(false);
+        template.execute(new SessionCallback<Void>() {
+            @Override
+            public <K, V> Void execute(RedisOperations<K, V> operations) throws DataAccessException {
+                @SuppressWarnings("unchecked")
+                RedisOperations<String, String> ops = (RedisOperations<String, String>) operations;
+
+                ops.multi();
+                ops.opsForHash().put(nkey, "isRead", "true");
+                ops.opsForHash().put(nkey, "unreadCount", "0");
+                ops.opsForZSet().remove(zkey, String.valueOf(notificationId));
+                ops.exec();
+                return null;
+            }
+        });
     }
 
     /** 채팅 읽음 처리 by (receiverId, roomId) */
@@ -156,41 +153,38 @@ public class NotificationRedisRepository {
         long start = pageable.getOffset();
         long end = start + pageable.getPageSize() - 1;
 
-        // 총 개수(미읽음 건)
         Long total = template.opsForZSet().zCard(zkey);
         if (total == null || total == 0) {
             return new PageImpl<>(List.of(), pageable, 0);
         }
 
-        // 최신순 범위
         Set<String> ids = template.opsForZSet().reverseRange(zkey, start, end);
         if (ids == null || ids.isEmpty()) {
             return new PageImpl<>(List.of(), pageable, total);
         }
 
         List<NotificationDTO> list = ids.stream()
-            .map(idStr -> {
-                String nkey = notifKey(Long.parseLong(idStr));
-                Map<Object, Object> m = template.opsForHash().entries(nkey);
-                if (m == null || m.isEmpty()) return null;
+                .map(idStr -> {
+                    String nkey = notifKey(Long.parseLong(idStr));
+                    Map<Object, Object> m = template.opsForHash().entries(nkey);
+                    if (m == null || m.isEmpty()) return null;
 
-                long updatedAtMillis = Long.parseLong((String)m.getOrDefault("updatedAtMillis","0"));
-                LocalDateTime kst = LocalDateTime.ofInstant(
-                        java.time.Instant.ofEpochMilli(updatedAtMillis), KST);
+                    long updatedAtMillis = Long.parseLong((String)m.getOrDefault("updatedAtMillis","0"));
+                    LocalDateTime kst = LocalDateTime.ofInstant(java.time.Instant.ofEpochMilli(updatedAtMillis), KST);
 
-                return NotificationDTO.builder()
-                        .id(Long.valueOf((String)m.get("id")))
-                        .receiverId((String)m.get("receiverId"))
-                        .productId(parseLongNull((String)m.get("productId")))
-                        .chatroomId(parseLongNull((String)m.get("chatroomId")))
-                        .message((String)m.get("message"))
-                        .updatedAt(kst)
-                        .isRead(Boolean.parseBoolean((String)m.getOrDefault("isRead","false")))
-                        .unreadCount(Integer.parseInt((String)m.getOrDefault("unreadCount","0")))
-                        .build();
-            })
-            .filter(Objects::nonNull)
-            .toList();
+                    return NotificationDTO.builder()
+                            .id(Long.valueOf((String)m.get("id")))
+                            .receiverId((String)m.get("receiverId"))
+                            .productId(parseLongNull((String)m.get("productId")))
+                            .chatroomId(parseLongNull((String)m.get("chatroomId")))
+                            .message((String)m.get("message"))
+                            .updatedAt(kst)
+                            .isRead(Boolean.parseBoolean((String)m.getOrDefault("isRead","false")))
+                            .unreadCount(Integer.parseInt((String)m.getOrDefault("unreadCount","0")))
+                            .build();
+                })
+                .filter(Objects::nonNull)
+                .toList();
 
         return new PageImpl<>(list, pageable, total);
     }
