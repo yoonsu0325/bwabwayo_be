@@ -1,5 +1,6 @@
 package com.bwabwayo.app.domain.support.controller;
 
+import com.bwabwayo.app.domain.support.dto.request.InquiryReplyRequest;
 import com.bwabwayo.app.domain.support.dto.request.InquiryRequest;
 import com.bwabwayo.app.domain.support.dto.response.InquiryResponse;
 import com.bwabwayo.app.domain.support.service.InquiryService;
@@ -37,6 +38,12 @@ public class InquiryController {
             Pageable pageable
     ) {
         return ResponseEntity.ok(inquiryService.findInquiryByUserId(user, pageable));
+    }
+
+    @PutMapping("/reply")
+    public ResponseEntity<?> saveInquiry(@RequestBody InquiryReplyRequest inquiryReplyRequest) {
+        inquiryService.saveReply(inquiryReplyRequest);
+        return ResponseEntity.ok("문의 답변 완료");
     }
 
     // 문의 게시물 작성

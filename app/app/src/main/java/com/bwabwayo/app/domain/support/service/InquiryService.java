@@ -2,12 +2,14 @@ package com.bwabwayo.app.domain.support.service;
 
 import com.bwabwayo.app.domain.support.domain.Inquiry;
 import com.bwabwayo.app.domain.support.domain.InquiryImage;
+import com.bwabwayo.app.domain.support.dto.request.InquiryReplyRequest;
 import com.bwabwayo.app.domain.support.dto.request.InquiryRequest;
 import com.bwabwayo.app.domain.support.dto.response.InquiryResponse;
 import com.bwabwayo.app.domain.support.repository.InquiryRepository;
 import com.bwabwayo.app.domain.user.domain.User;
 import com.bwabwayo.app.global.storage.service.StorageService;
 import com.bwabwayo.app.global.storage.util.StorageUtil;
+import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -58,6 +60,14 @@ public class InquiryService {
                         .reply(inquiry.getReply())
                         .createdAt(inquiry.getCreatedAt().toString())
                         .build());
+    }
+
+    @Transactional
+    public void saveReply(InquiryReplyRequest inquiryReplyRequest) {
+        Inquiry  inquiry = inquiryRepository.findById(inquiryReplyRequest.getId())
+                .orElseThrow(() -> new EntityNotFoundException("Inquiry not found"));
+        inquiry.setReply(inquiryReplyRequest.getReply());
+        inquiryRepository.save(inquiry);
     }
 
     // 문의 게시물 작성

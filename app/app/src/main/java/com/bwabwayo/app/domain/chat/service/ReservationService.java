@@ -70,7 +70,7 @@ public class ReservationService {
         //스케줄링하기
         scheduleOpenViduJob(reservation);
 
-        systemChatService.sendReservationMessage(chatRoom, reservationRequest.getStartAt());
+        systemChatService.sendReservationMessage(chatRoom, reservation);
 
         return reservation;
     }
@@ -229,7 +229,7 @@ public class ReservationService {
                 else replayUrl = storageService.getUrlFromKey(reservation.getVideoCallUrl());
             }
 
-            reservationResponseList.add(ReservationResponse.from(reservation, seller.getNickname(), product.getTitle(), Optional.ofNullable(replayUrl), isEnd));
+            reservationResponseList.add(ReservationResponse.from(reservation, buyer.getNickname(), product.getTitle(), Optional.ofNullable(replayUrl), isEnd));
         }
         return reservationResponseList;
     }

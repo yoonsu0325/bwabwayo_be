@@ -4,10 +4,6 @@ import com.bwabwayo.app.domain.chat.domain.ChatMessageRedisEntity;
 import com.bwabwayo.app.domain.chat.dto.MessageDTO;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 
@@ -29,7 +25,7 @@ public class RedisService {
         this.chatMongoService = chatMongoService;
     }
     private static final int PAGE_SIZE = 20;
-    private static final int MAX_CACHE_SIZE = 30;
+    private static final int MAX_CACHE_SIZE = 100;
     public List<MessageDTO> findMessages(Long roomId, int pageNumber) {
         String key = "chat:room:" + roomId;
         long start = (long) pageNumber * PAGE_SIZE;
@@ -93,9 +89,10 @@ public class RedisService {
 
     public Optional<ChatMessageRedisEntity> findLastMessage(Long roomId) {
         String key = "chat:room:" + roomId;
+        System.out.println(key);
         List<ChatMessageRedisEntity> lastMsgList = redisTemplate.opsForList().range(key, 0 , 0);
-        log.info("findLast" + String.valueOf(lastMsgList.get(0).getContent()));
-        if (lastMsgList != null && !lastMsgList.isEmpty()) {
+        //log.info("findLast" + String.valueOf(lastMsgList.get(0).getContent()));
+        if (!lastMsgList.isEmpty()) {
             return Optional.of(lastMsgList.get(0));
         }
         return Optional.empty();

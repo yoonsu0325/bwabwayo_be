@@ -25,4 +25,6 @@ public class ProductQueryCondition {
     private Integer maxPrice;
 
     private String urlPrefix;
+
+    private Boolean getOnlySale;
 }

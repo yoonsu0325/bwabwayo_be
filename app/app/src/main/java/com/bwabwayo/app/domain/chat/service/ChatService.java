@@ -5,6 +5,8 @@ import com.bwabwayo.app.domain.chat.dto.MessageDTO;
 import com.bwabwayo.app.domain.chat.dto.MessageSubDTO;
 import com.bwabwayo.app.domain.chat.dto.response.ChatRoomListResponse;
 import com.bwabwayo.app.domain.chat.repository.ChatRoomRedisRepository;
+import com.bwabwayo.app.domain.notification.service.NotificationAsyncService;
+import com.bwabwayo.app.domain.notification.service.SseService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -19,6 +21,7 @@ public class ChatService {
     private final ChatRoomRedisRepository chatRoomRedisRepository;
     private final ChatRoomService chatRoomService;
     private final RedisService redisService;
+//    private final NotificationAsyncService notificationAsyncService;
 
     public void sendChatMessage(MessageDTO chatMessage) {
         log.info("📢 메시지 브로드캐스트: {}", chatMessage);
@@ -62,6 +65,12 @@ public class ChatService {
                 .build();
 
         redisPublisher.publish(messageSubDto);
+
+//        try {
+//            notificationAsyncService.handleMessageAsync(chatMessage); // @Async
+//        } catch (Exception e) {
+//            log.error("handleMessage 비동기 제출 실패", e);
+//        }
     }
 
     private void setNewChatRoomInfo(MessageDTO chatMessage, ChatRoomListResponse newChatRoomListResponse) {

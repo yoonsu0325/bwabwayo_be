@@ -1,7 +1,10 @@
 package com.bwabwayo.app.domain.support.service;
 
+import com.bwabwayo.app.domain.support.domain.Inquiry;
 import com.bwabwayo.app.domain.support.domain.Report;
 import com.bwabwayo.app.domain.support.domain.ReportImage;
+import com.bwabwayo.app.domain.support.dto.request.InquiryReplyRequest;
+import com.bwabwayo.app.domain.support.dto.request.ReportReplyRequest;
 import com.bwabwayo.app.domain.support.dto.request.ReportRequest;
 import com.bwabwayo.app.domain.support.dto.response.ReportResponse;
 import com.bwabwayo.app.domain.support.repository.ReportRepository;
@@ -9,6 +12,7 @@ import com.bwabwayo.app.domain.user.domain.User;
 import com.bwabwayo.app.domain.user.service.UserService;
 import com.bwabwayo.app.global.storage.service.StorageService;
 import com.bwabwayo.app.global.storage.util.StorageUtil;
+import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -87,5 +91,20 @@ public class ReportService {
         reportRepository.save(report);
 
         return "게시물이 저장되었습니다.";
+    }
+
+    @Transactional
+    public void saveReply(ReportReplyRequest reportReplyRequest) {
+        boolean isPenalizable = reportReplyRequest.isPenalizable();
+        Report report = reportRepository.findById(reportReplyRequest.getId())
+                .orElseThrow(() -> new EntityNotFoundException("Report not found"));
+        User user = report.getTarget();
+        if(isPenalizable) {
+            int penaltyCount = user.getPenaltyCount();
+            userService.updateUserTrustScore(user, null, null, null, penaltyCount + 1);
+            user.setPenaltyCount(penaltyCount + 1);
+        }
+        report.setReply(reportReplyRequest.getReply());
+        reportRepository.save(report);
     }
 }

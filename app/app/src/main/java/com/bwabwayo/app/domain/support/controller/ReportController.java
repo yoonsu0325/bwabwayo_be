@@ -1,6 +1,7 @@
 package com.bwabwayo.app.domain.support.controller;
 
 
+import com.bwabwayo.app.domain.support.dto.request.ReportReplyRequest;
 import com.bwabwayo.app.domain.support.dto.request.ReportRequest;
 import com.bwabwayo.app.domain.support.dto.response.ReportResponse;
 import com.bwabwayo.app.domain.support.service.ReportService;
@@ -45,5 +46,11 @@ public class ReportController {
     public ResponseEntity<?> saveReport(@RequestBody ReportRequest reportRequest, @LoginUser User user) {
         String result =  reportService.save(reportRequest, user);
         return ResponseEntity.ok().body(result);
+    }
+
+    @PutMapping("/reply")
+    public ResponseEntity<?> saveReport(@RequestBody ReportReplyRequest reportReplyRequest) {
+        reportService.saveReply(reportReplyRequest);
+        return ResponseEntity.ok("신고 답변 완료");
     }
 }

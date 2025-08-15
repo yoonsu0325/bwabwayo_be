@@ -7,7 +7,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
 @Repository
-public interface InquiryRepository extends JpaRepository<Inquiry,Integer> {
+public interface InquiryRepository extends JpaRepository<Inquiry,Long> {
     Page<Inquiry> findAll(Pageable pageable);
 
     Page<Inquiry> findInquiriesByUser_Id(String userId, Pageable pageable);

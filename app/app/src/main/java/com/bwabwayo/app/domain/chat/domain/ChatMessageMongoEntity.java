@@ -7,7 +7,6 @@ import org.springframework.data.mongodb.core.mapping.Field;
 import org.springframework.format.annotation.DateTimeFormat;
 
 import java.time.LocalDateTime;
-import java.time.OffsetDateTime;
 
 @Builder
 @Getter @Setter
@@ -25,13 +24,13 @@ public class ChatMessageMongoEntity {
     private LocalDateTime createdAt;
     private MessageType type;
 
-    public static ChatMessageMongoEntity of(MessageDTO dto) {
+    public static ChatMessageMongoEntity of(MessageDTO dto, LocalDateTime paredTime) {
         return ChatMessageMongoEntity.builder()
                 .senderId(dto.getSenderId())
                 .receiverId(dto.getReceiverId())
                 .roomId(dto.getRoomId())
                 .content(dto.getContent())
-                .createdAt(LocalDateTime.parse(dto.getCreatedAt()))
+                .createdAt(paredTime)
                 .type(dto.getType())
                 .isRead(dto.isRead())
                 .build();

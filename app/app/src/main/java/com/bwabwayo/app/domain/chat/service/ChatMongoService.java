@@ -3,6 +3,7 @@ package com.bwabwayo.app.domain.chat.service;
 import com.bwabwayo.app.domain.chat.domain.ChatMessageMongoEntity;
 import com.bwabwayo.app.domain.chat.dto.MessageDTO;
 import com.bwabwayo.app.domain.chat.repository.ChatMessageRepository;
+import com.bwabwayo.app.global.common.CommonService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -10,15 +11,12 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.mongodb.core.MongoTemplate;
-import org.springframework.data.mongodb.core.query.Collation;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.data.support.PageableExecutionUtils;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.Collections;
-import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -29,12 +27,13 @@ public class ChatMongoService {
 
     private final ChatMessageRepository chatMessageRepository;
     private final MongoTemplate mongoTemplate;
+    private final CommonService commonService;
 
     // 채팅 저장
     @Transactional
     public MessageDTO save(MessageDTO chatMessageDto) {
 
-        ChatMessageMongoEntity chatMessage = chatMessageRepository.save(ChatMessageMongoEntity.of(chatMessageDto));
+        ChatMessageMongoEntity chatMessage = chatMessageRepository.save(ChatMessageMongoEntity.of(chatMessageDto, commonService.parseSafe(chatMessageDto.getCreatedAt())));
         log.info("save success : {}", chatMessage.getContent());
         return MessageDTO.fromEntity(chatMessage);
     }

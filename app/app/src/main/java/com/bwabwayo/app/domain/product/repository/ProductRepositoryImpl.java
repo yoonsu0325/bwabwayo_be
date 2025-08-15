@@ -3,6 +3,7 @@ package com.bwabwayo.app.domain.product.repository;
 import com.bwabwayo.app.domain.product.domain.QProduct;
 import com.bwabwayo.app.domain.product.dto.ProductQueryCondition;
 import com.bwabwayo.app.domain.product.dto.response.ProductWithIsLikeDTO;
+import com.bwabwayo.app.domain.product.enums.SaleStatus;
 import com.bwabwayo.app.domain.wish.domain.QWish;
 import com.querydsl.core.BooleanBuilder;
 import com.querydsl.core.types.Projections;
@@ -157,6 +158,11 @@ public class ProductRepositoryImpl implements ProductRepositoryCustom {
             whereCondition.and(product.price.goe(minPrice));
         } else if(maxPrice != null){
             whereCondition.and(product.price.loe(maxPrice));
+        }
+
+        Boolean onlySale = queryCondition.getGetOnlySale();
+        if(onlySale != null && onlySale){
+            whereCondition.and(product.saleStatus.eq(SaleStatus.AVAILABLE));
         }
 
         return whereCondition;

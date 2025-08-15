@@ -16,6 +16,7 @@ import com.bwabwayo.app.domain.product.dto.response.*;
 import com.bwabwayo.app.domain.product.enums.DeliveryStatus;
 import com.bwabwayo.app.domain.product.enums.ProductSortType;
 import com.bwabwayo.app.domain.product.exception.ProductNotFoundException;
+import com.bwabwayo.app.domain.product.repository.CategoryRepository;
 import com.bwabwayo.app.domain.product.repository.CourierRepository;
 import com.bwabwayo.app.domain.product.repository.ProductImageRepository;
 import com.bwabwayo.app.domain.product.repository.ProductRepository;
@@ -54,6 +55,7 @@ public class ProductService {
     private final ViewCountService viewCountService;
     private final ProductEmbeddingService productEmbeddingService;
     private final ReviewAggService reviewAggService;
+    private final CategoryRepository categoryRepository;
 
     @Value("${storage.path.temp}")
     private String tempPath;
@@ -128,6 +130,8 @@ public class ProductService {
             }
         }
 
+        categoryIds = keywordToCategory(keyword, categoryIds);
+
         // 페이징 조건
         // 페이지는 1부터 시작
         Integer page = requestDTO.getPage();
@@ -136,7 +140,7 @@ public class ProductService {
         // 기본 정렬 속성은 '최신순'
         ProductSortType sortType = ProductSortType.from(requestDTO.getSortBy());
         if((sortType == ProductSortType.RELATED || sortType == ProductSortType.LATEST_AND_RELATED)
-                && keyword == null){ // 키워드가 없으면 관련 검색 불가
+                && (keyword == null || keyword.isBlank())){ // 키워드가 없으면 관련 검색 불가
             log.warn("키워드가 없어 관련성 검색이 불가합니다; 기본 검색으로 대체");
             sortType = ProductSortType.LATEST;
         }
@@ -157,12 +161,13 @@ public class ProductService {
                 .minPrice(minPrice)
                 .maxPrice(maxPrice)
 //                .urlPrefix(requestDTO.getUrlPrefix())
+                .getOnlySale(requestDTO.getOnlySale())
                 .build();
 
         Page<ProductWithIsLikeDTO> pageData;
         if(sortType == ProductSortType.RELATED) {
             pageData = queryWithRelated(queryCondition, pageable, loginUser);
-        } else if(sortType != ProductSortType.LATEST_AND_RELATED || keyword == null || keyword.isBlank()){
+        } else if(sortType != ProductSortType.LATEST_AND_RELATED){
             pageData = productRepository.searchByCondition(queryCondition, pageable);
         } else{
             Page<ProductWithIsLikeDTO> related = queryWithRelated(queryCondition, pageable, loginUser);
@@ -197,6 +202,24 @@ public class ProductService {
                     .seller(sellerDTO)
                     .build();
         });
+    }
+
+    private List<Long> keywordToCategory(String keyword, List<Long> categoryIds) {
+        return categoryIds;
+//        if(keyword == null) return categoryIds;
+//
+//        if(categoryIds == null) categoryIds = new ArrayList<>();
+//        String[] tokens = keyword.split(" ");
+//        for(String token : tokens) {
+//            for (Category category : categoryRepository.findAll()) {
+//                if (category.getName().contains(token) || token.contains(category.getName())) {
+//                    List<Long> temp = CategoryUtils.getSubCategories(category).stream().map(Category::getId).toList();
+//                    categoryIds.addAll(temp);
+//                }
+//            }
+//        }
+//        log.info("ctegorys={}", Arrays.toString(categoryIds.toArray()));
+//        return categoryIds;
     }
 
     private Page<ProductWithIsLikeDTO> queryWithRelated(ProductQueryCondition queryCondition, Pageable pageable, User viewer){

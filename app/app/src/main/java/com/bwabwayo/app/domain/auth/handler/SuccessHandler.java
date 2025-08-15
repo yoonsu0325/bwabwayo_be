@@ -80,11 +80,13 @@ public class SuccessHandler extends SimpleUrlAuthenticationSuccessHandler {
             //마지막 로그인 갱신
             defaultUser.setLastLoginAt(LocalDateTime.now(seoulZone));
             userService.saveUser(defaultUser);
+            boolean isAdmin = defaultUser.getRole() == Role.ADMIN;
             String redirectUrl = UriComponentsBuilder
                     .fromUriString("https://i13e202.p.ssafy.io/fe/logincallback")
                     .queryParam("accessToken", accessToken)
                     .queryParam("isNewUser", false)
                     .queryParam("loginPoint", loginPoint)
+                    .queryParam("isAdmin", isAdmin)
                     .build()
                     .toUriString();
 
