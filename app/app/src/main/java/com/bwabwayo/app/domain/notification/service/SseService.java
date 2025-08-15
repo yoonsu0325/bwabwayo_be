@@ -29,7 +29,7 @@ public class SseService {
     /** 사용자에게 알림을 보낼 수 있도록 등록 */
     public SseEmitter subscribe(String userId, String lastEventId) {
         // 새로운 emitter 연결
-        SseEmitter emitter = new SseEmitter(TIMEOUT);
+        SseEmitter emitter = new SseEmitter(0L);
 
         // 연결종료, 타임아웃, 에러발생 시 emitter 제거 (메모리 누수 방지)
         log.info("SSE 구독 시작: userId={}", userId);
