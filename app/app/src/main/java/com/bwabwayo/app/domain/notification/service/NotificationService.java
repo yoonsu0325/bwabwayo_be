@@ -17,6 +17,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
@@ -38,6 +39,7 @@ public class NotificationService {
     // ===================== upsert =======================
 
 //    @Transactional
+    @Transactional(propagation = Propagation.NOT_SUPPORTED)
     public void upsert(String receiverId, Long productId, Long roomId, String message){
         log.info("upsert receiverId: {}, productId: {}, roomId: {}, message: {}", receiverId, productId, roomId, message);
 //        notificationRepository.upsert(receiverId, productId, roomId, message, LocalDateTime.now(ZoneId.of("Asia/Seoul")));
