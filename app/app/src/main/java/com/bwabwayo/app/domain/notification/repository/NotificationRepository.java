@@ -26,7 +26,7 @@ INSERT INTO notification
 VALUES (:receiverId, :productId, :roomId, :message, NOW(3), false, 1)
 ON DUPLICATE KEY UPDATE
   message = VALUES(message),
-  updated_at = NOW(3),
+  updated_at = CONVERT_TZ(NOW(3), 'UTC', 'Asia/Seoul'),
   is_read = false,
   unread_count = unread_count + 1
 """, nativeQuery = true)
