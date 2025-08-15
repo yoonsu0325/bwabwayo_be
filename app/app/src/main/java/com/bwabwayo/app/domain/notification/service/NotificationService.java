@@ -37,7 +37,7 @@ public class NotificationService {
 
     // ===================== upsert =======================
 
-    @Transactional
+//    @Transactional
     public void upsert(String receiverId, Long productId, Long roomId, String message){
         log.info("upsert receiverId: {}, productId: {}, roomId: {}, message: {}", receiverId, productId, roomId, message);
 //        notificationRepository.upsert(receiverId, productId, roomId, message, LocalDateTime.now(ZoneId.of("Asia/Seoul")));
@@ -46,25 +46,25 @@ public class NotificationService {
 
     // ===================== mark-read =======================
 
-    @Transactional
+//    @Transactional
     public void markRead(String receiverId, Long notificationId){
 //        notificationRepository.markRead(receiverId, notificationId);
         notificationRedisRepository.markRead(receiverId, notificationId);
     }
 
-    @Transactional
+//    @Transactional
     public void markChatRead(String receiverId, Long roomId){
 //        notificationRepository.markChatRead(receiverId, roomId);
         notificationRedisRepository.markChatRead(receiverId, roomId);
     }
 
-    @Transactional
+//    @Transactional
     public void markProductRead(String receiverId, Long roomId){
 //        notificationRepository.markProductRead(receiverId, roomId);
         notificationRedisRepository.markProductRead(receiverId, roomId);
     }
 
-    @Transactional
+//    @Transactional
     public Page<NotificationDTO> findInbox(String receiverId, Pageable pageable){
 //        return notificationRepository.findInbox(receiverId, pageable);
         return notificationRedisRepository.findInbox(receiverId, pageable);
