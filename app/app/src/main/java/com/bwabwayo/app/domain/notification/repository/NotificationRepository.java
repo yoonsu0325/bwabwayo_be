@@ -1,9 +1,6 @@
 package com.bwabwayo.app.domain.notification.repository;
 
-import com.bwabwayo.app.domain.chat.domain.ChatRoom;
 import com.bwabwayo.app.domain.notification.domain.Notification;
-import com.bwabwayo.app.domain.product.domain.Product;
-import com.bwabwayo.app.domain.user.domain.User;
 import io.lettuce.core.dynamic.annotation.Param;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -13,7 +10,6 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 
 import java.time.LocalDateTime;
-import java.util.List;
 
 @Repository
 public interface NotificationRepository extends JpaRepository<Notification, Long> {

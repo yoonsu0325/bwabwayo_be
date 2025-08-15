@@ -1,6 +1,7 @@
 package com.bwabwayo.app.domain.notification.controller;
 import com.bwabwayo.app.domain.auth.annotation.LoginUserId;
 import com.bwabwayo.app.domain.notification.domain.Notification;
+import com.bwabwayo.app.domain.notification.dto.NotificationDTO;
 import com.bwabwayo.app.domain.notification.dto.request.InboxRequest;
 import com.bwabwayo.app.domain.notification.dto.request.UpsertRequest;
 import com.bwabwayo.app.domain.notification.dto.response.NotificationResponse;
@@ -50,7 +51,7 @@ public class NotificationController {
     @ApiResponse(responseCode = "200")
     @GetMapping
     public ResponseEntity<NotificationListResponse> getUnreadNotifications(@Valid InboxRequest request, @LoginUser User user){
-        Page<Notification> notifications = notificationService.findInbox(user.getId(), PageRequest.of(0, request.getLimit()));
+        Page<NotificationDTO> notifications = notificationService.findInbox(user.getId(), PageRequest.of(0, request.getLimit()));
         List<NotificationResponse> dtos = notifications.getContent().stream().map(notificationService::build).toList();
 
         return ResponseEntity.ok(NotificationListResponse.of(dtos));
