@@ -5,8 +5,6 @@ import com.bwabwayo.app.domain.chat.dto.MessageDTO;
 import com.bwabwayo.app.domain.chat.dto.MessageSubDTO;
 import com.bwabwayo.app.domain.chat.dto.response.ChatRoomListResponse;
 import com.bwabwayo.app.domain.chat.repository.ChatRoomRedisRepository;
-import com.bwabwayo.app.domain.notification.service.NotificationAsyncService;
-import com.bwabwayo.app.domain.notification.service.SseService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;

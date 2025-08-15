@@ -18,6 +18,8 @@ spring:
     username: root
     password: whddnjsWkd123!
     driver-class-name: com.mysql.cj.jdbc.Driver
+    hikari:
+      leak-detection-threshold: 5000
 
   jpa:
     hibernate:
@@ -96,6 +98,7 @@ qdrant:
 logging:
   level:
     com.bwabwayo.app: DEBUG
+    com.zaxxer.hikari.pool.HikariPool: DEBUG
 
 openvidu:
   url: https://i13e202.p.ssafy.io:8443
@@ -107,9 +110,6 @@ storage:
     temp: temp
     productImage: products
     profileImage: profiles
-
-sse:
-  timeout: 1800000
 
 toss:
   key:

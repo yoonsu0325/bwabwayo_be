@@ -10,7 +10,8 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 @Builder
 @JsonInclude(JsonInclude.Include.NON_NULL)
-public class NotificationDTO {
+@ToString
+public class NotificationResponse {
 
     private Long id;
 
@@ -20,13 +21,13 @@ public class NotificationDTO {
     
     private LocalDateTime createdAt; // 발신 시각
 
-    private String thumbnail; // 상품의 썸네일
+    private String thumbnail; // 썸네일
 
-    private Integer unreadCount;
+    private Integer unreadCount; // 읽지 않은 메시지의 수
 
-    private String receiverId;
+    private String receiverId; // 수신자 ID
 
-    private Long productId;
+    private Long productId; // 상품 ID
 
-    private Long chatroomId;
+    private Long chatroomId; // 채팅방 ID
 }

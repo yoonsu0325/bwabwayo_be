@@ -69,6 +69,10 @@ public class RedisConfig {
         return createFactory(3);
     }
 
+    @Bean
+    public RedisConnectionFactory redisConnectionFactory4() {
+        return createFactory(4);
+    }
 
     // ObjectMapper (직렬화 기본 설정)
     @Bean
@@ -108,6 +112,14 @@ public class RedisConfig {
         template.setHashValueSerializer(serializer);
 
         // afterPropertiesSet()을 호출하면 내부적으로 설정한 직렬화기, 커넥션 팩토리 등을 기반으로 초기화 작업
+        template.afterPropertiesSet();
+        return template;
+    }
+
+    @Bean
+    public RedisTemplate<String, Object> notificationRedisTemplate(@Qualifier("redisConnectionFactory4") RedisConnectionFactory redisConnectionFactory) {
+        RedisTemplate<String, Object> template = new RedisTemplate<>();
+        template.setConnectionFactory(redisConnectionFactory);
         template.afterPropertiesSet();
         return template;
     }
@@ -158,6 +170,8 @@ public class RedisConfig {
         template.afterPropertiesSet();
         return template;
     }
+
+
 
     // RefreshTokenTemplate (DB1 사용)
     @Bean
