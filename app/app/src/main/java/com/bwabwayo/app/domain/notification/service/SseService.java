@@ -21,7 +21,7 @@ public class SseService {
     private final Map<String, SseEmitter> emitters = new ConcurrentHashMap<>();
     private final NotificationService notificationService;
 
-    private final Long TIMEOUT = 1000L * 60 * 30;
+    private final Long TIMEOUT = 1000L * 30;
 
 
     // ============= subscribe ==================
