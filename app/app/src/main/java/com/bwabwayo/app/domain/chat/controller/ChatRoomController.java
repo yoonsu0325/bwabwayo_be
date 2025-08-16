@@ -62,7 +62,7 @@ public class ChatRoomController {
                     ChatMessageRedisEntity entity = ChatMessageRedisEntity.of(msg); // DTO → Entity 변환 메서드 필요
                     redisService.markAsRead(entity);
                 });
-        notificationService.markChatRead(user.getId(), roomId);
+//        notificationService.markChatRead(user.getId(), roomId);
         return ResponseEntity.ok(messages);
     }
 
