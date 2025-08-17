@@ -4,9 +4,12 @@ import com.bwabwayo.app.domain.chat.domain.ChatMessageRedisEntity;
 import com.bwabwayo.app.domain.chat.domain.ChatRoom;
 import com.bwabwayo.app.domain.chat.dto.request.CreateChatRoomRequest;
 import com.bwabwayo.app.domain.chat.dto.response.ChatRoomListResponse;
+import com.bwabwayo.app.domain.chat.dto.response.ProductInfoResponse;
 import com.bwabwayo.app.domain.chat.repository.ChatRoomRedisRepository;
 import com.bwabwayo.app.domain.chat.repository.ChatRoomRepository;
 import com.bwabwayo.app.domain.product.domain.Product;
+import com.bwabwayo.app.domain.product.enums.SaleStatus;
+import com.bwabwayo.app.domain.product.repository.ProductRepository;
 import com.bwabwayo.app.domain.product.service.ProductService;
 import com.bwabwayo.app.domain.user.domain.ReviewAgg;
 import com.bwabwayo.app.domain.user.domain.User;
@@ -20,9 +23,7 @@ import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeParseException;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
@@ -37,6 +38,7 @@ public class ChatRoomService {
     private final RedisService redisService;
     private final CommonService commonService;
     private final StorageService storageService;
+    private final ProductRepository productRepository;
 
     /**
      * 채팅방 생성: MySQL 저장 + Redis 캐싱
@@ -83,6 +85,9 @@ public class ChatRoomService {
     public List<ChatRoomListResponse> getChatRoomList(String userId) {
         List<ChatRoomListResponse> roomList;
 
+        // 0) saleStatus 최신화에 필요한 productId를 수집
+        Set<Long> productIds = new HashSet<>();
+
         // Redis에 존재하면 가져오기
         if (chatRoomRedisRepository.existChatRoomList(userId)) {
             roomList = chatRoomRedisRepository.getChatRoomList(userId);
@@ -97,6 +102,29 @@ public class ChatRoomService {
                 // unread count 갱신
                 long unreadCount = redisService.countUnreadMessages(roomId, userId);
                 response.setUnreadCount(unreadCount);
+
+                // productId 수집 (null 가드)
+                if (response.getProduct() != null && response.getProduct().getId() != null) {
+                    productIds.add(response.getProduct().getId());
+                }
+            }
+            // 1) RDB에서 최신 product 상태 일괄 조회
+            if (!productIds.isEmpty()) {
+                List<Product> products = productRepository.findAllById(productIds);
+                Map<Long, SaleStatus> statusById = products.stream()
+                        .collect(Collectors.toMap(Product::getId, Product::getSaleStatus));
+
+                // 2) 각 response의 product.saleStatus를 최신값으로 덮어쓰기
+                for (ChatRoomListResponse response : roomList) {
+                    ProductInfoResponse p = response.getProduct();
+                    if (p == null || p.getId() == null) continue;
+
+                    SaleStatus latest = statusById.get(p.getId());
+                    if (latest != null) {
+                        p.setSaleStatus(latest); // ProductInfoResponse에 @Setter 있으니 가능
+                    }
+                    // latest가 없으면(삭제/비활성화 등) 기존 Redis 값 유지
+                }
             }
 
         } else {
