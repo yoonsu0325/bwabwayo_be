@@ -27,6 +27,11 @@ public class OpenAiClient {
     @Value("${openai.chat-model}")
     private String model;
 
+    @Value("${openai.embedding-url}")
+    private String embeddingApiUrl;
+    @Value("${openai.embedding-model}")
+    private String embeddingModel;
+
     /**
      * 사용자 질문을 GPT 모델에 전달하고 응답 받기
      */
@@ -79,10 +84,10 @@ public class OpenAiClient {
 
 
     public List<Double> getEmbedding(String text) {
-        EmbeddingRequest request = new EmbeddingRequest("text-embedding-3-large", List.of(text));
+        EmbeddingRequest request = new EmbeddingRequest(embeddingModel, List.of(text));
 
         ResponseEntity<EmbeddingResponse> response = restTemplate.postForEntity(
-                "https://gms.ssafy.io/gmsapi/api.openai.com/v1/embeddings",  // 또는 공식 OpenAI URL
+                embeddingApiUrl,  // 또는 공식 OpenAI URL
                 request,
                 EmbeddingResponse.class
         );
@@ -93,7 +98,4 @@ public class OpenAiClient {
 
         return response.getBody().getData().get(0).getEmbedding();
     }
-
-
-
 }
