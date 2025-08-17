@@ -90,10 +90,12 @@ public class ProductEmbeddingService {
         List<Long> categoryIn = queryCondition.getCategoryIn();
         Integer minPrice = queryCondition.getMinPrice();
         Integer maxPrice = queryCondition.getMaxPrice();
+        Boolean onlySale = queryCondition.getGetOnlySale();
 
         QdrantFilterBuilder builder = new QdrantFilterBuilder();
         if(categoryIn != null && !categoryIn.isEmpty()) builder.in("categoryId", categoryIn);
         builder.range("price", minPrice, maxPrice);
+        if(onlySale != null && onlySale) builder.match("isSale", false);
         Map<String, Object> filter = builder.build();
 
         // 유사도 검색
