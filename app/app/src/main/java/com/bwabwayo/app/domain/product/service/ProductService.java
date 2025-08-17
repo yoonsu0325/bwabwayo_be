@@ -62,8 +62,7 @@ public class ProductService {
     @Value("${storage.path.productImage}")
     private String productPath;
 
-    @Value("${product.detail.others}")
-    private Integer otherCount;
+    private final Integer OTHER_COUNT = 5;
 
 
     /**
@@ -268,11 +267,11 @@ public class ProductService {
 
         // 판매자 정보
         User seller = product.getSeller();
-        List<ProductDTO> others = query(ProductQueryRequest.builder().sellerId(seller.getId()).size(otherCount + 1).urlPrefix("http").build(), loginUser)
+        List<ProductDTO> others = query(ProductQueryRequest.builder().sellerId(seller.getId()).size(OTHER_COUNT + 1).urlPrefix("http").build(), loginUser)
                 .getResult().stream()
                 .map(ProductQueryResult::getProduct)
                 .filter(p ->!p.getId().equals(product.getId()))
-                .limit(otherCount)
+                .limit(OTHER_COUNT)
                 .toList();
 
         SellerDetailDTO sellerDTO = SellerDetailDTO.builder()
