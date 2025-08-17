@@ -71,7 +71,7 @@ public class OpenViduController {
         String sessionId = session.getSessionId();
 
         taskScheduler.schedule(() -> handleRecordingComplete(sessionId),
-                new Date(System.currentTimeMillis() + TimeUnit.MINUTES.toMillis(30)));
+                new Date(System.currentTimeMillis() + TimeUnit.MINUTES.toMillis(3)));
 
         return new ResponseEntity<>(session.getSessionId(), HttpStatus.OK);
     }
