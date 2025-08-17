@@ -10,6 +10,7 @@ import com.bwabwayo.app.domain.chat.repository.ChatRoomRepository;
 import com.bwabwayo.app.domain.product.domain.Product;
 import com.bwabwayo.app.domain.product.enums.SaleStatus;
 import com.bwabwayo.app.domain.product.repository.ProductRepository;
+import com.bwabwayo.app.domain.product.repository.ProductRepository;
 import com.bwabwayo.app.domain.product.service.ProductService;
 import com.bwabwayo.app.domain.user.domain.ReviewAgg;
 import com.bwabwayo.app.domain.user.domain.User;
@@ -176,6 +177,7 @@ public class ChatRoomService {
     public List<ChatRoomListResponse> sortChatRoomListLatest(List<ChatRoomListResponse> list) {
 
         return list.stream()
+                .filter(r -> productRepository.existsById(r.getProduct().getId())) // N+1이라서 수정 필요
                 .filter(r -> r.getLastMessage() != null)
                 .sorted((o1, o2) -> {
                     try {
