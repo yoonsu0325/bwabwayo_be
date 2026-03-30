@@ -1,93 +1,148 @@
-# bwabwayo_BE
+# README.md
+
+![Thumbnail](./resources/Thumbnail.png)
+
+## **프로젝트 개요**
+
+비대면 화상 중고거래 플랫폼 **봐봐요**는 실시간 화상 채팅을 통한 거래 검증으로 **택배거래 사기 문제를 예방**하고, 안전하고 신뢰성 있는 중고거래 환경을 제공합니다.
+
+- **개발 기간** : 2025.07.07 ~ 2025.08.18 (7주)
+- **플랫폼** : Web
+- **개발 인원** : 6명 (프론트엔드 2명, 백엔드 4명)
+
+## 팀원 구성
+
+| <img src="./resources/장종원.jpg" alt="장종원" width="300"> | <img src="./resources/조우영.png" alt="조우영" width="300"> | <img src="./resources/전소슬.jpg" alt="전소슬" width="300"> | <img src="./resources/이재원.jpg" alt="이재원" width="300"> | <img src="./resources/배준수.jpg" alt="배준수" width="300"> | <img src="./resources/원윤서.jpg" alt="원윤서" width="300"> |
+| --- | --- | --- | --- | --- | --- |
+| 장종원(PM) | 조우영(FE) | 전소슬(FE) | 이재원(BE) | 배준수(BE) | 원윤서(BE) |
+| - AI 챗봇, 검색엔진<br>- WebRTC<br>- 인프라 구축 | - 소켓통신, WebRTC<br>- 결제연동 | - 사용자 인증 및 인가<br>- 개인화 서비스 API 연동<br> | -인증/보안<br>- OAuth 연동<br>- User API 개발 | -상품 도메인<br>-검색엔진<br>-S3 관리<br>- 알림(SSE)<br> | - 채팅(Web Socket)<br>- 화면 디자인<br>- 인프라 구축 |
+
+## 시스템 아키텍처
+![시스템 아키텍처](./resources/Architecture.png)
+
+## 기술 스택
+
+### FE
+<div align="center">
+
+![Cursor](https://img.shields.io/badge/Cursor-00D4AA?style=for-the-badge&logo=cursor&logoColor=white)
+![Visual Studio Code](https://img.shields.io/badge/Visual_Studio_Code-007ACC?style=for-the-badge&logo=visualstudiocode&logoColor=white)<br>
+![HTML5](https://img.shields.io/badge/html5-E34F26?style=for-the-badge&logo=html5&logoColor=white)
+![CSS](https://img.shields.io/badge/css-663399?style=for-the-badge&logo=css&logoColor=white)
+![JavaScript](https://img.shields.io/badge/javascript-F7DF1E?style=for-the-badge&logo=javascript&logoColor=black)
+![TypeScript](https://img.shields.io/badge/TypeScript-3178C6?style=for-the-badge&logo=typescript&logoColor=white) <br>
+![Next.js](https://img.shields.io/badge/Next.js-000000?style=for-the-badge&logo=nextdotjs&logoColor=white)
+![React](https://img.shields.io/badge/React-61DAFB?style=for-the-badge&logo=react&logoColor=black)
+![Node.js](https://img.shields.io/badge/Node.js-339933?style=for-the-badge&logo=nodedotjs&logoColor=white) 
+![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-38B2AC?style=for-the-badge&logo=tailwind-css&logoColor=white) <br>
+![OpenVidu](https://img.shields.io/badge/OpenVidu-FF6B6B?style=for-the-badge&logo=webrtc&logoColor=white)
+![Axios](https://img.shields.io/badge/Axios-5C3EE8?style=for-the-badge&logo=axios&logoColor=white)
+![Socket.io](https://img.shields.io/badge/Socket.io-010101?style=for-the-badge&logo=socketdotio&logoColor=white)
+![Zustand](https://img.shields.io/badge/Zustand-764ABC?style=for-the-badge&logo=redux&logoColor=white)
 
 
+</div>
 
-## Getting started
+- **Language |** JavaScript, TypeScript 5.5.3
+- **Runtime Environment |** Node.js v22.17.1
+- **Framework |** Next.js 14.2.30 (React 18.2.0), Tailwind CSS 4
+- **Library |** Zustand 5.0.6, Axios 1.11.0, OpenVidu Browser 2.29.0, Socket.io 4.8.1, STOMP.js 7.1.1, SockJs 1.6.1, Event Source Polyfill 1.0.31, TossPayments SDK 2.3.5, Swiper 11.2.10, React Slick 0.30.3, React Calendar 6.0.0, React Date Picker 12.0.1, Lucide React 0.539.0
+- **IDE |** Visual Studio Code 1.99.3, Cursor 1.4.5
 
-To make it easy for you to get started with GitLab, here's a list of recommended next steps.
+### BE
+<div align="center">
 
-Already a pro? Just edit this README.md and make it your own. Want to make it easy? [Use the template at the bottom](#editing-this-readme)!
+![IntelliJ IDEA](https://img.shields.io/badge/IntelliJ_IDEA-000000?style=for-the-badge&logo=intellijidea&logoColor=white)
+![Java](https://img.shields.io/badge/Java-ED8B00?style=for-the-badge&logo=openjdk&logoColor=white)
+![Gradle](https://img.shields.io/badge/Gradle-02303A?style=for-the-badge&logo=gradle&logoColor=white)<br>
+![Spring Boot](https://img.shields.io/badge/Spring_Boot-6DB33F?style=for-the-badge&logo=springboot&logoColor=white)
+![Spring Security](https://img.shields.io/badge/Spring_Security-6DB33F?style=for-the-badge&logo=springsecurity&logoColor=white)
+![JPA](https://img.shields.io/badge/JPA-6DB33F?style=for-the-badge&logo=spring&logoColor=white)<br>
+![MySQL](https://img.shields.io/badge/MySQL-4479A1?style=for-the-badge&logo=mysql&logoColor=white)
+![Redis](https://img.shields.io/badge/Redis-DC382D?style=for-the-badge&logo=redis&logoColor=white)
+![Qdrant](https://img.shields.io/badge/Qdrant-FF6B6B?style=for-the-badge&logo=qdrant&logoColor=white)
+![Hibernate](https://img.shields.io/badge/Hibernate-BC2E3D?style=for-the-badge&logo=hibernate&logoColor=white)<br>
+![JWT](https://img.shields.io/badge/JWT-000000?style=for-the-badge&logo=jsonwebtokens&logoColor=white)
+![Swagger](https://img.shields.io/badge/Swagger-85EA2D?style=for-the-badge&logo=swagger&logoColor=white)
+![OpenAI](https://img.shields.io/badge/OpenAI-412991?style=for-the-badge&logo=openai&logoColor=white)
 
-## Add your files
 
-- [ ] [Create](https://docs.gitlab.com/ee/user/project/repository/web_editor.html#create-a-file) or [upload](https://docs.gitlab.com/ee/user/project/repository/web_editor.html#upload-a-file) files
-- [ ] [Add files using the command line](https://docs.gitlab.com/topics/git/add_files/#add-files-to-a-git-repository) or push an existing Git repository with the following command:
+</div>
 
-```
-cd existing_repo
-git remote add origin https://lab.ssafy.com/wkdwhd7598/bwabwayo_be.git
-git branch -M master
-git push -uf origin master
-```
+- **Language |** Java 17 (OpenJDK 17.0.16)
+- **Framework |** Spring Boot 3.5.3
 
-## Integrate with your tools
+- **Library |** Spring Security, Oauth2 Client, JWT, Spring Web, Srping WebSocket, Spring WebFlux, OpenVidu, Spring Data JPA, Spring Data Redis, QueryDSL 5.0.0, Spring Cloud AWS 2.2.6, SpringDoc OpenAPI 2.8.8, Lombok, Apache Lucene, Lucene Analysis Nori, Open Korean Text 2.3.1
+- **Database |** MySQL 8.0.18, Redis 7.2,  Qdrant 1.15.1
+- **IDE |** IntelliJ IDEA 2025.1.3 (Ultimate Edition)
+- **Build Tool |** Gradle 8.14.3
 
-- [ ] [Set up project integrations](https://lab.ssafy.com/wkdwhd7598/bwabwayo_be/-/settings/integrations)
+### DevOps
+<div align="center">
 
-## Collaborate with your team
+![Docker](https://img.shields.io/badge/Docker-2496ED?style=for-the-badge&logo=docker&logoColor=white)
+![Jenkins](https://img.shields.io/badge/Jenkins-D24939?style=for-the-badge&logo=jenkins&logoColor=white)
+![Ubuntu](https://img.shields.io/badge/Ubuntu-E95420?style=for-the-badge&logo=ubuntu&logoColor=white)
+![Nginx](https://img.shields.io/badge/Nginx-009639?style=for-the-badge&logo=nginx&logoColor=white)
 
-- [ ] [Invite team members and collaborators](https://docs.gitlab.com/ee/user/project/members/)
-- [ ] [Create a new merge request](https://docs.gitlab.com/ee/user/project/merge_requests/creating_merge_requests.html)
-- [ ] [Automatically close issues from merge requests](https://docs.gitlab.com/ee/user/project/issues/managing_issues.html#closing-issues-automatically)
-- [ ] [Enable merge request approvals](https://docs.gitlab.com/ee/user/project/merge_requests/approvals/)
-- [ ] [Set auto-merge](https://docs.gitlab.com/user/project/merge_requests/auto_merge/)
+</div>
 
-## Test and Deploy
+- **AMI |** Ubuntu 22.04.4 LTS
+- **Web Server**: Nginx 1.18.0 (Ubuntu)
+- **Docker |** 28.3.2
+- **Docker Compose |** v2.38.2
+- **CI/CD |** Jenkins 2.516.1
 
-Use the built-in continuous integration in GitLab.
+### Collaboration
+<div align="center">
 
-- [ ] [Get started with GitLab CI/CD](https://docs.gitlab.com/ee/ci/quick_start/)
-- [ ] [Analyze your code for known vulnerabilities with Static Application Security Testing (SAST)](https://docs.gitlab.com/ee/user/application_security/sast/)
-- [ ] [Deploy to Kubernetes, Amazon EC2, or Amazon ECS using Auto Deploy](https://docs.gitlab.com/ee/topics/autodevops/requirements.html)
-- [ ] [Use pull-based deployments for improved Kubernetes management](https://docs.gitlab.com/ee/user/clusters/agent/)
-- [ ] [Set up protected environments](https://docs.gitlab.com/ee/ci/environments/protected_environments.html)
+![Git](https://img.shields.io/badge/Git-F05032?style=for-the-badge&logo=git&logoColor=white)
+![GitLab](https://img.shields.io/badge/GitLab-FC6D26?style=for-the-badge&logo=gitlab&logoColor=white)<br>
+![Notion](https://img.shields.io/badge/Notion-000000?style=for-the-badge&logo=notion&logoColor=white)
+![Figma](https://img.shields.io/badge/Figma-F24E1E?style=for-the-badge&logo=figma&logoColor=white)
+![Jira](https://img.shields.io/badge/Jira-0052CC?style=for-the-badge&logo=jira&logoColor=white)<br>
+![Mattermost](https://img.shields.io/badge/Mattermost-0058CC?style=for-the-badge&logo=mattermost&logoColor=white)
+![Discord](https://img.shields.io/badge/Discord-5865F2?style=for-the-badge&logo=discord&logoColor=white)
+![Webex](https://img.shields.io/badge/Webex-049FD9?style=for-the-badge&logo=webex&logoColor=white)
 
-***
+</div>
 
-# Editing this README
+## 기능 구성
 
-When you're ready to make this README your own, just edit this file and use the handy template below (or feel free to structure it however you want - this is just a starting point!). Thanks to [makeareadme.com](https://www.makeareadme.com/) for this template.
+### 메인
+<img src="./resources/main.png" alt="main" width="600">
 
-## Suggestions for a good README
+### 판매글 보기
+<img src="./resources/post.png" alt="post" width="600">
 
-Every project is different, so consider which of these sections apply to yours. The sections used in the template are suggestions for most open source projects. Also keep in mind that while a README can be too long and detailed, too long is better than too short. If you think your README is too long, consider utilizing another form of documentation rather than cutting out information.
+### 판매글 작성
+<img src="./resources/write.png" alt="write" width="600">
 
-## Name
-Choose a self-explaining name for your project.
+### 채팅하기
+<img src="./resources/chat.png" alt="chat" width="600">
 
-## Description
-Let people know what your project can do specifically. Provide context and add a link to any reference visitors might be unfamiliar with. A list of Features or a Background subsection can also be added here. If there are alternatives to your project, this is a good place to list differentiating factors.
+### 화상거래
+<img src="./resources/videocall.png" alt="videocall" width="600">
 
-## Badges
-On some READMEs, you may see small images that convey metadata, such as whether or not all the tests are passing for the project. You can use Shields to add some to your README. Many services also have instructions for adding a badge.
+### 리뷰 작성
+<img src="./resources/review.png" alt="review" width="600">
 
-## Visuals
-Depending on what you are making, it can be a good idea to include screenshots or even a video (you'll frequently see GIFs rather than actual videos). Tools like ttygif can help, but check out Asciinema for a more sophisticated method.
+### 내정보
+<img src="./resources/my.png" alt="my" width="600">
 
-## Installation
-Within a particular ecosystem, there may be a common way of installing things, such as using Yarn, NuGet, or Homebrew. However, consider the possibility that whoever is reading your README is a novice and would like more guidance. Listing specific steps helps remove ambiguity and gets people to using your project as quickly as possible. If it only runs in a specific context like a particular programming language version or operating system or has dependencies that have to be installed manually, also add a Requirements subsection.
+### 구매이력 조회
+<img src="./resources/purchase.png" alt="purchase" width="600">
 
-## Usage
-Use examples liberally, and show the expected output if you can. It's helpful to have inline the smallest example of usage that you can demonstrate, while providing links to more sophisticated examples if they are too long to reasonably include in the README.
+## 프로젝트 산출물
 
-## Support
-Tell people where they can go to for help. It can be any combination of an issue tracker, a chat room, an email address, etc.
+### 화면설계서
 
-## Roadmap
-If you have ideas for releases in the future, it is a good idea to list them in the README.
+[![화면설계서](./resources/Page.png)](https://www.figma.com/design/1TaIBDaoszdC5N1xcZBrlZ/%ED%8C%80-%ED%94%84%EB%A1%9C%ED%95%84-%EB%94%94%EC%9E%90%EC%9D%B8?node-id=0-1&m=dev&t=wCETQbmlYcp8vyBa-1)
 
-## Contributing
-State if you are open to contributions and what your requirements are for accepting them.
 
-For people who want to make changes to your project, it's helpful to have some documentation on how to get started. Perhaps there is a script that they should run or some environment variables that they need to set. Make these steps explicit. These instructions could also be useful to your future self.
+### ERD
 
-You can also document commands to lint the code or run tests. These steps help to ensure high code quality and reduce the likelihood that the changes inadvertently break something. Having instructions for running tests is especially helpful if it requires external setup, such as starting a Selenium server for testing in a browser.
+[![ERD.png](./resources/ERD.png)](https://www.erdcloud.com/d/hDa5k3BnFy7xr85oo)
 
-## Authors and acknowledgment
-Show your appreciation to those who have contributed to the project.
-
-## License
-For open source projects, say how it is licensed.
-
-## Project status
-If you have run out of energy or time for your project, put a note at the top of the README saying that development has slowed down or stopped completely. Someone may choose to fork your project or volunteer to step in as a maintainer or owner, allowing your project to keep going. You can also make an explicit request for maintainers.
+### API 명세서
+[![API명세서.png](./resources/API.png)](https://hip-water-dfc.notion.site/API-23332874d9b180a9be1bcd4f3ba71315)
